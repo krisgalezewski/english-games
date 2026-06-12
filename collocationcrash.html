@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CollocationCrash — English Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#f76a6a;--text:#f0f0f4;--muted:#888896;--correct:#4caf82;--wrong:#f76a6a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
+nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
+nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
+main{flex:1;width:100%;max-width:560px;padding:1.5rem 1rem 2rem;display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
+.top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;}
+.score-pill{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:.35rem .9rem;font-size:.85rem;font-weight:600;}
+.score-pill span{color:var(--accent);}
+.progress-wrap{flex:1;margin:0 .75rem;height:6px;background:var(--border);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;width:100%;display:flex;flex-direction:column;align-items:center;gap:1.5rem;}
+.q-label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.q-noun{font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:800;text-align:center;}
+.q-prompt{color:var(--muted);font-size:.9rem;}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;width:100%;}
+.opt-btn{background:#0e0e10;border:2px solid var(--border);border-radius:12px;padding:.9rem .75rem;font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:var(--text);cursor:pointer;transition:all .18s;text-align:center;}
+.opt-btn:hover:not(:disabled){border-color:var(--accent);background:#f76a6a0e;}
+.opt-btn.correct{border-color:var(--correct);background:#4caf8220;color:var(--correct);}
+.opt-btn.wrong{border-color:var(--wrong);background:#f76a6a18;color:var(--wrong);}
+.opt-btn.reveal{border-color:var(--correct);background:#4caf8215;}
+.opt-btn:disabled{cursor:default;}
+.feedback-bar{min-height:1.5rem;font-size:.92rem;font-weight:600;text-align:center;}
+.feedback-bar.ok{color:var(--correct);}
+.feedback-bar.no{color:var(--wrong);}
+.explanation{background:#ffffff06;border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;font-size:.85rem;color:var(--muted);line-height:1.5;width:100%;display:none;}
+.next-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--text);display:none;}
+.next-btn:hover{border-color:var(--accent);}
+/* end */
+.end-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;width:100%;flex-direction:column;align-items:center;gap:1rem;display:none;}
+.end-score{font-size:3rem;font-family:'Syne',sans-serif;color:var(--accent);font-weight:800;}
+.score-submit{display:flex;gap:.5rem;width:100%;flex-wrap:wrap;}
+.score-submit input{flex:1;min-width:120px;background:#0e0e10;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
+.score-submit input:focus{outline:none;border-color:var(--accent);}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;}
+.btn:hover{opacity:.85;}
+.play-again{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;cursor:pointer;color:var(--text);}
+.play-again:hover{border-color:var(--accent);}
+.lb-section{width:100%;max-width:560px;padding:0 1rem 2.5rem;}
+.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
+.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
+.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
+.lb-table tr:first-child td{color:var(--accent);font-weight:600;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">← Games</a>
+  <h1>💥 CollocationCrash</h1>
+  <span></span>
+</nav>
+<main>
+  <div class="top-bar">
+    <div class="score-pill">Score: <span id="scoreVal">0</span></div>
+    <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="score-pill" id="qCounter">1 / 10</div>
+  </div>
+
+  <div class="q-card" id="qCard">
+    <div class="q-label" id="qLabel">Which verb goes with…</div>
+    <div class="q-noun" id="qNoun"></div>
+    <div class="q-prompt" id="qPrompt"></div>
+    <div class="options-grid" id="optGrid"></div>
+    <div class="feedback-bar" id="feedback"></div>
+    <div class="explanation" id="explanation"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQ()">Next →</button>
+  </div>
+
+  <div class="end-card" id="endCard">
+    <h2>Round complete!</h2>
+    <div class="end-score" id="endScore"></div>
+    <p style="color:var(--muted);font-size:.9rem" id="endMsg"></p>
+    <div class="score-submit">
+      <input id="nameInput" placeholder="Your name" maxlength="20"/>
+      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
+    </div>
+    <button class="play-again" onclick="restartGame()">Play again</button>
+  </div>
+</main>
+
+<div class="lb-section">
+  <h2>🏆 Leaderboard</h2>
+  <table class="lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script src="shared.js"></script>
+<script>
+const GAME = 'collocationcrash';
+
+// Format: {noun, correct, distractors:[], prompt, explanation}
+const ALL_QS = [
+  {noun:'a decision',correct:'make',distractors:['do','take','have'],prompt:'___ a decision',explanation:'"Make a decision" is the natural collocation. We say "make" not "do" with decision.'},
+  {noun:'a mistake',correct:'make',distractors:['do','commit','have'],prompt:'___ a mistake',explanation:'"Make a mistake" — we always "make" mistakes in English, not "do" them.'},
+  {noun:'a suggestion',correct:'make',distractors:['give','say','tell'],prompt:'___ a suggestion',explanation:'"Make a suggestion" — you make, not give, a suggestion.'},
+  {noun:'homework',correct:'do',distractors:['make','have','take'],prompt:'___ homework',explanation:'"Do homework" — tasks and activities use "do", not "make".'},
+  {noun:'a course',correct:'take',distractors:['do','make','follow'],prompt:'___ a course',explanation:'"Take a course" is standard. You can also "do a course" in British English.'},
+  {noun:'a photo',correct:'take',distractors:['make','do','shoot'],prompt:'___ a photo',explanation:'"Take a photo" — we take, not make, photos.'},
+  {noun:'a shower',correct:'take',distractors:['do','make','have'],prompt:'___ a shower',explanation:'Both "take a shower" and "have a shower" are correct — but NOT "do a shower".'},
+  {noun:'an effort',correct:'make',distractors:['do','take','have'],prompt:'___ an effort',explanation:'"Make an effort" is the fixed collocation.'},
+  {noun:'research',correct:'do',distractors:['make','take','conduct'],prompt:'___ research',explanation:'"Do research" — activities and work-related things typically collocate with "do".'},
+  {noun:'a speech',correct:'give',distractors:['make','do','say'],prompt:'___ a speech',explanation:'"Give a speech" — presentations and performances use "give".'},
+  {noun:'advice',correct:'give',distractors:['make','say','tell'],prompt:'___ advice',explanation:'"Give advice" — you give, not make, advice.'},
+  {noun:'a promise',correct:'make',distractors:['give','do','take'],prompt:'___ a promise',explanation:'"Make a promise" — commitments and pledges use "make".'},
+  {noun:'a joke',correct:'make',distractors:['tell','say','do'],prompt:'___ a joke',explanation:'You can "make a joke" or "tell a joke" — both are correct! "Tell" is arguably more common.'},
+  {noun:'an exam',correct:'take',distractors:['do','make','pass'],prompt:'___ an exam',explanation:'Both "take an exam" and "do an exam" are used. "Sit an exam" is also common in British English.'},
+  {noun:'a nap',correct:'take',distractors:['do','have','make'],prompt:'___ a nap',explanation:'"Take a nap" — resting activities use "take" or "have".'},
+  {noun:'friends',correct:'make',distractors:['do','get','find'],prompt:'___ friends',explanation:'"Make friends" is the fixed expression.'},
+  {noun:'a complaint',correct:'make',distractors:['do','give','have'],prompt:'___ a complaint',explanation:'"Make a complaint" — formal communications often use "make".'},
+  {noun:'an appointment',correct:'make',distractors:['take','do','book'],prompt:'___ an appointment',explanation:'"Make an appointment" — scheduling uses "make".'},
+  {noun:'experience',correct:'have',distractors:['make','do','get'],prompt:'___ experience',explanation:'"Have experience" — states and possessions use "have".'},
+  {noun:'a look',correct:'have',distractors:['take','make','do'],prompt:'___ a look',explanation:'Both "have a look" and "take a look" are correct in English.'},
+];
+
+const base = dailyIndex(ALL_QS.length);
+const ROUND_SIZE = 10;
+const ROUND = Array.from({length: ROUND_SIZE}, (_, i) => ALL_QS[(base + i) % ALL_QS.length]);
+
+let current = 0, score = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function init() { loadQ(); loadLeaderboard(); }
+
+function loadQ() {
+  const q = ROUND[current];
+  document.getElementById('qCounter').textContent = `${current+1} / ${ROUND_SIZE}`;
+  document.getElementById('progressFill').style.width = `${(current/ROUND_SIZE)*100}%`;
+  document.getElementById('qNoun').textContent = q.noun;
+  document.getElementById('qPrompt').textContent = q.prompt;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback-bar';
+  document.getElementById('explanation').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  const opts = shuffle([q.correct, ...q.distractors.slice(0,3)]);
+  const grid = document.getElementById('optGrid'); grid.innerHTML = '';
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn'; btn.textContent = o;
+    btn.addEventListener('click', () => answer(o, btn));
+    grid.appendChild(btn);
+  });
+}
+
+function answer(chosen, btn) {
+  const q = ROUND[current];
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  if (chosen === q.correct) {
+    btn.classList.add('correct');
+    score += 10;
+    document.getElementById('scoreVal').textContent = score;
+    document.getElementById('feedback').textContent = '✓ Correct!';
+    document.getElementById('feedback').className = 'feedback-bar ok';
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b => { if(b.textContent === q.correct) b.classList.add('reveal'); });
+    document.getElementById('feedback').textContent = `✗ It's "${q.correct} ${q.noun}"`;
+    document.getElementById('feedback').className = 'feedback-bar no';
+  }
+  const exp = document.getElementById('explanation');
+  exp.textContent = q.explanation; exp.style.display = 'block';
+  if (current + 1 < ROUND_SIZE) { document.getElementById('nextBtn').style.display = 'inline-block'; }
+  else { setTimeout(endRound, 1200); }
+}
+
+function nextQ() { current++; loadQ(); }
+
+function endRound() {
+  document.getElementById('qCard').style.display = 'none';
+  const ec = document.getElementById('endCard'); ec.style.display = 'flex';
+  document.getElementById('endScore').textContent = score + ' / ' + (ROUND_SIZE * 10);
+  document.getElementById('endMsg').textContent = score >= 90 ? '🎉 Collocation master!' : score >= 60 ? '👏 Solid performance!' : 'Keep practising — collocations take time!';
+  ec.dataset.score = score;
+}
+
+function restartGame() {
+  current = 0; score = 0;
+  document.getElementById('scoreVal').textContent = 0;
+  document.getElementById('qCard').style.display = 'flex';
+  document.getElementById('endCard').style.display = 'none';
+  loadQ();
+}
+
+async function handleSubmit() {
+  const name = document.getElementById('nameInput').value.trim(); if(!name) return;
+  const sc = parseInt(document.getElementById('endCard').dataset.score);
+  await submitScore(GAME, name, sc);
+  document.querySelector('.score-submit').innerHTML = '<p style="color:var(--correct);font-size:.85rem">✓ Score submitted!</p>';
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const data = await getLeaderboard(GAME);
+  const tbody = document.getElementById('lbBody');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>';return;}
+  tbody.innerHTML = data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>

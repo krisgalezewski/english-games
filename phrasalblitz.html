@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PhrasalBlitz — English Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#f7c06a;--text:#f0f0f4;--muted:#888896;--correct:#4caf82;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
+nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
+nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
+main{flex:1;width:100%;max-width:560px;padding:1.5rem 1rem 2rem;display:flex;flex-direction:column;gap:1.25rem;align-items:center;}
+.verb-display{text-align:center;}
+.verb-display .label{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.verb-display .verb{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;color:var(--accent);line-height:1.1;}
+.timer-ring{position:relative;width:80px;height:80px;}
+.timer-ring svg{transform:rotate(-90deg);}
+.timer-ring circle{fill:none;stroke-width:5;}
+.timer-ring .track{stroke:#2a2a30;}
+.timer-ring .prog{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .5s;}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;}
+.top-row{display:flex;align-items:center;justify-content:space-between;width:100%;}
+.score-pill{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:.35rem .9rem;font-size:.85rem;font-weight:600;}
+.score-pill span{color:var(--accent);}
+.particles-grid{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;width:100%;}
+.particle-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.55rem 1rem;font-size:.95rem;font-weight:600;color:var(--text);cursor:pointer;transition:all .15s;min-width:3.5rem;text-align:center;}
+.particle-btn:hover{background:#2a2a38;border-color:var(--accent);}
+.particle-btn.correct{background:#4caf8220;border-color:var(--correct);color:var(--correct);}
+.particle-btn.used{opacity:.3;pointer-events:none;}
+.found-list{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;min-height:80px;}
+.found-list h3{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;}
+.found-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+.chip{background:#f7c06a18;border:1px solid #f7c06a40;color:var(--accent);border-radius:99px;padding:.2rem .7rem;font-size:.82rem;font-weight:600;}
+.start-btn,.play-again-btn{background:var(--accent);color:#111;border:none;border-radius:10px;padding:.7rem 2rem;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.start-btn:hover,.play-again-btn:hover{opacity:.85;}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center;width:100%;}
+.result-card h2{font-family:'Syne',sans-serif;font-size:1.8rem;margin-bottom:.4rem;}
+.result-card p{color:var(--muted);font-size:.9rem;margin-bottom:1rem;}
+.missed-list{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1rem;}
+.missed-chip{background:#ffffff0a;border:1px solid var(--border);border-radius:99px;padding:.2rem .7rem;font-size:.8rem;color:var(--muted);}
+.lb-section{width:100%;max-width:560px;padding:0 1rem 2.5rem;}
+.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
+.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
+.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
+.lb-table tr:first-child td{color:var(--accent);font-weight:600;}
+.score-submit{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.score-submit input{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
+.score-submit input:focus{outline:none;border-color:var(--accent);}
+.btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;}
+.btn:hover{opacity:.85;}
+#phase-intro,#phase-game,#phase-result{display:none;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">← Games</a>
+  <h1>⚡ PhrasalBlitz</h1>
+  <span></span>
+</nav>
+<main>
+
+<!-- INTRO -->
+<div id="phase-intro" style="text-align:center;padding:2rem 0;display:flex;flex-direction:column;align-items:center;gap:1.25rem;">
+  <div class="verb-display">
+    <div class="label">Today's verb</div>
+    <div class="verb" id="introVerb">…</div>
+  </div>
+  <p style="color:var(--muted);font-size:.9rem;max-width:340px;line-height:1.6;">Click as many correct particles as you can to build phrasal verbs in <strong style="color:var(--text)">60 seconds</strong>. Each correct combo scores a point!</p>
+  <button class="start-btn" onclick="startGame()">Start →</button>
+</div>
+
+<!-- GAME -->
+<div id="phase-game">
+  <div class="top-row">
+    <div class="verb-display"><div class="label">Verb</div><div class="verb" id="gameVerb"></div></div>
+    <div class="timer-ring">
+      <svg viewBox="0 0 80 80" width="80" height="80">
+        <circle class="track" cx="40" cy="40" r="35"/>
+        <circle class="prog" id="timerCircle" cx="40" cy="40" r="35" stroke-dasharray="220" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="timerNum">60</div>
+    </div>
+    <div class="score-pill">Found: <span id="foundCount">0</span></div>
+  </div>
+  <div class="particles-grid" id="particlesGrid"></div>
+  <div class="found-list"><h3>Phrasal verbs found</h3><div class="found-chips" id="foundChips"></div></div>
+</div>
+
+<!-- RESULT -->
+<div id="phase-result">
+  <div class="result-card">
+    <h2 id="resultScore"></h2>
+    <p id="resultMsg"></p>
+    <div class="missed-list" id="missedList"></div>
+    <button class="play-again-btn" onclick="resetGame()">Play again</button>
+  </div>
+  <div id="submitArea" style="margin-top:1rem;">
+    <div class="score-submit">
+      <input id="nameInput" placeholder="Your name" maxlength="20"/>
+      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="lb-section">
+  <h2>🏆 Leaderboard</h2>
+  <table class="lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script src="shared.js"></script>
+<script>
+const GAME = 'phrasalblitz';
+const VERBS = [
+  {verb:'GIVE', pairs:{UP:'give up (stop)',OUT:'give out (distribute)',AWAY:'give away (donate)',BACK:'give back (return)',IN:'give in (surrender)',OFF:'give off (emit)',OVER:'give over (stop)',UP:'give up (quit)'}},
+  {verb:'TAKE', pairs:{UP:'take up (start a hobby)',OFF:'take off (depart/remove)',ON:'take on (accept)',BACK:'take back (return)',OVER:'take over (control)',OUT:'take out (remove/date)',IN:'take in (understand)',AWAY:'take away (remove)'}},
+  {verb:'COME', pairs:{UP:'come up (arise)',OUT:'come out (emerge)',BACK:'come back (return)',IN:'come in (enter)',DOWN:'come down (decrease)',OVER:'come over (visit)',ACROSS:'come across (find)',THROUGH:'come through (survive)'}},
+  {verb:'LOOK', pairs:{UP:'look up (search)',OUT:'look out (be careful)',AFTER:'look after (care for)',INTO:'look into (investigate)',FORWARD:'look forward (anticipate)',BACK:'look back (reflect)',DOWN:'look down (despise)',OVER:'look over (review)'}},
+  {verb:'PUT', pairs:{OFF:'put off (postpone)',ON:'put on (wear)',OUT:'put out (extinguish)',UP:'put up (accommodate)',BACK:'put back (return)',DOWN:'put down (criticise)',AWAY:'put away (tidy)',THROUGH:'put through (connect)'}},
+  {verb:'GET', pairs:{UP:'get up (wake)',ON:'get on (board)',OUT:'get out (leave)',OVER:'get over (recover)',BACK:'get back (return)',INTO:'get into (enter)',THROUGH:'get through (survive)',AWAY:'get away (escape)'}},
+  {verb:'TURN', pairs:{UP:'turn up (arrive)',DOWN:'turn down (refuse)',OFF:'turn off (stop)',ON:'turn on (start)',OUT:'turn out (result)',OVER:'turn over (flip)',BACK:'turn back (return)',INTO:'turn into (become)'}},
+  {verb:'BREAK', pairs:{UP:'break up (end relationship)',DOWN:'break down (fail)',IN:'break in (enter illegally)',OUT:'break out (escape)',THROUGH:'break through (overcome)',OFF:'break off (stop)',AWAY:'break away (escape)',INTO:'break into (enter)'}},
+  {verb:'PICK', pairs:{UP:'pick up (collect)',OUT:'pick out (choose)',ON:'pick on (bully)',APART:'pick apart (criticise)',THROUGH:'pick through (sort)',OVER:'pick over (examine)'}},
+  {verb:'RUN', pairs:{OUT:'run out (exhaust)',UP:'run up (accumulate)',AWAY:'run away (flee)',OVER:'run over (knock down)',INTO:'run into (meet)',THROUGH:'run through (rehearse)',OFF:'run off (flee)',DOWN:'run down (criticise)'}},
+];
+
+const idx = dailyIndex(VERBS.length);
+const TODAY = VERBS[idx];
+const ALL_PARTICLES = ['UP','DOWN','OFF','ON','OUT','IN','BACK','AWAY','OVER','THROUGH','INTO','ACROSS','FORWARD','AFTER','APART'];
+
+let timer, timeLeft, found, score;
+
+function init() {
+  document.getElementById('introVerb').textContent = TODAY.verb;
+  document.getElementById('phase-intro').style.display = 'flex';
+  loadLeaderboard();
+}
+
+function startGame() {
+  found = new Set(); score = 0; timeLeft = 60;
+  document.getElementById('phase-intro').style.display = 'none';
+  document.getElementById('phase-game').style.display = 'block';
+  document.getElementById('gameVerb').textContent = TODAY.verb;
+  document.getElementById('foundCount').textContent = '0';
+  document.getElementById('foundChips').innerHTML = '';
+  buildParticles();
+  runTimer();
+}
+
+function buildParticles() {
+  const grid = document.getElementById('particlesGrid'); grid.innerHTML = '';
+  ALL_PARTICLES.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'particle-btn'; btn.textContent = p; btn.dataset.p = p;
+    btn.addEventListener('click', () => tryParticle(p, btn));
+    grid.appendChild(btn);
+  });
+}
+
+function tryParticle(p, btn) {
+  if (found.has(p)) return;
+  if (TODAY.pairs[p]) {
+    found.add(p); score++;
+    btn.classList.add('correct','used');
+    const chip = document.createElement('span');
+    chip.className = 'chip'; chip.textContent = TODAY.verb.toLowerCase() + ' ' + p.toLowerCase();
+    document.getElementById('foundChips').appendChild(chip);
+    document.getElementById('foundCount').textContent = score;
+  } else {
+    btn.style.background = '#f76a6a20'; btn.style.borderColor = '#f76a6a';
+    setTimeout(() => { btn.style.background = ''; btn.style.borderColor = ''; }, 500);
+  }
+}
+
+function runTimer() {
+  updateRing();
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timerNum').textContent = timeLeft;
+    updateRing();
+    if (timeLeft <= 10) document.getElementById('timerCircle').style.stroke = '#f76a6a';
+    if (timeLeft <= 0) { clearInterval(timer); endGame(); }
+  }, 1000);
+}
+
+function updateRing() {
+  const circ = 220;
+  const offset = circ - (timeLeft / 60) * circ;
+  document.getElementById('timerCircle').style.strokeDashoffset = offset;
+}
+
+function endGame() {
+  document.getElementById('phase-game').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'block';
+  document.getElementById('resultScore').textContent = `${score} phrasal verb${score !== 1 ? 's' : ''} found!`;
+  const total = Object.keys(TODAY.pairs).length;
+  document.getElementById('resultMsg').textContent = `You found ${score} out of ${total} possible. ${score === total ? '🎉 Perfect!' : score >= total/2 ? '👏 Great job!' : 'Keep practising!'}`;
+  const missed = document.getElementById('missedList'); missed.innerHTML = '';
+  Object.entries(TODAY.pairs).forEach(([p, def]) => {
+    if (!found.has(p)) {
+      const chip = document.createElement('span');
+      chip.className = 'missed-chip'; chip.textContent = TODAY.verb.toLowerCase() + ' ' + p.toLowerCase() + ' — ' + def.split('(')[1]?.replace(')','') || '';
+      missed.appendChild(chip);
+    }
+  });
+  document.getElementById('submitArea').dataset.score = score * 10;
+}
+
+function resetGame() {
+  document.getElementById('phase-result').style.display = 'none';
+  startGame();
+}
+
+async function handleSubmit() {
+  const name = document.getElementById('nameInput').value.trim(); if (!name) return;
+  const sc = parseInt(document.getElementById('submitArea').dataset.score);
+  await submitScore(GAME, name, sc);
+  document.getElementById('submitArea').innerHTML = '<p style="color:var(--correct);font-size:.85rem">✓ Score submitted!</p>';
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const data = await getLeaderboard(GAME);
+  const tbody = document.getElementById('lbBody');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>'; return; }
+  tbody.innerHTML = data.map((r, i) => `<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>

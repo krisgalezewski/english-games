@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SpellIt! — English Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#6af7b8;--text:#f0f0f4;--muted:#888896;--wrong:#f76a6a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
+nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
+nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
+main{flex:1;width:100%;max-width:520px;padding:2rem 1rem;display:flex;flex-direction:column;align-items:center;gap:1.5rem;}
+.streak-bar{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:.4rem 1rem;font-size:.85rem;}
+.streak-bar .fire{font-size:1rem;}
+.streak-val{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);font-weight:700;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
+.round-label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.definition{font-size:1.05rem;line-height:1.65;color:var(--text);max-width:380px;}
+.definition strong{color:var(--accent);}
+.letter-count{font-size:.78rem;color:var(--muted);letter-spacing:.06em;}
+.input-row{display:flex;gap:.6rem;width:100%;max-width:340px;}
+.spell-input{flex:1;background:#0e0e10;border:2px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--text);text-align:center;letter-spacing:.1em;text-transform:uppercase;transition:border-color .2s;}
+.spell-input:focus{outline:none;border-color:var(--accent);}
+.spell-input.wrong{border-color:var(--wrong);animation:shake .35s;}
+.spell-input.correct{border-color:var(--accent);}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.check-btn{background:var(--accent);color:#111;border:none;border-radius:10px;padding:.7rem 1.1rem;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;white-space:nowrap;}
+.check-btn:hover{opacity:.85;}
+.hint-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.4rem .9rem;font-size:.78rem;color:var(--muted);cursor:pointer;transition:all .15s;}
+.hint-btn:hover{border-color:var(--accent);color:var(--accent);}
+.feedback{font-size:.95rem;font-weight:600;min-height:1.4rem;text-align:center;}
+.feedback.ok{color:var(--accent);}
+.feedback.no{color:var(--wrong);}
+.reveal{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--accent);letter-spacing:.12em;}
+.next-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--text);}
+.next-btn:hover{border-color:var(--accent);}
+/* progress dots */
+.dots{display:flex;gap:.35rem;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s;}
+.dot.done{background:var(--accent);}
+.dot.wrong{background:var(--wrong);}
+/* end card */
+.end-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.end-card h2{font-family:'Syne',sans-serif;font-size:1.8rem;}
+.end-score{font-size:3rem;font-family:'Syne',sans-serif;color:var(--accent);font-weight:800;}
+.score-submit{display:flex;gap:.5rem;width:100%;flex-wrap:wrap;}
+.score-submit input{flex:1;min-width:120px;background:#0e0e10;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
+.score-submit input:focus{outline:none;border-color:var(--accent);}
+.btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;}
+.btn:hover{opacity:.85;}
+.play-again{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--text);}
+.play-again:hover{border-color:var(--accent);}
+.lb-section{width:100%;max-width:520px;padding:0 1rem 2.5rem;}
+.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
+.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
+.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
+.lb-table tr:first-child td{color:var(--accent);font-weight:600;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">← Games</a>
+  <h1>✍️ SpellIt!</h1>
+  <span></span>
+</nav>
+<main>
+  <div class="streak-bar"><span class="fire">🔥</span> Streak: <span class="streak-val" id="streakVal">0</span></div>
+  <div class="dots" id="dots"></div>
+  <div class="card" id="gameCard">
+    <div class="round-label" id="roundLabel">Word 1 of 8</div>
+    <div class="definition" id="defText">Loading…</div>
+    <div class="letter-count" id="letterCount"></div>
+    <div class="input-row">
+      <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type here…"/>
+      <button class="check-btn" onclick="checkSpelling()">Check</button>
+    </div>
+    <button class="hint-btn" id="hintBtn" onclick="showHint()">💡 Show hint</button>
+    <div class="feedback" id="feedback"></div>
+    <div class="reveal" id="revealWord" style="display:none"></div>
+    <button class="next-btn" id="nextBtn" style="display:none" onclick="nextWord()">Next word →</button>
+  </div>
+  <div class="end-card" id="endCard" style="display:none">
+    <h2>Round complete!</h2>
+    <div class="end-score" id="endScore"></div>
+    <p style="color:var(--muted);font-size:.9rem" id="endMsg"></p>
+    <div class="score-submit">
+      <input id="nameInput" placeholder="Your name" maxlength="20"/>
+      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
+    </div>
+    <button class="play-again" onclick="restartGame()">Play again</button>
+  </div>
+</main>
+
+<div class="lb-section">
+  <h2>🏆 Leaderboard</h2>
+  <table class="lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script src="shared.js"></script>
+<script>
+const GAME = 'spellit';
+const ALL_WORDS = [
+  {word:'NECESSARY',def:'Something you <strong>cannot do without</strong>; essential.',hint:'1 C, 2 S'},
+  {word:'ACCOMMODATION',def:'A place to <strong>stay or live</strong>, especially temporarily.',hint:'2 C\'s, 2 M\'s'},
+  {word:'ENTREPRENEUR',def:'A person who <strong>starts a business</strong>, taking on financial risk.',hint:'Ends in -EUR'},
+  {word:'CONSCIENTIOUS',def:'Being <strong>very careful and thorough</strong> in your work.',hint:'Silent C after S'},
+  {word:'MILLENNIUM',def:'A period of <strong>one thousand years</strong>.',hint:'2 L\'s, 2 N\'s'},
+  {word:'EMBARRASS',def:'To make someone feel <strong>awkward or ashamed</strong>.',hint:'2 R\'s, 2 S\'s'},
+  {word:'OCCURRENCE',def:'An event or <strong>incident that happens</strong>.',hint:'2 C\'s, 2 R\'s'},
+  {word:'PRIVILEGE',def:'A special <strong>right or advantage</strong> given to a person.',hint:'No D before the GE'},
+  {word:'SEPARATE',def:'To <strong>divide or move apart</strong>.',hint:'There\'s a RAT in sepaRATE'},
+  {word:'COLLEAGUES',def:'People you <strong>work with</strong>.',hint:'Ends in -AGUES'},
+  {word:'LIAISON',def:'A <strong>communication or connection</strong> between groups.',hint:'Two I\'s'},
+  {word:'COMMITMENT',def:'A <strong>promise or obligation</strong> to do something.',hint:'2 M\'s, 2 T\'s'},
+  {word:'EXAGGERATE',def:'To <strong>overstate</strong> something, making it seem more than it is.',hint:'2 G\'s'},
+  {word:'HIERARCHY',def:'A <strong>ranking system</strong> where some are above others.',hint:'IE not EI'},
+  {word:'BUREAUCRACY',def:'A system with <strong>complex rules and processes</strong>.',hint:'Starts with BURE-'},
+  {word:'SUPERSEDE',def:'To <strong>replace</strong> something older with something newer.',hint:'Ends in -SEDE not -CEDE'},
+  {word:'PARLIAMENT',def:'The <strong>lawmaking body</strong> of a country.',hint:'There\'s LIAM in parLIAMent'},
+  {word:'INDEPENDENT',def:'Free from <strong>outside control</strong>; self-governing.',hint:'Ends in -ENT not -ANT'},
+  {word:'PARTICULARLY',def:'<strong>Especially</strong> or to a greater degree than usual.',hint:'Don\'t forget the -ARLY'},
+  {word:'QUESTIONNAIRE',def:'A <strong>list of questions</strong> given to many people.',hint:'Double N'},
+];
+
+const base = dailyIndex(ALL_WORDS.length);
+const ROUND = Array.from({length:8}, (_,i) => ALL_WORDS[(base+i)%ALL_WORDS.length]);
+const ROUND_SIZE = 8;
+
+let current = 0, streak = 0, roundScore = 0, attempts = 0, hintUsed = false;
+
+function init() {
+  buildDots(); loadWord(); loadLeaderboard();
+  document.getElementById('spellInput').addEventListener('keydown', e => { if(e.key==='Enter') checkSpelling(); });
+}
+
+function buildDots() {
+  const el = document.getElementById('dots'); el.innerHTML = '';
+  for(let i=0;i<ROUND_SIZE;i++){const d=document.createElement('div');d.className='dot';d.id='dot'+i;el.appendChild(d);}
+}
+
+function loadWord() {
+  const w = ROUND[current];
+  document.getElementById('roundLabel').textContent = `Word ${current+1} of ${ROUND_SIZE}`;
+  document.getElementById('defText').innerHTML = w.def;
+  document.getElementById('letterCount').textContent = `${w.word.length} letters`;
+  document.getElementById('spellInput').value = '';
+  document.getElementById('spellInput').className = 'spell-input';
+  document.getElementById('spellInput').disabled = false;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('revealWord').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('hintBtn').style.display = 'inline-block';
+  hintUsed = false; attempts = 0;
+  setTimeout(()=>document.getElementById('spellInput').focus(), 100);
+}
+
+function showHint() {
+  const w = ROUND[current];
+  document.getElementById('feedback').textContent = `💡 ${w.hint}`;
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('hintBtn').style.display = 'none';
+  hintUsed = true;
+}
+
+function checkSpelling() {
+  const inp = document.getElementById('spellInput');
+  const guess = inp.value.trim().toUpperCase();
+  const target = ROUND[current].word;
+  attempts++;
+  if (guess === target) {
+    inp.className = 'spell-input correct';
+    const pts = hintUsed ? 5 : (attempts === 1 ? 15 : 10);
+    roundScore += pts; streak++;
+    document.getElementById('streakVal').textContent = streak;
+    document.getElementById('feedback').textContent = `✓ Correct! +${pts} pts`;
+    document.getElementById('feedback').className = 'feedback ok';
+    document.getElementById('dot'+current).className = 'dot done';
+    inp.disabled = true;
+    document.getElementById('hintBtn').style.display = 'none';
+    if (current + 1 < ROUND_SIZE) {
+      document.getElementById('nextBtn').style.display = 'inline-block';
+    } else { setTimeout(endRound, 900); }
+  } else {
+    inp.className = 'spell-input wrong';
+    streak = 0; document.getElementById('streakVal').textContent = 0;
+    if (attempts >= 3) {
+      document.getElementById('revealWord').textContent = target;
+      document.getElementById('revealWord').style.display = 'block';
+      document.getElementById('feedback').textContent = 'Better luck next time!';
+      document.getElementById('feedback').className = 'feedback no';
+      document.getElementById('dot'+current).className = 'dot wrong';
+      inp.disabled = true;
+      document.getElementById('hintBtn').style.display = 'none';
+      if (current + 1 < ROUND_SIZE) { document.getElementById('nextBtn').style.display = 'inline-block'; }
+      else { setTimeout(endRound, 1200); }
+    } else {
+      document.getElementById('feedback').textContent = `✗ Try again (attempt ${attempts}/3)`;
+      document.getElementById('feedback').className = 'feedback no';
+      setTimeout(()=>{ inp.className='spell-input'; }, 400);
+    }
+  }
+}
+
+function nextWord() { current++; loadWord(); }
+
+function endRound() {
+  document.getElementById('gameCard').style.display = 'none';
+  document.getElementById('endCard').style.display = 'flex';
+  document.getElementById('endScore').textContent = roundScore + ' pts';
+  const max = ROUND_SIZE * 15;
+  document.getElementById('endMsg').textContent = roundScore >= max*0.8 ? '🎉 Outstanding!' : roundScore >= max*0.5 ? '👏 Well done!' : 'Keep practising your spelling!';
+  document.getElementById('endCard').dataset.score = roundScore;
+}
+
+function restartGame() {
+  current = 0; streak = 0; roundScore = 0;
+  document.getElementById('streakVal').textContent = 0;
+  document.getElementById('gameCard').style.display = 'flex';
+  document.getElementById('endCard').style.display = 'none';
+  buildDots(); loadWord();
+}
+
+async function handleSubmit() {
+  const name = document.getElementById('nameInput').value.trim(); if(!name) return;
+  const sc = parseInt(document.getElementById('endCard').dataset.score);
+  await submitScore(GAME, name, sc);
+  document.querySelector('.score-submit').innerHTML = '<p style="color:var(--accent);font-size:.85rem">✓ Score submitted!</p>';
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const data = await getLeaderboard(GAME);
+  const tbody = document.getElementById('lbBody');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>';return;}
+  tbody.innerHTML = data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>
