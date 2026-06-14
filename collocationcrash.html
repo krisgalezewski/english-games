@@ -452,18 +452,18 @@ const EASY_QS = [
    pattern:'___ time',
    explanation:'"Save time" means to do something that reduces the time needed.',
    example:'Taking the motorway will save a lot of time.'},
-  {noun:'energy', correct:'save', distractors:['keep','store','make'],
+  {noun:'energy', correct:'save', distractors:['waste','earn','borrow'],
    pattern:'___ energy',
-   explanation:'"Save energy" means to reduce the amount of energy used.',
+   explanation:'"Save energy" means to reduce energy consumption. "Waste", "earn" and "borrow" cannot collocate with energy in this sense.',
    example:'Turn off the lights to save energy.'},
-  {noun:'a question', correct:'raise', distractors:['make','ask','do'],
-   pattern:'___ a question',
-   explanation:'"Raise a question" means to bring up a question for discussion.',
-   example:'She raised an important question about the deadline.'},
-  {noun:'awareness', correct:'raise', distractors:['make','grow','build'],
-   pattern:'___ awareness',
-   explanation:'"Raise awareness" means to help people understand more about an issue.',
-   example:'The campaign aims to raise awareness about mental health.'},
+  {noun:'an important question', correct:'raise', distractors:['make','do','answer'],
+   pattern:'___ an important question',
+   explanation:'"Raise an important question" means to bring a topic into formal discussion. "Ask a question" is also correct but "ask" is not one of the options here.',
+   example:'She raised an important question about the budget deadline.'},
+  {noun:'public awareness', correct:'raise', distractors:['make','do','achieve'],
+   pattern:'___ public awareness',
+   explanation:'"Raise public awareness" is the standard collocation. We raise awareness — we do not "make" or "do" awareness.',
+   example:'The campaign aims to raise public awareness about mental health.'},
   {noun:'a deadline', correct:'miss', distractors:['lose','fail','skip'],
    pattern:'___ a deadline',
    explanation:'"Miss a deadline" means to fail to complete something in time.',
@@ -472,10 +472,10 @@ const EASY_QS = [
    pattern:'___ the point',
    explanation:'"Miss the point" means to fail to understand what is really important.',
    example:'I think you\'ve completely missed the point of the exercise.'},
-  {noun:'time', correct:'spend', distractors:['use','waste','give'],
-   pattern:'___ time',
-   explanation:'"Spend time" means to use time doing something.',
-   example:'I like to spend time outdoors at weekends.'},
+  {noun:'quality time', correct:'spend', distractors:['make','do','have'],
+   pattern:'___ quality time',
+   explanation:'"Spend quality time" is the fixed collocation. We spend quality time with people — we do not "make" or "do" quality time.',
+   example:'It is important to spend quality time with your family.'},
   {noun:'the night', correct:'spend', distractors:['use','make','have'],
    pattern:'___ the night',
    explanation:'"Spend the night" means to sleep somewhere.',
@@ -956,6 +956,15 @@ function setDiff(d) {
   restartGame();
 }
 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function initRound() {
   const base = dailyIndex(qBank.length);
   roundQs = Array.from({length: Math.min(ROUND_SIZE, qBank.length)}, (_,i) => qBank[(base+i)%qBank.length]);
@@ -979,7 +988,7 @@ function loadQ() {
   document.getElementById('explanation').className = 'explanation';
   document.getElementById('nextBtn').style.display = 'none';
 
-  const opts = dailyShuffle([q.correct, ...q.distractors.slice(0,3)]);
+  const opts = shuffle([q.correct, ...q.distractors.slice(0,3)]);
   const grid = document.getElementById('optsGrid'); grid.innerHTML = '';
   opts.forEach(o => {
     const btn = document.createElement('button');

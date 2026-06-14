@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>WordSpark — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
@@ -16,6 +16,7 @@ main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 
 #board { display:grid; gap:.35rem; }
 .row { display:grid; gap:.35rem; }
 .tile {
+  touch-action: manipulation;
   width:52px; height:52px;
   display:flex; align-items:center; justify-content:center;
   font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900;
@@ -33,6 +34,7 @@ main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 
 #keyboard { display:flex; flex-direction:column; gap:.3rem; width:100%; max-width:440px; }
 .kb-row { display:flex; justify-content:center; gap:.25rem; }
 .key {
+  touch-action: manipulation;
   height:48px; min-width:28px; flex:1; max-width:36px;
   padding:0 .2rem;
   background:var(--surface2); border:1px solid var(--border); border-radius:4px;

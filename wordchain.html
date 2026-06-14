@@ -110,9 +110,6 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
       </div>
     </div>
 
-    <!-- Chain display -->
-    <div class="chain-scroll" id="chainDisplay"></div>
-
     <!-- Next letter -->
     <div class="next-letter" id="nextLetterDisplay"></div>
 
@@ -125,16 +122,12 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
       <div class="feedback" id="feedback"></div>
     </div>
 
-    <!-- Scoring key -->
-    <div class="scoring-key">
-      <span class="score-pill">3 letters → <strong>3 pts +6s</strong></span>
-      <span class="score-pill">5 letters → <strong>5 pts +10s</strong></span>
-      <span class="score-pill">8 letters → <strong>8 pts +16s</strong></span>
-    </div>
+    <!-- Chain display — below input so timer stays visible on mobile -->
+    <div class="chain-scroll" id="chainDisplay"></div>
 
-    <!-- Rules -->
+    <!-- Rules + scoring -->
     <div class="rules-box">
-      <strong>Rules:</strong> Each word must start with the <strong>last letter</strong> of the previous word. 3+ letters, real English only, no repeats. <strong>Longer words = more points + more time.</strong> The clock runs out when you can't keep up!
+      <strong>Rules:</strong> Each word must start with the <strong>last letter</strong> of the previous word. 3+ letters, real English only, no repeats. <strong>Longer words = more points + more time</strong> (1 pt &amp; +2s per letter).
     </div>
   </div>
 
