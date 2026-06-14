@@ -4,246 +4,255 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WordChain — English Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <style>
-:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#6aaff7;--text:#f0f0f4;--muted:#888896;--correct:#4caf82;--wrong:#f76a6a;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
-nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
-nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
-nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
-main{flex:1;width:100%;max-width:560px;padding:1.5rem 1rem 2rem;display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
-.stats-row{display:flex;gap:.75rem;width:100%;}
-.stat-pill{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .75rem;text-align:center;}
-.stat-pill .val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:var(--accent);}
-.stat-pill .lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
-.chain-display{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem;min-height:72px;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;}
-.chain-word{background:#6aaff715;border:1px solid #6aaff740;color:var(--accent);border-radius:8px;padding:.3rem .7rem;font-size:.88rem;font-weight:600;font-family:'Syne',sans-serif;}
-.chain-arrow{color:var(--border);font-size:.8rem;}
-.next-letter{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--text);text-align:center;}
-.next-letter span{color:var(--accent);}
-.input-area{width:100%;display:flex;flex-direction:column;align-items:center;gap:.65rem;}
-.word-input{width:100%;max-width:340px;background:#0e0e10;border:2px solid var(--border);border-radius:12px;padding:.75rem 1rem;font-family:'Syne',sans-serif;font-size:1.15rem;color:var(--text);text-align:center;text-transform:lowercase;transition:border-color .2s;}
-.word-input:focus{outline:none;border-color:var(--accent);}
-.word-input.ok{border-color:var(--correct);}
-.word-input.bad{border-color:var(--wrong);animation:shake .35s;}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.action-row{display:flex;gap:.6rem;}
-.submit-btn{background:var(--accent);color:#111;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;}
-.submit-btn:hover{opacity:.85;}
-.pass-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;font-size:.85rem;color:var(--muted);cursor:pointer;}
-.pass-btn:hover{border-color:var(--wrong);color:var(--wrong);}
-.pass-count{font-size:.75rem;color:var(--muted);}
-.feedback{min-height:1.4rem;font-size:.9rem;font-weight:600;text-align:center;}
-.feedback.ok{color:var(--correct);}
-.feedback.bad{color:var(--wrong);}
-.feedback.info{color:var(--accent);}
-/* rules */
-.rules{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;width:100%;font-size:.82rem;color:var(--muted);line-height:1.7;}
-.rules strong{color:var(--text);}
+main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+
+.stats-row { display:flex; gap:.65rem; width:100%; }
+.stat-box { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.6rem .75rem; text-align:center; }
+.stat-box .val { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--gold); }
+.stat-box .lbl { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+.chain-scroll { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.85rem 1rem; min-height:60px; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; overflow-x:auto; }
+.chain-word { background:var(--gold-dim); border:1px solid rgba(212,175,55,.3); color:var(--gold); border-radius:4px; padding:.25rem .6rem; font-family:'Playfair Display',serif; font-size:.9rem; font-weight:700; white-space:nowrap; }
+.chain-sep { color:var(--muted2); font-size:.75rem; }
+
+.next-letter { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; text-align:center; color:var(--text); }
+.next-letter em { color:var(--gold); font-style:normal; }
+
+.input-area { display:flex; flex-direction:column; align-items:center; gap:.75rem; width:100%; }
+.word-input { width:100%; max-width:340px; background:#0a0a0a; border:2px solid var(--border2); border-radius:4px; padding:.75rem 1rem; font-family:'Playfair Display',serif; font-size:1.15rem; color:var(--text); text-align:center; text-transform:lowercase; transition:border-color .2s; }
+.word-input:focus { outline:none; border-color:var(--gold); }
+.word-input.ok  { border-color:var(--correct); }
+.word-input.bad { border-color:var(--wrong); animation:shake .35s; }
+
+.action-row { display:flex; gap:.6rem; }
+.passes-info { font-family:'Space Mono',monospace; font-size:.68rem; color:var(--muted); text-align:center; letter-spacing:.06em; }
+
+.feedback { min-height:1.4rem; font-size:.88rem; font-weight:600; text-align:center; font-family:'Space Mono',monospace; }
+.feedback.ok   { color:var(--correct); }
+.feedback.bad  { color:var(--wrong); }
+.feedback.info { color:var(--gold); }
+
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
+/* loading state */
+.loading-bar { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+.loading-bar .eyebrow { margin-bottom:.5rem; }
+.loading-progress { height:3px; background:var(--border2); border-radius:99px; overflow:hidden; margin-top:.75rem; }
+.loading-progress-fill { height:100%; background:var(--gold); border-radius:99px; animation:loadpulse 1.5s ease-in-out infinite; }
+@keyframes loadpulse { 0%{width:10%} 50%{width:80%} 100%{width:10%} }
+
 /* end */
-.end-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;width:100%;display:none;flex-direction:column;align-items:center;gap:1rem;}
-.end-score{font-size:3rem;font-family:'Syne',sans-serif;color:var(--accent);font-weight:800;}
-.score-submit{display:flex;gap:.5rem;width:100%;flex-wrap:wrap;}
-.score-submit input{flex:1;min-width:120px;background:#0e0e10;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
-.score-submit input:focus{outline:none;border-color:var(--accent);}
-.btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;}
-.btn:hover{opacity:.85;}
-.play-again{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;cursor:pointer;color:var(--text);}
-.play-again:hover{border-color:var(--accent);}
-.lb-section{width:100%;max-width:560px;padding:0 1rem 2.5rem;}
-.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
-.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
-.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
-.lb-table tr:first-child td{color:var(--accent);font-weight:600;}
+.end-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem 1.5rem; width:100%; text-align:center; display:flex; flex-direction:column; align-items:center; gap:1rem; animation:fadeIn .4s ease; }
+.end-score { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--gold); }
+
+.lb-section { width:100%; max-width:560px; padding:0 1rem 2.5rem; }
 </style>
 </head>
 <body>
-<nav>
-  <a href="index.html">← Games</a>
-  <h1>🔗 WordChain</h1>
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">🔗 WordChain</span>
   <span></span>
 </nav>
+
 <main>
-  <div class="stats-row">
-    <div class="stat-pill"><div class="val" id="chainLen">0</div><div class="lbl">Chain</div></div>
-    <div class="stat-pill"><div class="val" id="bestLen">—</div><div class="lbl">Best today</div></div>
-    <div class="stat-pill"><div class="val" id="passesLeft">3</div><div class="lbl">Passes left</div></div>
+  <!-- Loading state -->
+  <div class="loading-bar" id="loadingBar">
+    <div class="eyebrow">Loading word list…</div>
+    <div style="color:var(--muted);font-size:.82rem;margin-top:.25rem">Downloading dictionary for word validation</div>
+    <div class="loading-progress"><div class="loading-progress-fill"></div></div>
   </div>
 
-  <div class="chain-display" id="chainDisplay"><span style="color:var(--muted);font-size:.85rem">Your chain will appear here…</span></div>
-
-  <div class="next-letter" id="nextLetterDisplay"></div>
-
-  <div class="input-area">
-    <input class="word-input" id="wordInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type a word…" maxlength="20"/>
-    <div class="action-row">
-      <button class="submit-btn" onclick="submitWord()">Add word ↵</button>
-      <button class="pass-btn" onclick="usePass()">Skip letter</button>
+  <!-- Game UI (hidden until loaded) -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div class="stats-row">
+      <div class="stat-box"><div class="val" id="chainLen">1</div><div class="lbl">Chain</div></div>
+      <div class="stat-box"><div class="val" id="bestLen">—</div><div class="lbl">Best</div></div>
+      <div class="stat-box"><div class="val" id="passesLeft">3</div><div class="lbl">Passes</div></div>
     </div>
-    <div class="pass-count" id="passInfo">You have 3 passes — use them wisely!</div>
-    <div class="feedback" id="feedback"></div>
+
+    <div class="chain-scroll" id="chainDisplay"></div>
+
+    <div class="next-letter" id="nextLetterDisplay"></div>
+
+    <div class="input-area">
+      <input class="word-input" id="wordInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type a word…" maxlength="20"/>
+      <div class="action-row">
+        <button class="btn-primary" onclick="submitWord()">Add word ↵</button>
+        <button class="btn-ghost"   onclick="usePass()">Skip this letter</button>
+      </div>
+      <div class="passes-info" id="passInfo"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="rules-box">
+      <strong>Rules:</strong> Each word must begin with the <strong>last letter</strong> of the previous word. Words must be real English (3+ letters, no proper nouns). No repeats! <strong>Skip</strong> to swap to an easier letter — 3 skips available. Game ends when you run out of skips.
+    </div>
   </div>
 
-  <div class="rules">
-    <strong>How to play:</strong> Each word must start with the <strong>last letter</strong> of the previous word. Words must be real English words (3+ letters). No repeats! Use <strong>passes</strong> to skip a tricky letter. The game ends when you run out of passes or can't continue.
-  </div>
-
-  <div class="end-card" id="endCard">
-    <h2>Chain broken!</h2>
+  <!-- End card -->
+  <div class="end-card" id="endCard" style="display:none">
+    <div class="eyebrow">Chain broken!</div>
     <div class="end-score" id="endScore"></div>
     <p style="color:var(--muted);font-size:.9rem" id="endMsg"></p>
-    <div class="score-submit">
-      <input id="nameInput" placeholder="Your name" maxlength="20"/>
-      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
+    <div id="submitArea">
+      <div class="submit-row">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>
     </div>
-    <button class="play-again" onclick="restartGame()">Play again</button>
+    <button class="btn-ghost" onclick="restartGame()">Play again</button>
   </div>
 </main>
 
 <div class="lb-section">
-  <h2>🏆 Leaderboard</h2>
-  <table class="lb-table">
-    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
-  </table>
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script src="shared.js"></script>
 <script>
-const GAME = 'wordchain';
+const STARTERS = ['apple','bridge','crane','dream','eagle','flame','globe','honey','island','jungle',
+  'knight','lemon','mango','night','ocean','pearl','river','stone','tiger','valley','water','yellow','zebra'];
 
-// Large offline English word list for validation (common words, 3+ letters)
-const WORD_LIST = new Set(`ace act add age ago aid aim air all ant ape apt arc are ark arm art ash ask asp ate awe axe aye
-back bail bait bale ball ban band bank bare bark barn base bath bay bear beat bed bee belt bend best bet bid big bill bind bird bit blow blue boat bob bold bolt book boot bore both box boy bred brew brim brow bud bug bulk bull bun burn bus but buy
-cab can cap car cat cave chin chip clan clap clay clip clue coal coat cod coil cold cone cook cool cop core corn cost cot cow cub cup curb cure curl cute
-dab dam dare dark dawn day deal dean dear debt deep den dew die dig dim dip dire dish disk dive dock dog dome done door dose dot dove down draw drew drop drug drum dry dug dune dusk dust
-ear earn eat edge elf elm else end era eve even evil ewe eye
-face fact fade fail fair fall fame fan far farm fate fawn fear feed feel felt fend fern few fib fill find firm fish fist fit fix flaw flew flit flow fly foam foe fog foil fold folk fond foot ford fore fork form foul fox frog from fuel full fund fuse
-gab gag gap gas gave gaze gem gin glee glue goal golf gone gore gown grab gram grim grin grip grit grow gulf gust gut
-had hag hail halt ham hand hang hard hare harm harp haste hat haul hay head heap heat heel hem high hill him hip hire hit hive home hook hop horn host hot how hub hue hug hull hump hung hunt hut
-ice icy ill imp ink inn
-jab jag jam jar jaw jet job jog jot joy jug
-keg kid kin knob
-lab lag lame land lane lap lash last lax lazy lead leaf leak lean leap lend let lid lime line link lip list live loft log lore lose lost lot low lug
-mad mail main male mall malt map mar mash mast mat maw may maze mead meal mean melt men mid mist mix mob mob mole mood moon mop mow mud mug mule musk must
-nab nag nail neat neck need nest new night nip nod nor nose not nun
-oak oar oat odd ode oil old one ore orb owe owl own
-pace pack paid pair pan park past pat pave paw pay pea peel peer pen pep per pet pie pin pit plan play plod plug plum plus pod pole poll pond pool pop pot pour pout prey prim prop pub pun pup
-race rack rag rail rain ram ran rank rap rat raw ray real red reed reel rein rely rend rent rep rest rid rig rim rip road roam roar rob robe rod roe rose rot row rub rug rum run rut rye
-sad sag sail sale salt sap sat save saw say seal seam sear sect self send set sew shed shin ship shy side sift silk sill sip sit ski sky slab slam slap slat slim slip slit slob slop slot slow slug smug snag snap snip snob snug sob sod sob soil sole some song soot sop sort sow spa span spar spit spot spy sly stem step stew stir stop stow stub stun sub such sum sun sup swab swap swat
-tab tab tack tail tale talk tall tam tan tap tar tax tea tell tent thin tick tide tied till tin tip tire tod toe toil toll top tow town trap tray trim trio trip trod true tub tug tusk
-ulcer undo upon
-vale vane vast vault veal veer veil vent view
-wag wake ward wary wax way weal wean weep weld well wend west wick wide wilt wimp wind wise wish wisp woe woe wok wove wrap wren writ
-yam yap yaw yell yew
-zap zeal zero zest zip zone`.split(/\s+/).filter(w=>w.length>=3));
-
-const STARTERS = ['apple','bridge','crane','dream','eagle','flame','globe','honey','island','jungle','knight','lemon','mango','night','ocean','pearl','quill','river','stone','tiger','urban','violet','water','xerox','yacht','zebra'];
-
+let wordSet = new Set();
 let chain = [], passes = 3, currentLetter = '', gameOver = false, best = 0;
 
-function init() {
-  const si = dailyIndex(STARTERS.length);
-  const starter = STARTERS[si];
-  chain = [starter];
-  currentLetter = starter[starter.length - 1];
-  passes = 3;
-  render();
-  loadLeaderboard();
+async function loadWords() {
+  try {
+    // Primary: dwyl/english-words — ~370k words, letters only
+    const r = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt');
+    const text = await r.text();
+    let count = 0;
+    text.split('\n').forEach(w => {
+      const clean = w.trim().toLowerCase();
+      if (clean.length >= 3 && clean.length <= 15 && /^[a-z]+$/.test(clean)) {
+        wordSet.add(clean); count++;
+      }
+    });
+    console.log(`Loaded ${count} words`);
+  } catch(e) {
+    // Fallback: large inline common-word list
+    const fallback = `ace act add age ago aid aim air all ant ape apt arc are ark arm art ash ask ate awe axe aye back bail bait bale ball band bank bare bark barn base bath bear beat bed bee belt bend best bid big bill bind bird bit blow blue boat bold bolt book boot bore both box boy buck bulk bull bun burn bus buy cab can cap car cat cave chin chip clan clap clay clip clue coal coat cod coil cold cone cook cool cop core corn cost cot cow cub cup curb cure curl cute dab dam dare dark dawn day deal dear debt deep den dew die dig dim dip dish disk dive dock dog dome done door dose dot dove down draw drop drum dry dug dune dusk dust ear earn eat edge elf elm end era eve even evil ewe face fact fade fail fair fall fame fan far farm fate fawn fear feed feel felt fend fern few fill find firm fish fist fit fix flaw flew flit flow fly foam foe fog foil fold folk fond foot ford fore fork form foul fox frog fuel full fund fuse gab gap gas gave gem gin glee glue goal golf gone gore gown grab gram grim grin grip grit grow gulf gust gut had hag hail halt ham hand hang hard hare harm harp hat haul hay head heap heat heel hem hill hop horn host hot hub hue hug hull hump hung hunt hut ice icy ill ink inn jab jag jam jar jaw jet job jog jot joy jug keg kid kin lab lag lame land lane lap lash last lax lead leaf leak lean leap lend let lid lime line link lip list live loft log lore lose lost lot low lug mad mail male mall malt map mar mash mast mat may maze mead meal mean melt men mid mist mix mob mole mood moon mop mow mud mug mule musk must nab nag nail neat neck need nest nip nod nor nose not oak oar oat odd ode oil old one ore orb owe owl own pace pack paid pair pan park past pat pave paw pay pea peel peer pen pep pet pie pin pit plan play plod plug plum plus pod pole poll pond pool pop pot pour pout prey prop pub pun pup race rack rag rail rain ram ran rank rap rat raw ray real red reed reel rein rely rend rent rep rest rid rig rim rip road roam roar rob robe rod roe rose rot row rub rug rum run rut rye sad sag sail sale salt sap sat save saw say seal seam sear shed shin ship shy side sift silk sill sip sit ski sky slam slap slim slip slit slob slop slot slow slug sob sod soil sole some song soot sop sort sow spa span spar spit spot spy stem step stew stir stop stow stub stun sub sum sun sup tab tack tail tale talk tall tan tap tar tax tea tell tent tick tide till tin tip tire toe toil toll top tow trap tray trim trio trip true tub tug ulcer undo vale vane vast veal veer veil vent view wag wake ward wax way weal wean weep weld well wend west wick wide wilt wind wise wish woe wok wove yam yap yaw yell yew zap zeal zero zest zip zone able acid aged also arch army aunt axis bake ball band bark barn bath beam bean beat bell bend best bind bird bite blew blow blue boat body bond bone book boom bore bowl brow bulk bull bump burn busy cage cake call calm card care cart case cash cast cave cent chin chip city clam clay clip clod clot clue coal coat code coil cold come cook cool copy cord cork corn cost cove cozy cram crew crop cure dark dart dash data dead deaf deal dean debt deed deep deny desk dice died digs dill dime dine dire dirt disc dish dive dock does dole doom door dose dove drab drag drew drop drum dual dumb dump dune dunk each earn east easy edge else emit epic ever exam face fact fade firm fish fist five fizz flag fled flew flip flop foam folk fond font fore fork fort foul fowl fray gale gear glee glob goad goat golf grab gram grew grin grit grow gulf hack hail half hall halt hang hard haze heal heap heat heel help hemp herb herd hero high hint hive hole holy hood hope hose host hour hull hung hunt husk hymn icon idle inch isle jest jump jury keen keep kelp kiln knit lace lack lair lake lamb lamp lark lash lass last late laud lava lawn lead leaf lean leap lend lens levy lied life lift lime limp lint lion lode loft lone long loom lore lout love luck luge lure mace maid main make mall mane mast math maze melt mesh mild milk mill mime mint mire mist moat mock mode mole monk moor mope moss moth move muck mugs mule must myth nail nape near neck node nose numb oath once oral orbs ours oven pace pact pail pair pale pawn pest pick pile pill pine pink pipe plan play plod plot plow ploy plug plum pond poor pose pout prey prod prop pump pure push ramp rank rare raze reap reel rein rely rend rice rich rind ring riot rode romp rook rope rout rude ruin rule rump ruse rush sage sake same sand sane sash save scam scan scar seek seep sent shed shin shoe shot show sift sigh sill silt sire slap slim slip slit slob slop slot slow slug smug snag snap snip soak soap soar soft soil sole song soot sore sort soul soup sour span spar spin spot spud stub stun suck suit sung surf sway tack tale tall tame tang tent term than thee then thin tide till tile toad toll tomb tone toss tour trod tube twig twin type unit upon vain vale vane veer veil verb vine void volt wade wage wail wake wane weld woke worm yawn yoke zero zone zoom brave catch cease chase climb close crane crash crawl cross drive drown earth eight elite empty enjoy enter equal error feast field fight final flame flesh float flood floor force grace grade grant grasp grass grave great green grief groan gross guess guide heart heavy house image inner issue joint judge knife known large laser laugh layer learn least legal level lucky magic major match maybe meant mercy might minor model money month moral mount mouth music night noble noise north novel nurse occur offer often order paint panel panic paper peace phone photo piece pilot place plain plane plant plate point power press price prime print prize probe prose prove queen quest quick quiet quite quota quote radio range rapid ratio reach ready rebel reign relax reply reset ridge rifle rigid risen risky rival river robin robot rough round route royal saint salad sauce scale scare scene score scrap scout seize sense serve setup seven shaft shake shall shame shape share sharp shift shine shirt shock shoot short shout sight silly since sixth sixty skate skill skull slate slide slope small smart smile smoke snake solar solid solve south space spare spark speak speed spend spine split spoon sport spray squad stage stain stake stamp stand stark start state steal steam steel steep steer stern stick stiff still stock stone stood store story strap straw stray strip stuck study stuff style sugar suite sunny super surge swear sweep sweet swift swing sword table taste teach teeth thank theft their theme these thick thing think thorn those three threw throw tiger tight timer tired title today token total touch tough towel tower track trade trail train trait trash treat trick tried troop truck trunk trust truth twist typed under union until upper upset urban usual utter vague valid value vapor vault verse video viral virus visit vista vital vocal voice voter waist waste watch water weary weave wedge weird wheat where which while whole whose wider windy witch woman women world worse worst worth wound wrist wrong young youth zebra`;
+    fallback.split(/\s+/).forEach(w => { const c=w.trim().toLowerCase(); if(c.length>=3) wordSet.add(c); });
+  }
+}
+
+async function init() {
+  document.getElementById('loadingBar').style.display = 'block';
+  await loadWords();
+  document.getElementById('loadingBar').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  startChain();
+  renderLeaderboard('wordchain', 'lbBody');
   document.getElementById('wordInput').addEventListener('keydown', e => { if(e.key==='Enter') submitWord(); });
   document.getElementById('wordInput').focus();
 }
 
+function startChain() {
+  const si = dailyIndex(STARTERS.length);
+  const starter = STARTERS[si];
+  chain = [starter];
+  currentLetter = starter[starter.length-1];
+  passes = 3; gameOver = false;
+  render(); showFeedback('','');
+}
+
 function render() {
-  document.getElementById('chainLen').textContent = chain.length;
+  document.getElementById('chainLen').textContent   = chain.length;
   document.getElementById('passesLeft').textContent = passes;
+  document.getElementById('passInfo').textContent   = passes === 1 ? '⚠️ Last skip remaining!' : `${passes} skip${passes!==1?'s':''} remaining`;
+
   const disp = document.getElementById('chainDisplay');
-  if (chain.length === 0) { disp.innerHTML = '<span style="color:var(--muted);font-size:.85rem">Your chain will appear here…</span>'; }
-  else {
-    disp.innerHTML = chain.map((w,i) => `${i>0?'<span class="chain-arrow">→</span>':''}<span class="chain-word">${w}</span>`).join('');
-    disp.scrollLeft = disp.scrollWidth;
-  }
-  document.getElementById('nextLetterDisplay').innerHTML = `Next word starts with: <span>${currentLetter.toUpperCase()}</span>`;
-  document.getElementById('passInfo').textContent = passes === 1 ? '⚠️ Last pass remaining!' : `${passes} passes remaining`;
+  if (!chain.length) { disp.innerHTML = '<span style="color:var(--muted);font-size:.85rem">Chain starts here…</span>'; return; }
+  disp.innerHTML = chain.map((w,i) =>
+    (i > 0 ? '<span class="chain-sep">→</span>' : '') +
+    `<span class="chain-word">${w}</span>`
+  ).join('');
+  // Scroll to end
+  disp.scrollLeft = disp.scrollWidth;
+
+  document.getElementById('nextLetterDisplay').innerHTML =
+    `Next word starts with: <em>${currentLetter.toUpperCase()}</em>`;
 }
 
 function submitWord() {
   if (gameOver) return;
   const inp = document.getElementById('wordInput');
-  const word = inp.value.trim().toLowerCase();
-  if (word.length < 3) { showFeedback('Word must be at least 3 letters', 'bad'); shake(inp); return; }
-  if (word[0] !== currentLetter) { showFeedback(`Word must start with "${currentLetter.toUpperCase()}"`, 'bad'); shake(inp); return; }
-  if (chain.includes(word)) { showFeedback('Already used that word!', 'bad'); shake(inp); return; }
-  if (!WORD_LIST.has(word)) { showFeedback('Not a recognised word — try another', 'bad'); shake(inp); return; }
-  chain.push(word);
-  currentLetter = word[word.length - 1];
+  const word = inp.value.trim().toLowerCase().replace(/[^a-z]/g,'');
   inp.value = '';
+
+  if (word.length < 3)                   { showFeedback('Word must be at least 3 letters','bad'); return; }
+  if (word[0] !== currentLetter)          { showFeedback(`Word must start with "${currentLetter.toUpperCase()}"`, 'bad'); blink('bad'); return; }
+  if (chain.includes(word))               { showFeedback('Already used that word!', 'bad'); blink('bad'); return; }
+  if (!wordSet.has(word))                 { showFeedback('Not a recognised word — try another', 'bad'); blink('bad'); return; }
+
+  chain.push(word);
+  currentLetter = word[word.length-1];
   inp.className = 'word-input ok';
-  setTimeout(() => { inp.className = 'word-input'; }, 500);
-  showFeedback(`✓ Great! +1 (${chain.length} words)`, 'ok');
-  render();
+  setTimeout(() => { inp.className = 'word-input'; inp.focus(); }, 400);
+  showFeedback(`✓ +1 — chain of ${chain.length}!`, 'ok');
   if (chain.length > best) { best = chain.length; document.getElementById('bestLen').textContent = best; }
+  render();
 }
 
 function usePass() {
   if (passes <= 0 || gameOver) return;
   passes--;
   if (passes === 0) { endGame(); return; }
-  // pick a more common letter
-  const goodLetters = ['a','e','i','o','s','t','r','n'];
-  currentLetter = goodLetters[Math.floor(Math.random() * goodLetters.length)];
-  showFeedback(`Pass used! New letter: ${currentLetter.toUpperCase()}`, 'info');
+  const goodLetters = ['a','e','i','o','s','t','r','n','l','c'];
+  // Pick one that isn't the current letter
+  const options = goodLetters.filter(l => l !== currentLetter);
+  currentLetter = options[Math.floor(Math.random() * options.length)];
+  showFeedback(`Skip used! New letter: ${currentLetter.toUpperCase()}`, 'info');
   render();
+  document.getElementById('wordInput').focus();
 }
 
-function shake(el) {
-  el.className = 'word-input bad';
-  setTimeout(() => { el.className = 'word-input'; }, 400);
+function blink(type) {
+  const inp = document.getElementById('wordInput');
+  inp.className = 'word-input ' + type;
+  setTimeout(() => { inp.className = 'word-input'; }, 450);
 }
 
 function showFeedback(msg, type) {
   const el = document.getElementById('feedback');
   el.textContent = msg;
-  el.className = 'feedback ' + type;
+  el.className = 'feedback' + (type ? ' '+type : '');
 }
 
 function endGame() {
   gameOver = true;
+  document.getElementById('gameUI').style.display = 'none';
   document.getElementById('wordInput').disabled = true;
-  const sc = chain.length * 10;
-  document.getElementById('endCard').style.display = 'flex';
-  document.getElementById('endScore').textContent = `${chain.length} words`;
-  document.getElementById('endMsg').textContent = chain.length >= 15 ? '🎉 Amazing chain!' : chain.length >= 8 ? '👏 Solid effort!' : 'Keep building your vocabulary!';
-  document.getElementById('endCard').dataset.score = sc;
+  const score = chain.length * 10;
+  document.getElementById('endCard').style.display  = 'flex';
+  document.getElementById('endScore').textContent   = `${chain.length} words`;
+  document.getElementById('endMsg').textContent     = chain.length >= 20 ? '🎉 Extraordinary chain!' : chain.length >= 12 ? '👏 Impressive!' : chain.length >= 7 ? 'Good effort — keep building!' : 'Practice makes perfect!';
+  document.getElementById('endCard').dataset.score  = score;
 }
 
 function restartGame() {
-  gameOver = false; chain = []; passes = 3;
-  document.getElementById('endCard').style.display = 'none';
+  gameOver = false;
+  document.getElementById('endCard').style.display  = 'none';
+  document.getElementById('gameUI').style.display   = 'flex';
   document.getElementById('wordInput').disabled = false;
   document.getElementById('wordInput').value = '';
-  const si = dailyIndex(STARTERS.length);
-  const starter = STARTERS[si];
-  chain = [starter]; currentLetter = starter[starter.length-1];
-  render(); showFeedback('', '');
+  startChain();
   document.getElementById('wordInput').focus();
 }
 
-async function handleSubmit() {
-  const name = document.getElementById('nameInput').value.trim(); if(!name) return;
-  const sc = parseInt(document.getElementById('endCard').dataset.score);
-  await submitScore(GAME, name, sc);
-  document.querySelector('.score-submit').innerHTML = '<p style="color:var(--correct);font-size:.85rem">✓ Score submitted!</p>';
-  loadLeaderboard();
-}
-
-async function loadLeaderboard() {
-  const data = await getLeaderboard(GAME);
-  const tbody = document.getElementById('lbBody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>';return;}
-  tbody.innerHTML = data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
+async function doSubmit() {
+  const area = document.getElementById('endCard');
+  await handleScoreSubmit('wordchain', parseInt(area.dataset.score), 'nameInput', 'submitArea', 'lbBody');
 }
 
 init();

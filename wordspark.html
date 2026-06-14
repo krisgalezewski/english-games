@@ -4,216 +4,307 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WordSpark — English Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <style>
-:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#7c6af7;--text:#f0f0f4;--muted:#888896;--correct:#4caf82;--present:#f7c06a;--absent:#3a3a42;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
-nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
-nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
-nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
-.subtitle{font-size:.78rem;color:var(--muted);margin-top:.3rem;text-align:center;}
-main{flex:1;display:flex;flex-direction:column;align-items:center;padding:1.5rem 1rem 2rem;width:100%;max-width:520px;gap:1.25rem;}
-.theme-badge{background:#7c6af720;border:1px solid #7c6af740;color:var(--accent);border-radius:99px;padding:.3rem .9rem;font-size:.78rem;font-weight:600;letter-spacing:.06em;}
-#board{display:grid;grid-template-rows:repeat(6,1fr);gap:.45rem;width:min(330px,90vw);}
-.row{display:grid;grid-template-columns:repeat(5,1fr);gap:.45rem;}
-.tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;border:2px solid var(--border);border-radius:8px;text-transform:uppercase;transition:background .3s,border-color .3s,transform .1s;user-select:none;}
-.tile.filled{border-color:var(--muted);transform:scale(1.04);}
-.tile.correct{background:var(--correct);border-color:var(--correct);color:#fff;}
-.tile.present{background:var(--present);border-color:var(--present);color:#111;}
-.tile.absent{background:var(--absent);border-color:var(--absent);color:var(--muted);}
-.tile.shake{animation:shake .4s;}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
-#keyboard{display:flex;flex-direction:column;gap:.4rem;width:min(380px,96vw);}
-.kb-row{display:flex;justify-content:center;gap:.3rem;}
-.key{height:3.2rem;min-width:2.2rem;padding:0 .5rem;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex:1;max-width:2.8rem;}
-.key.wide{max-width:4rem;font-size:.7rem;}
-.key:hover{background:#2a2a38;}
-.key.correct{background:var(--correct);border-color:var(--correct);color:#fff;}
-.key.present{background:var(--present);border-color:var(--present);color:#111;}
-.key.absent{background:var(--absent);border-color:var(--absent);}
-#message{min-height:1.5rem;font-size:.92rem;color:var(--accent);font-weight:600;text-align:center;}
-/* leaderboard */
-.lb-section{width:100%;max-width:520px;padding:0 1rem 2.5rem;}
-.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
-.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
-.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
-.lb-table tr:first-child td{color:var(--present);font-weight:600;}
-.score-submit{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
-.score-submit input{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
-.score-submit input:focus{outline:none;border-color:var(--accent);}
-.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;}
-.btn:hover{opacity:.85;}
+main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 1rem 2rem; gap:1rem; max-width:520px; margin:0 auto; width:100%; }
+
+.top-bar { display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:.5rem; }
+
+/* Board */
+#board { display:grid; gap:.35rem; }
+.row { display:grid; gap:.35rem; }
+.tile {
+  width:52px; height:52px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900;
+  border:1px solid rgba(255,255,255,0.15); border-radius:4px;
+  text-transform:uppercase; transition:background .25s, border-color .25s, transform .1s;
+  user-select:none;
+}
+.tile.filled  { border-color:rgba(255,255,255,0.35); transform:scale(1.04); }
+.tile.correct { background:var(--correct); border-color:var(--correct); color:#0d0d0d; }
+.tile.present { background:#b8860b;         border-color:#b8860b;         color:#0d0d0d; }
+.tile.absent  { background:#2a2a2a;         border-color:#2a2a2a;         color:var(--muted); }
+.tile.shake   { animation:shake .4s; }
+
+/* Keyboard */
+#keyboard { display:flex; flex-direction:column; gap:.3rem; width:100%; max-width:440px; }
+.kb-row { display:flex; justify-content:center; gap:.25rem; }
+.key {
+  height:48px; min-width:28px; flex:1; max-width:36px;
+  padding:0 .2rem;
+  background:var(--surface2); border:1px solid var(--border); border-radius:4px;
+  color:var(--text); font-family:'DM Sans',sans-serif; font-size:.75rem; font-weight:600;
+  cursor:pointer; transition:background .12s; display:flex; align-items:center; justify-content:center;
+  text-transform:uppercase;
+}
+.key.wide { max-width:54px; font-size:.65rem; }
+.key:hover { background:#2a2a2a; }
+.key.correct { background:var(--correct); border-color:var(--correct); color:#0d0d0d; }
+.key.present { background:#b8860b; border-color:#b8860b; color:#0d0d0d; }
+.key.absent  { background:#1a1a1a; border-color:var(--border); color:var(--muted2); }
+
+#message { min-height:1.4rem; font-size:.88rem; font-weight:600; text-align:center; color:var(--gold); font-family:'Space Mono',monospace; }
+
+/* Win reveal */
+.win-reveal { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1.25rem 1.5rem; width:100%; text-align:center; animation:fadeIn .4s ease; }
+.win-reveal .win-word { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--gold); letter-spacing:.08em; }
+.win-reveal .win-def  { color:var(--muted); font-size:.88rem; line-height:1.65; margin-top:.5rem; }
+.win-reveal .win-ex   { font-style:italic; color:var(--muted2); font-size:.82rem; margin-top:.5rem; border-left:2px solid var(--gold); padding-left:.75rem; text-align:left; }
+
+/* Submit / LB area */
+.lb-section { width:100%; max-width:520px; padding:0 1rem 2.5rem; }
 </style>
 </head>
 <body>
-<nav>
-  <a href="index.html">← Games</a>
-  <h1>🟩 WordSpark</h1>
-  <span class="subtitle" id="dateLabel"></span>
+
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">🟨 WordSpark</span>
+  <span class="eyebrow" id="dateLabel"></span>
 </nav>
+
 <main>
-  <div class="theme-badge" id="themeBadge">Loading…</div>
+  <div class="top-bar">
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="tab4" onclick="setMode(4)">Easy · 4</button>
+      <button class="diff-tab"        id="tab6" onclick="setMode(6)">Hard · 6</button>
+    </div>
+    <span class="gold-badge" id="themeBadge"></span>
+  </div>
+
   <div id="board"></div>
   <div id="message"></div>
+  <div id="winReveal" style="display:none" class="win-reveal"></div>
   <div id="keyboard"></div>
+
+  <div id="submitArea" style="display:none; width:100%">
+    <div class="submit-row">
+      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>
+  </div>
 </main>
 
 <div class="lb-section">
-  <div id="submitArea" style="display:none">
-    <div class="score-submit">
-      <input id="nameInput" placeholder="Your name" maxlength="20"/>
-      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
-    </div>
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
   </div>
-  <h2>🏆 Leaderboard</h2>
-  <table class="lb-table">
-    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
-  </table>
 </div>
 
 <script src="shared.js"></script>
 <script>
-const GAME = 'wordspark';
-const WORDS = [
-  {word:'BRAVE',theme:'Personality'},  {word:'LIGHT',theme:'Science'},
-  {word:'SPOKE',theme:'Communication'},{word:'FLAME',theme:'Nature'},
-  {word:'GRAIN',theme:'Food & Farming'},{word:'PRIDE',theme:'Emotions'},
-  {word:'STORM',theme:'Weather'},       {word:'BLUNT',theme:'Personality'},
-  {word:'CRISP',theme:'Senses'},        {word:'DRIFT',theme:'Movement'},
-  {word:'ELDER',theme:'Family'},        {word:'FANCY',theme:'Style'},
-  {word:'GLOOM',theme:'Emotions'},      {word:'HASTE',theme:'Time'},
-  {word:'INFER',theme:'Thinking'},      {word:'JOUST',theme:'History'},
-  {word:'KNACK',theme:'Skills'},        {word:'LUNAR',theme:'Space'},
-  {word:'MANOR',theme:'Places'},        {word:'NERVE',theme:'Body'},
-  {word:'ONSET',theme:'Time'},          {word:'PLUCK',theme:'Personality'},
-  {word:'QUERY',theme:'Communication'}, {word:'RALLY',theme:'Sport'},
-  {word:'SCORN',theme:'Emotions'},      {word:'TRUCE',theme:'Conflict'},
-  {word:'UNITY',theme:'Society'},       {word:'VALOR',theme:'Personality'},
-  {word:'WRATH',theme:'Emotions'},      {word:'YEARN',theme:'Feelings'},
-  {word:'ABBEY',theme:'Buildings'},     {word:'BLAZE',theme:'Nature'},
-  {word:'CHAOS',theme:'Concepts'},      {word:'DODGE',theme:'Movement'},
-  {word:'EAGER',theme:'Feelings'},      {word:'FLAIR',theme:'Style'},
-  {word:'GREED',theme:'Personality'},   {word:'HOVER',theme:'Movement'},
-  {word:'IRONY',theme:'Language'},      {word:'JUDGE',theme:'Law'},
+// ── Word banks ─────────────────────────────────────────────────────
+const WORDS4 = [
+  {w:'BOLD',t:'Personality'},{w:'CALM',t:'Emotions'},{w:'DARE',t:'Actions'},
+  {w:'EARN',t:'Work'},{w:'FAIR',t:'Values'},{w:'GAIN',t:'Progress'},
+  {w:'HOPE',t:'Emotions'},{w:'IDEA',t:'Thinking'},{w:'JUST',t:'Values'},
+  {w:'KIND',t:'Personality'},{w:'LAZY',t:'Personality'},{w:'MIND',t:'Thinking'},
+  {w:'NEAT',t:'Appearance'},{w:'OPEN',t:'Personality'},{w:'PACE',t:'Movement'},
+  {w:'QUIT',t:'Actions'},{w:'RISK',t:'Actions'},{w:'SAFE',t:'Values'},
+  {w:'TASK',t:'Work'},{w:'URGE',t:'Emotions'},{w:'VAST',t:'Size'},
+  {w:'WISE',t:'Personality'},{w:'ZEAL',t:'Emotions'},{w:'ABLE',t:'Skills'},
+  {w:'BASE',t:'Structure'},{w:'CORE',t:'Structure'},{w:'DEEP',t:'Concepts'},
+  {w:'EDGE',t:'Position'},{w:'FLOW',t:'Movement'},{w:'GLOW',t:'Light'},
+];
+const WORDS6 = [
+  {w:'BRIGHT',t:'Light'},{w:'CASTLE',t:'Buildings'},{w:'DANGER',t:'Concepts'},
+  {w:'ESCAPE',t:'Actions'},{w:'FAMINE',t:'Society'},{w:'GATHER',t:'Actions'},
+  {w:'HERALD',t:'History'},{w:'IMPACT',t:'Concepts'},{w:'JOYFUL',t:'Emotions'},
+  {w:'KINDLY',t:'Personality'},{w:'LAUNCH',t:'Actions'},{w:'MANNER',t:'Behaviour'},
+  {w:'NATION',t:'Society'},{w:'OBJECT',t:'Things'},{w:'PATRON',t:'People'},
+  {w:'QUAINT',t:'Appearance'},{w:'REVEAL',t:'Actions'},{w:'SIGNAL',t:'Communication'},
+  {w:'TENDER',t:'Personality'},{w:'UNFOLD',t:'Actions'},{w:'VANISH',t:'Movement'},
+  {w:'WANDER',t:'Movement'},{w:'YEOMAN',t:'History'},{w:'ZEALOT',t:'People'},
+  {w:'ABLAZE',t:'Nature'},{w:'BOUNTY',t:'Concepts'},{w:'CUSTOM',t:'Society'},
+  {w:'DARING',t:'Personality'},{w:'ELAPSE',t:'Time'},{w:'FERVOR',t:'Emotions'},
 ];
 
-const idx = dailyIndex(WORDS.length);
-const {word: TARGET, theme: THEME} = WORDS[idx];
-const VALID = new Set([...WORDS.map(w=>w.word), 'TRACE','CRANE','RAISE','STARE','SLATE','CRATE','ADORE','ALIEN','ALIGN','ALLOW','ALOFT','AMONG','ANGER','ANGEL','APPLE','ARGUE','ARISE','ARRAY','ARROW','BELOW','BENCH','BIRTH','BLACK','BLANK','BLAST','BLEND','BLESS','BLOCK','BLOOD','BLOOM','BLOWN','BOARD','BOOST','BOUND','BOXER','BRAIN','BRAND','BREAK','BREED','BRICK','BRIDE','BRIEF','BRING','BROAD','BROKE','BUILD','BUILT','BUNCH','BURST','BUYER','CABIN','CABLE','CATCH','CAUSE','CHAIN','CHAIR','CHASE','CHECK','CHEEK','CHEST','CHILD','CHINA','CHOIR','CHORD','CHOSE','CHUNK','CIVIL','CLAIM','CLASS','CLEAN','CLEAR','CLICK','CLIFF','CLIMB','CLOSE','CLOTH','CLOUD','COACH','COAST','COULD','COUNT','COURT','COVER','CRACK','CRAFT','CRASH','CRAWL','CRAZY','CREEK','CROSS','CROWD','CRUEL','CRUSH','CURVE','DAILY','DANCE','DEATH','DEBUT','DELAY','DELTA','DENSE','DEPTH','DEPOT','DIRTY','DOUBT','DOUGH','DRAFT','DRAIN','DRAMA','DRAWN','DREAM','DRESS','DRIED','DRINK','DRIVE','DROVE','DYING','EARLY','EARTH','EIGHT','ELITE','EMPTY','ENEMY','ENJOY','ENTER','EQUAL','ERROR','ESSAY','EVENT','EVERY','EXACT','EXIST','EXTRA','FAINT','FAITH','FALSE','FATAL','FAULT','FEAST','FENCE','FEVER','FIELD','FIFTH','FIFTY','FIGHT','FINAL','FIRST','FIXED','FLESH','FLOAT','FLOOD','FLOOR','FOCUS','FORCE','FORGE','FOUND','FRAME','FRANK','FRESH','FRONT','FRONT','FROZE','FULLY','FUNNY','GIANT','GIVEN','GLASS','GLIDE','GLORY','GLOSS','GLOVE','GOING','GRACE','GRADE','GRAND','GRANT','GRASP','GRASS','GRAVE','GREAT','GREEN','GREET','GRIEF','GRILL','GROAN','GROSS','GROUP','GROWN','GROWL','GUESS','GUEST','GUIDE','GUILT','GUISE','GULF','HABIT','HAPPY','HARSH','HEART','HEAVY','HENCE','HINGE','HONEY','HONOR','HORSE','HOTEL','HOUSE','HUMAN','HUMOR','IDEAL','IMAGE','IMPLY','INNER','INPUT','ISSUE','ITALY','IVORY','JEWEL','JOINT','JOKER','JOYFUL','JUICE','JUICY','JUMPY','KNEEL','KNIFE','KNOCK','KNOWN','LABEL','LARGE','LASER','LATER','LAUGH','LAYER','LEARN','LEAST','LEGAL','LEMON','LEVEL','LIVER','LOCAL','LODGE','LOGIC','LOOSE','LOWER','LOYAL','LUCKY','MAGIC','MAJOR','MAKER','MARCH','MARRY','MATCH','MAYBE','MEANT','MEDAL','MERCY','MERIT','METAL','MIGHT','MINOR','MINUS','MODEL','MONEY','MONTH','MORAL','MOTIF','MOTOR','MOUNT','MOUTH','MOVED','MOVIE','MUSIC','NASAL','NAVAL','NIGHT','NINJA','NOBLE','NOISE','NORTH','NOTED','NOVEL','NURSE','OCCUR','OFFER','OFTEN','OPTIC','ORDER','OTHER','OUTER','OWNED','OXIDE','OZONE','PAINT','PANEL','PANIC','PAPER','PARTY','PATCH','PAUSE','PEACE','PEACH','PENNY','PHONE','PHOTO','PIANO','PIECE','PILOT','PINCH','PIXEL','PLACE','PLAIN','PLANE','PLANT','PLATE','PLAZA','PLEAD','PLEAT','PLUMB','PLUMP','PLUNGE','POINT','POLAR','POUND','POWER','PRESS','PRICE','PRIME','PRINT','PRIOR','PRIZE','PROBE','PRONE','PROSE','PROVE','PROWL','PSALM','PUBIC','PULSE','PUNCH','PUPIL','PURE','PUSH','QUEEN','QUEST','QUEUE','QUICK','QUIET','QUITE','QUOTA','QUOTE','RADAR','RADIO','RAISE','RANCH','RANGE','RAPID','RATIO','REACH','READY','REBEL','RECUT','REFER','REIGN','RELAX','RENEW','REPAY','REPEL','REPLY','RERUN','RESET','RIDGE','RIFLE','RIGID','RISEN','RISKY','RIVAL','RIVER','ROAST','ROBIN','ROBOT','ROCKY','ROMAN','ROUGE','ROUGH','ROUND','ROUTE','ROYAL','RULED','RUMOR','RURAL','SADLY','SAINT','SALAD','SANDY','SAUCE','SCALE','SCARE','SCENE','SCORE','SCRAP','SCREW','SCOUT','SEDAN','SEIZE','SENSE','SERVE','SETUP','SEVEN','SHAFT','SHAKE','SHALL','SHAME','SHAPE','SHARE','SHARK','SHARP','SHIFT','SHINE','SHIRT','SHOCK','SHOOT','SHORT','SHOUT','SHOVE','SIGHT','SILLY','SINCE','SIXTH','SIXTY','SIZED','SKATE','SKILL','SKULL','SLATE','SLIDE','SLOPE','SLUMP','SMALL','SMART','SMILE','SMOKE','SNAKE','SOLAR','SOLID','SOLVE','SORRY','SOUTH','SPACE','SPARE','SPARK','SPEAK','SPEED','SPEND','SPINE','SPITE','SPLIT','SPOON','SPORT','SPRAY','SQUAD','SQUID','STACK','STAGE','STAIN','STAKE','STALL','STAMP','STAND','STARK','START','STATE','STAYS','STEAL','STEAM','STEEL','STEEP','STEER','STERN','STICK','STIFF','STILL','STOCK','STONE','STOOD','STORE','STORK','STORY','STRAP','STRAW','STRAY','STRIP','STUCK','STUDY','STUFF','STYLE','SUGAR','SUITE','SUNNY','SUPER','SURGE','SWAMP','SWEAR','SWEEP','SWEET','SWEPT','SWIFT','SWING','SWORD','TABLE','TASTE','TEACH','TEETH','THANK','THEFT','THEIR','THEME','THERE','THESE','THICK','THING','THINK','THORN','THOSE','THREE','THREW','THROW','TIGER','TIGHT','TIMER','TIRED','TITLE','TODAY','TOKEN','TONAL','TOTAL','TOUCH','TOUGH','TOWEL','TOWER','TOXIC','TRACK','TRADE','TRAIL','TRAIN','TRAIT','TRAMP','TRASH','TREAT','TRICK','TRIED','TROOP','TRUCK','TRULY','TRUNK','TRUST','TRUTH','TULIP','TUMOR','TUNER','TWIST','TYING','TYPED','UDDER','ULCER','ULTRA','UNCLE','UNDER','UNION','UNTIL','UPPER','UPSET','URBAN','USUAL','UTTER','VAGUE','VALID','VALUE','VAPOR','VAULT','VERSE','VIDEO','VIGOR','VIRAL','VIRUS','VISIT','VISTA','VITAL','VIVID','VOCAL','VOICE','VOTER','VOWED','WAIST','WASTE','WATCH','WATER','WEARY','WEAVE','WEDGE','WEIGH','WEIRD','WHEAT','WHERE','WHICH','WHILE','WHOLE','WHOSE','WIDER','WINDY','WITCH','WOMAN','WOMEN','WORLD','WORSE','WORST','WORTH','WOULD','WOUND','WRIST','WRONG','YACHT','YOUNG','YOURS','YOUTH','ZEBRA','ZONAL']);
-
+// Large valid-word set (5000+ common English words via inline list)
+// We load an external word list from a CDN for validation
+let VALID_WORDS = new Set();
+let mode = 4, TARGET = '', THEME = '';
 let guesses = [], current = '', gameOver = false;
 const rows = [];
 
-function init() {
-  document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('themeBadge').textContent = `Today's theme: ${THEME}`;
+// Load word list from a public source
+async function loadWordList() {
+  try {
+    // Use a curated common-words list
+    const r = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt');
+    const text = await r.text();
+    text.split('\n').forEach(w => {
+      const clean = w.trim().toUpperCase();
+      if (clean.length >= 3 && clean.length <= 8) VALID_WORDS.add(clean);
+    });
+  } catch(e) {
+    // Fallback: built-in list of most common words
+    const fallback = `ABLE ABLY ACID AGED ALSO ARCH ARMY AUNT AXIS BACK BAKE BALL BAND BANK BARE BARK BARN BASE BATH BEAD BEAM BEAN BEAR BEAT BEEN BELL BELT BEND BEST BIND BIRD BITE BLEW BLOW BLUE BOAR BOAT BODY BOLD BOLT BOND BONE BOOK BOOM BOOT BORE BOTH BOWL BROW BUCK BULK BULL BUMP BURN BURP BUSY CAGE CAKE CALL CALM CAME CARD CARE CART CASE CASH CAST CAVE CENT CHAD CHIN CHIP CHOP CITY CLAM CLAP CLAY CLIP CLOD CLOP CLOT CLUE COAL COAT CODE COIL COLD COME COOK COOL COPY CORD CORE CORK CORN COST COVE COZY CRAM CREW CROP CROW CURE CURL CUTE DAMP DARE DARK DART DASH DATA DEAD DEAF DEAL DEAN DEAR DEBT DEED DEEP DELL DENY DESK DICE DIED DIGS DILL DIME DINE DIRE DIRT DISC DISH DISK DIVE DOCK DOES DOLE DONE DOOM DOOR DOSE DOTE DOVE DRAB DRAG DRAW DREW DROP DRUM DUAL DUMB DUMP DUNE DUNK DUSK DUST DUTY EACH EARN EAST EASY EDGE ELSE EMIT EPIC EVEN EVER EXAM FACE FACT FADE FAIL FAIN FAIR FAKE FALL FAME FARM FAST FATE FAWN FEAR FEAT FEED FEEL FELL FELT FERN FIFE FILL FINE FIRE FIRM FISH FIST FIVE FIZZ FLAG FLAW FLED FLEW FLIP FLIT FLOP FLOW FOAM FOIL FOLK FOND FONT FORE FORK FORM FORT FOUL FOWL FRAY FREE FROG FUEL FULL FURY FUSE GALE GAZE GEAR GLEE GLIB GLOB GLUE GOAD GOAT GOLF GONE GRAB GRAM GRAY GREW GRIN GRIP GRIT GROW GULF GUST HACK HAIL HALF HALL HALT HAND HANG HARD HARE HARM HARP HAVE HAZE HEAD HEAL HEAP HEAT HEEL HELP HEMP HERB HERD HERO HIGH HILL HINT HIRE HIVE HOLE HOLY HOME HOOD HOOK HOPE HOPS HOSE HOST HOUR HULL HUMP HUNG HUNT HURT HUSK HYMN ICON IDLE INCH INKY ISLE JABS JADE JEST JILT JUMP JURY JUST KEEN KEEP KELP KILN KNIT LACE LACK LAIR LAKE LAMB LAMP LARK LASH LASS LAST LATE LAUD LAVA LAWN LAZE LEAD LEAF LEAN LEAP LEND LENS LEVY LIED LIES LIFE LIFT LIKE LIME LIMP LINE LINT LION LIST LODE LOFT LONE LONG LOOK LOOM LOON LORE LORN LOUT LOVE LUCK LUGE LURE LURK MACE MAID MAIN MAKE MALL MANE MAST MATH MAZE MELT MESH MILD MILK MILL MIME MINT MIRE MIST MOAN MOAT MOCK MODE MOLE MONK MOOD MOOR MOPE MOSS MOTH MOVE MUCK MUGS MULE MUSK MUST MYTH NAIL NAPE NEAR NECK NEED NIGH NODE NOSE NUMB OATH ONCE ORAL ORBS OURS OVEN OVER OWNS PACE PACT PAID PAIL PAIR PALE PAVE PAWN PEEL PEST PICK PILE PILL PINE PINK PIPE PLAN PLAY PLOD PLOP PLOT PLOW PLOY PLUG PLUM PLUS POND POOL POOR POPE PORE PORK POSE POUT PREY PROD PROM PROP PROW PUMP PURE PUSH RAMP RANG RANK RARE RAZE READ REAP REEL REIN RELY REND RENT REST RICE RICH RIND RING RIOT ROBE RODE ROMP ROOD ROOK ROPE ROSE ROUT RUDE RUIN RULE RUMP RUSE RUSH SAGE SAIL SAKE SAME SAND SANE SANG SASH SAVE SCAM SCAN SCAR SEAM SEAR SEEK SEEP SENT SHED SHIN SHIP SHOE SHOP SHOT SHOW SIFT SIGH SILL SILT SIRE SLAP SLAT SLIM SLIP SLIT SLOB SLOP SLOT SLOW SLUG SLUR SMUG SNAG SNAP SNIP SOAK SOAP SOAR SOFT SOIL SOLE SONG SOOT SORE SORT SOUL SOUP SOUR SPAN SPAR SPIN SPIT SPOT SPUD STUB STUN SUCK SUDS SUIT SUMP SUNG SUNK SURF SWAY SWUM TACK TALE TALL TAME TANG TAUT TENT TERM THAN THEE THEN THEY THIN TIDE TILL TILE TIPS TOAD TOLL TOMB TOME TONE TOSS TOTE TOUR TROD TUBE TUFT TWIG TWIN TYPE ULNA UNIT UPON VAIN VALE VANE VEER VEIL VENT VERB VERY VIBE VINE VOID VOLT WADE WAGE WAIL WAKE WANE WARY WELD WENT WEPT WERE WOKE WORM WOVE WRIT YAWN YOKE ZAPS ZERO ZONE ZOOM BLAZE BRAVE BRING BROKE CATCH CEASE CHASE CLIMB CLOSE CRANE CRASH CRAWL CROSS DRIVE DROWN DWARF EARLY EARTH EIGHT ELITE EMPTY ENJOY ENTER EQUAL ERROR FEAST FIELD FIFTH FIFTY FIRST FLAME FLAME FLESH FLOAT FLOOD FLOOR FORCE FOUND GRACE GRADE GRANT GRASP GRASS GRAVE GREAT GREEN GRIEF GROAN GROSS GUESS GUIDE GUILT HEART HEAVY HOUSE IDEAL IMAGE INNER ISSUE JOINT JUDGE KNIFE KNOWN LARGE LASER LAUGH LAYER LEARN LEAST LEGAL LEVEL LIVER LOCAL LOGIC LUCKY MAGIC MAJOR MATCH MAYBE MEANT MERCY MIGHT MINOR MODEL MONEY MONTH MORAL MOUNT MOUTH MOVED MUSIC NIGHT NOBLE NOISE NORTH NOVEL NURSE OCCUR OFFER OFTEN ORDER OWNED PAINT PANEL PANIC PAPER PEACE PEACH PENNY PHONE PHOTO PIECE PILOT PLACE PLAIN PLANE PLANT PLATE PLAZA POINT POWER PRESS PRICE PRIME PRINT PRIZE PROBE PROSE PROVE QUEEN QUEST QUICK QUIET QUITE QUOTA QUOTE RADIO RANGE RAPID RATIO REACH READY REBEL REIGN RELAX REPLY RESET RIDGE RIFLE RIGID RISEN RISKY RIVAL RIVER ROBIN ROBOT ROCKY ROUGE ROUGH ROUND ROUTE ROYAL SAINT SALAD SAUCE SCALE SCARE SCENE SCORE SCRAP SCREW SCOUT SEIZE SENSE SERVE SETUP SEVEN SHAFT SHAKE SHALL SHAME SHAPE SHARE SHARP SHIFT SHINE SHIRT SHOCK SHOOT SHORT SHOUT SIGHT SILLY SINCE SIXTH SIXTY SIZED SKATE SKILL SKULL SLATE SLIDE SLOPE SMALL SMART SMILE SMOKE SNAKE SOLAR SOLID SOLVE SOUTH SPACE SPARE SPARK SPEAK SPEED SPEND SPINE SPLIT SPOON SPORT SPRAY SQUAD STAGE STAIN STAKE STALL STAMP STAND STARK START STATE STAYS STEAL STEAM STEEL STEEP STEER STERN STICK STIFF STILL STOCK STONE STOOD STORE STORY STRAP STRAW STRAY STRIP STUCK STUDY STUFF STYLE SUGAR SUITE SUNNY SUPER SURGE SWEAR SWEEP SWEET SWIFT SWING SWORD TABLE TASTE TEACH TEETH THANK THEFT THEIR THEME THERE THESE THICK THING THINK THORN THOSE THREE THREW THROW TIGER TIGHT TIMER TIRED TITLE TODAY TOKEN TOTAL TOUCH TOUGH TOWEL TOWER TRACK TRADE TRAIL TRAIN TRAIT TRASH TREAT TRICK TRIED TROOP TRUCK TRUNK TRUST TRUTH TUMOR TWIST TYING TYPED UNDER UNION UNTIL UPPER UPSET URBAN USUAL UTTER VAGUE VALID VALUE VAPOR VAULT VERSE VIDEO VIRAL VIRUS VISIT VISTA VITAL VOCAL VOICE VOTER WAIST WASTE WATCH WATER WEARY WEAVE WEDGE WEIRD WHEAT WHERE WHICH WHILE WHOLE WHOSE WIDER WINDY WITCH WOMAN WOMEN WORLD WORSE WORST WORTH WOUND WRIST WRONG YOUNG YOUTH ZEBRA`.split(' ');
+    fallback.forEach(w => VALID_WORDS.add(w.trim().toUpperCase()));
+  }
+}
+
+function setMode(n) {
+  if (gameOver === false && guesses.length > 0) {
+    if (!confirm('Start a new game with ' + n + ' letters?')) return;
+  }
+  mode = n;
+  document.getElementById('tab4').classList.toggle('active', n === 4);
+  document.getElementById('tab6').classList.toggle('active', n === 6);
+  initGame();
+}
+
+function initGame() {
+  guesses = []; current = ''; gameOver = false;
+  rows.length = 0;
+  document.getElementById('winReveal').style.display = 'none';
+  document.getElementById('submitArea').style.display = 'none';
+  document.getElementById('message').textContent = '';
+
+  const bank = mode === 4 ? WORDS4 : WORDS6;
+  const entry = bank[dailyIndex(bank.length)];
+  TARGET = entry.w; THEME = entry.t;
+  document.getElementById('themeBadge').textContent = `Theme: ${THEME}`;
+
+  buildBoard(); buildKeyboard();
+  renderLeaderboard('wordspark_' + mode, 'lbBody');
+}
+
+function buildBoard() {
   const board = document.getElementById('board');
+  board.style.gridTemplateRows = `repeat(6, 1fr)`;
+  board.innerHTML = '';
   for (let r = 0; r < 6; r++) {
-    const row = document.createElement('div'); row.className = 'row';
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.gridTemplateColumns = `repeat(${mode}, 52px)`;
     const tiles = [];
-    for (let c = 0; c < 5; c++) { const t = document.createElement('div'); t.className = 'tile'; row.appendChild(t); tiles.push(t); }
+    for (let c = 0; c < mode; c++) {
+      const t = document.createElement('div'); t.className = 'tile';
+      row.appendChild(t); tiles.push(t);
+    }
     board.appendChild(row); rows.push(tiles);
   }
-  buildKeyboard();
-  loadLeaderboard();
-  document.addEventListener('keydown', onKey);
 }
 
 function buildKeyboard() {
-  const layout = [['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
-  const kb = document.getElementById('keyboard');
+  const layout = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['ENTER','Z','X','C','V','B','N','M','⌫']
+  ];
+  const kb = document.getElementById('keyboard'); kb.innerHTML = '';
   layout.forEach(row => {
     const div = document.createElement('div'); div.className = 'kb-row';
     row.forEach(k => {
       const btn = document.createElement('button');
       btn.className = 'key' + (k.length > 1 ? ' wide' : '');
       btn.textContent = k; btn.dataset.key = k;
-      btn.addEventListener('click', () => onKey({key: k === '⌫' ? 'Backspace' : k === 'ENTER' ? 'Enter' : k}));
+      btn.addEventListener('click', () => handleKey(k === '⌫' ? 'Backspace' : k === 'ENTER' ? 'Enter' : k));
       div.appendChild(btn);
     });
     kb.appendChild(div);
   });
 }
 
-function onKey(e) {
+document.addEventListener('keydown', e => handleKey(e.key));
+
+function handleKey(k) {
   if (gameOver) return;
-  const k = e.key.toUpperCase();
-  if (k === 'ENTER') { submitGuess(); return; }
-  if (k === 'BACKSPACE' || k === '⌫') { current = current.slice(0, -1); render(); return; }
-  if (/^[A-Z]$/.test(k) && current.length < 5) { current += k; render(); }
+  const K = k.toUpperCase();
+  if (K === 'ENTER') { submitGuess(); return; }
+  if (K === 'BACKSPACE' || K === '⌫') { current = current.slice(0,-1); render(); return; }
+  if (/^[A-Z]$/.test(K) && current.length < mode) { current += K; render(); }
 }
 
 function render() {
-  const rowIdx = guesses.length;
-  if (rowIdx >= 6) return;
-  rows[rowIdx].forEach((t, i) => { t.textContent = current[i] || ''; t.className = 'tile' + (current[i] ? ' filled' : ''); });
+  const r = guesses.length; if (r >= 6) return;
+  rows[r].forEach((t,i) => {
+    t.textContent = current[i] || '';
+    t.className = 'tile' + (current[i] ? ' filled' : '');
+  });
 }
 
 function submitGuess() {
-  if (current.length < 5) { showMsg('Not enough letters'); shake(); return; }
-  if (!VALID.has(current) && current !== TARGET) { showMsg('Not in word list'); shake(); return; }
-  const result = score(current);
-  guesses.push({word: current, result});
+  if (current.length < mode) { showMsg('Not enough letters'); shakeRow(guesses.length); return; }
+  const upper = current.toUpperCase();
+  if (!VALID_WORDS.has(upper) && upper !== TARGET) { showMsg('Not a recognised word — try another'); shakeRow(guesses.length); return; }
+  const result = score(upper);
+  guesses.push({word: upper, result});
   revealRow(guesses.length - 1, result);
-  updateKeys(current, result);
-  if (current === TARGET) { setTimeout(() => endGame(true), 1800); }
-  else if (guesses.length === 6) { setTimeout(() => endGame(false), 1800); }
+  updateKeys(upper, result);
+  if (upper === TARGET) { setTimeout(() => endGame(true), mode * 220 + 200); }
+  else if (guesses.length === 6) { setTimeout(() => endGame(false), mode * 220 + 200); }
   current = '';
 }
 
 function score(guess) {
-  const res = Array(5).fill('absent');
+  const res = Array(mode).fill('absent');
   const pool = TARGET.split('');
-  guess.split('').forEach((l, i) => { if (l === pool[i]) { res[i] = 'correct'; pool[i] = null; } });
-  guess.split('').forEach((l, i) => { if (res[i] !== 'correct') { const j = pool.indexOf(l); if (j !== -1) { res[i] = 'present'; pool[j] = null; } } });
+  guess.split('').forEach((l,i) => { if (l === pool[i]) { res[i]='correct'; pool[i]=null; } });
+  guess.split('').forEach((l,i) => { if (res[i]!=='correct') { const j=pool.indexOf(l); if(j!==-1){res[i]='present';pool[j]=null;} } });
   return res;
 }
 
 function revealRow(r, result) {
-  rows[r].forEach((t, i) => {
-    setTimeout(() => { t.className = 'tile ' + result[i]; }, i * 200);
-  });
+  rows[r].forEach((t,i) => { setTimeout(() => { t.className = 'tile ' + result[i]; }, i * 200); });
 }
 
 function updateKeys(guess, result) {
-  guess.split('').forEach((l, i) => {
+  guess.split('').forEach((l,i) => {
     const btn = document.querySelector(`[data-key="${l}"]`); if (!btn) return;
-    const cur = btn.className;
-    if (!cur.includes('correct') && (result[i] === 'correct' || (!cur.includes('present') && result[i] === 'present') || result[i] === 'absent'))
-      btn.classList.add(result[i]);
+    if (result[i] === 'correct') btn.className = 'key correct';
+    else if (result[i] === 'present' && !btn.classList.contains('correct')) btn.classList.add('present');
+    else if (result[i] === 'absent' && !btn.classList.contains('correct') && !btn.classList.contains('present')) btn.classList.add('absent');
   });
 }
 
-function shake() { rows[guesses.length].forEach(t => { t.classList.add('shake'); setTimeout(() => t.classList.remove('shake'), 500); }); }
-function showMsg(m) { const el = document.getElementById('message'); el.textContent = m; setTimeout(() => { if (el.textContent === m) el.textContent = ''; }, 2000); }
+function shakeRow(r) { rows[r].forEach(t => { t.classList.add('shake'); setTimeout(() => t.classList.remove('shake'), 500); }); }
+function showMsg(m) { const el = document.getElementById('message'); el.textContent = m; setTimeout(() => { if(el.textContent===m) el.textContent=''; }, 2200); }
 
 function endGame(won) {
   gameOver = true;
-  const sc = won ? Math.max(10, 110 - guesses.length * 20) : 0;
-  showMsg(won ? `🎉 Brilliant! Score: ${sc}` : `The word was ${TARGET}`);
-  if (won) { document.getElementById('submitArea').style.display = 'block'; document.getElementById('submitArea').dataset.score = sc; }
+  const sc = won ? Math.max(10, 120 - guesses.length * 20) : 0;
+  showMsg(won ? `🎉 Brilliant! Score: ${sc} pts` : `The word was ${TARGET}`);
+
+  // Show word + definition from Free Dictionary API
+  const rev = document.getElementById('winReveal');
+  rev.style.display = 'block';
+  rev.innerHTML = `<div class="win-word">${TARGET}</div><div class="win-def" style="color:var(--gold)">Looking up definition…</div>`;
+
+  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${TARGET.toLowerCase()}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!Array.isArray(data)) throw new Error();
+      const def = data[0]?.meanings?.[0]?.definitions?.[0];
+      rev.innerHTML = `
+        <div class="win-word">${TARGET}</div>
+        <div class="win-def">${def?.definition || 'Definition not available.'}</div>
+        ${def?.example ? `<div class="win-ex">"${def.example}"</div>` : ''}`;
+    })
+    .catch(() => {
+      rev.innerHTML = `<div class="win-word">${TARGET}</div><div class="win-def" style="color:var(--muted)">Definition not available.</div>`;
+    });
+
+  if (won) {
+    document.getElementById('submitArea').style.display = 'block';
+    document.getElementById('submitArea').dataset.score = sc;
+    document.getElementById('submitArea').dataset.game = 'wordspark_' + mode;
+  }
 }
 
-async function handleSubmit() {
-  const name = document.getElementById('nameInput').value.trim();
-  if (!name) return;
-  const sc = parseInt(document.getElementById('submitArea').dataset.score);
-  await submitScore(GAME, name, sc);
-  document.getElementById('submitArea').style.display = 'none';
-  loadLeaderboard();
+async function doSubmit() {
+  const area = document.getElementById('submitArea');
+  await handleScoreSubmit(area.dataset.game, parseInt(area.dataset.score), 'nameInput', 'submitArea', 'lbBody');
 }
 
-async function loadLeaderboard() {
-  const data = await getLeaderboard(GAME);
-  const tbody = document.getElementById('lbBody');
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>'; return; }
-  tbody.innerHTML = data.map((r, i) => `<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
-}
-
-init();
+// Init
+document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+loadWordList().then(() => initGame());
 </script>
 </body>
 </html>

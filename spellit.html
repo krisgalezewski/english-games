@@ -4,246 +4,333 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SpellIt! — English Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <style>
-:root{--bg:#0e0e10;--surface:#18181c;--border:#2a2a30;--accent:#6af7b8;--text:#f0f0f4;--muted:#888896;--wrong:#f76a6a;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
-nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);}
-nav a{color:var(--muted);text-decoration:none;font-size:.85rem;}nav a:hover{color:var(--text);}
-nav h1{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);}
-main{flex:1;width:100%;max-width:520px;padding:2rem 1rem;display:flex;flex-direction:column;align-items:center;gap:1.5rem;}
-.streak-bar{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:.4rem 1rem;font-size:.85rem;}
-.streak-bar .fire{font-size:1rem;}
-.streak-val{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--accent);font-weight:700;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
-.round-label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-.definition{font-size:1.05rem;line-height:1.65;color:var(--text);max-width:380px;}
-.definition strong{color:var(--accent);}
-.letter-count{font-size:.78rem;color:var(--muted);letter-spacing:.06em;}
-.input-row{display:flex;gap:.6rem;width:100%;max-width:340px;}
-.spell-input{flex:1;background:#0e0e10;border:2px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--text);text-align:center;letter-spacing:.1em;text-transform:uppercase;transition:border-color .2s;}
-.spell-input:focus{outline:none;border-color:var(--accent);}
-.spell-input.wrong{border-color:var(--wrong);animation:shake .35s;}
-.spell-input.correct{border-color:var(--accent);}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.check-btn{background:var(--accent);color:#111;border:none;border-radius:10px;padding:.7rem 1.1rem;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;white-space:nowrap;}
-.check-btn:hover{opacity:.85;}
-.hint-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.4rem .9rem;font-size:.78rem;color:var(--muted);cursor:pointer;transition:all .15s;}
-.hint-btn:hover{border-color:var(--accent);color:var(--accent);}
-.feedback{font-size:.95rem;font-weight:600;min-height:1.4rem;text-align:center;}
-.feedback.ok{color:var(--accent);}
-.feedback.no{color:var(--wrong);}
-.reveal{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--accent);letter-spacing:.12em;}
-.next-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--text);}
-.next-btn:hover{border-color:var(--accent);}
+main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+
+.hud { display:flex; align-items:center; justify-content:space-between; width:100%; gap:.5rem; flex-wrap:wrap; }
+.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.45rem .9rem; text-align:center; min-width:64px; }
+.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--gold); }
+.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
 /* progress dots */
-.dots{display:flex;gap:.35rem;}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s;}
-.dot.done{background:var(--accent);}
-.dot.wrong{background:var(--wrong);}
-/* end card */
-.end-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-.end-card h2{font-family:'Syne',sans-serif;font-size:1.8rem;}
-.end-score{font-size:3rem;font-family:'Syne',sans-serif;color:var(--accent);font-weight:800;}
-.score-submit{display:flex;gap:.5rem;width:100%;flex-wrap:wrap;}
-.score-submit input{flex:1;min-width:120px;background:#0e0e10;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;}
-.score-submit input:focus{outline:none;border-color:var(--accent);}
-.btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:.5rem 1.1rem;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;}
-.btn:hover{opacity:.85;}
-.play-again{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.55rem 1.3rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--text);}
-.play-again:hover{border-color:var(--accent);}
-.lb-section{width:100%;max-width:520px;padding:0 1rem 2.5rem;}
-.lb-section h2{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.75rem;color:var(--accent);}
-.lb-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-.lb-table th{text-align:left;color:var(--muted);font-weight:500;padding:.35rem .5rem;border-bottom:1px solid var(--border);}
-.lb-table td{padding:.4rem .5rem;border-bottom:1px solid #1e1e24;}
-.lb-table tr:first-child td{color:var(--accent);font-weight:600;}
+.dots { display:flex; gap:.3rem; flex-wrap:wrap; justify-content:center; }
+.dot { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
+.dot.done  { background:var(--correct); }
+.dot.wrong { background:var(--wrong); }
+.dot.skip  { background:#b8860b; }
+
+.q-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.75rem 1.5rem; width:100%; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+.q-meta { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
+.definition { font-size:1rem; line-height:1.7; color:var(--text); text-align:center; max-width:380px; }
+.letter-hint { font-family:'Space Mono',monospace; font-size:.75rem; color:var(--muted); letter-spacing:.06em; }
+
+.spell-wrap { display:flex; gap:.5rem; width:100%; max-width:360px; }
+.spell-input { flex:1; background:#0a0a0a; border:2px solid var(--border2); border-radius:4px; padding:.7rem 1rem; font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--text); text-align:center; letter-spacing:.12em; text-transform:uppercase; transition:border-color .2s; }
+.spell-input:focus { outline:none; border-color:var(--gold); }
+.spell-input.ok  { border-color:var(--correct); }
+.spell-input.bad { border-color:var(--wrong); animation:shake .35s; }
+
+.hint-row { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; }
+.hint-box { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.4rem .85rem; font-size:.78rem; color:var(--muted); font-style:italic; text-align:center; width:100%; max-width:360px; min-height:1.8rem; }
+.hint-box.revealed { color:var(--text); font-style:normal; }
+
+.feedback { min-height:1.4rem; font-size:.88rem; font-weight:600; text-align:center; font-family:'Space Mono',monospace; }
+.feedback.ok  { color:var(--correct); }
+.feedback.bad { color:var(--wrong); }
+
+/* end */
+.end-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem 1.5rem; width:100%; text-align:center; display:flex; flex-direction:column; align-items:center; gap:1rem; animation:fadeIn .4s ease; }
+.end-score { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--gold); }
+.words-review { width:100%; display:flex; flex-direction:column; gap:.4rem; margin-top:.5rem; }
+.review-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.5rem .9rem; font-size:.85rem; cursor:pointer; transition:border-color .15s; }
+.review-item:hover { border-color:var(--gold); }
+.review-item .rword { font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); }
+.review-item .rstatus { font-size:.7rem; font-family:'Space Mono',monospace; }
+.rstatus.ok   { color:var(--correct); }
+.rstatus.bad  { color:var(--wrong); }
+.rstatus.skip { color:#b8860b; }
+
+.lb-section { width:100%; max-width:520px; padding:0 1rem 2.5rem; }
 </style>
 </head>
 <body>
-<nav>
-  <a href="index.html">← Games</a>
-  <h1>✍️ SpellIt!</h1>
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">✍️ SpellIt!</span>
   <span></span>
 </nav>
+
 <main>
-  <div class="streak-bar"><span class="fire">🔥</span> Streak: <span class="streak-val" id="streakVal">0</span></div>
-  <div class="dots" id="dots"></div>
-  <div class="card" id="gameCard">
-    <div class="round-label" id="roundLabel">Word 1 of 8</div>
-    <div class="definition" id="defText">Loading…</div>
-    <div class="letter-count" id="letterCount"></div>
-    <div class="input-row">
-      <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type here…"/>
-      <button class="check-btn" onclick="checkSpelling()">Check</button>
+  <div class="hud">
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy</button>
+      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard</button>
     </div>
-    <button class="hint-btn" id="hintBtn" onclick="showHint()">💡 Show hint</button>
-    <div class="feedback" id="feedback"></div>
-    <div class="reveal" id="revealWord" style="display:none"></div>
-    <button class="next-btn" id="nextBtn" style="display:none" onclick="nextWord()">Next word →</button>
+    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+    <div class="hud-pill"><div class="val" id="streakVal">🔥0</div><div class="lbl">Streak</div></div>
+    <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
   </div>
-  <div class="end-card" id="endCard" style="display:none">
-    <h2>Round complete!</h2>
-    <div class="end-score" id="endScore"></div>
-    <p style="color:var(--muted);font-size:.9rem" id="endMsg"></p>
-    <div class="score-submit">
-      <input id="nameInput" placeholder="Your name" maxlength="20"/>
-      <button class="btn" onclick="handleSubmit()">Add to leaderboard</button>
+
+  <div class="dots" id="dots"></div>
+
+  <div class="q-card" id="qCard">
+    <div class="q-meta" id="qMeta">Word 1 of 8</div>
+    <div class="definition" id="defText"></div>
+    <div class="letter-hint" id="letterHint"></div>
+    <div class="spell-wrap">
+      <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="TYPE HERE" maxlength="22"/>
+      <button class="btn-primary" onclick="checkSpelling()">✓</button>
     </div>
-    <button class="play-again" onclick="restartGame()">Play again</button>
+    <div class="hint-box" id="hintBox">Hint not revealed yet</div>
+    <div class="hint-row">
+      <button class="btn-ghost" id="hint1Btn" onclick="showHint1()">💡 Hint (−3 pts)</button>
+      <button class="btn-ghost" id="hint2Btn" onclick="showHint2()">🔍 Extra hint (−5 pts, once only)</button>
+      <button class="btn-ghost" id="skipBtn"  onclick="skipWord()">⏭ Skip (−8 pts)</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="end-card" id="endCard" style="display:none">
+    <div class="eyebrow">Round complete</div>
+    <div class="end-score" id="endScore"></div>
+    <p style="color:var(--muted);font-size:.88rem" id="endMsg"></p>
+    <div class="words-review" id="wordsReview"></div>
+    <div id="submitArea" style="width:100%">
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>
+    </div>
+    <button class="btn-ghost" onclick="restartGame()">Play again</button>
   </div>
 </main>
 
 <div class="lb-section">
-  <h2>🏆 Leaderboard</h2>
-  <table class="lb-table">
-    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-    <tbody id="lbBody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
-  </table>
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script src="shared.js"></script>
 <script>
-const GAME = 'spellit';
-const ALL_WORDS = [
-  {word:'NECESSARY',def:'Something you <strong>cannot do without</strong>; essential.',hint:'1 C, 2 S'},
-  {word:'ACCOMMODATION',def:'A place to <strong>stay or live</strong>, especially temporarily.',hint:'2 C\'s, 2 M\'s'},
-  {word:'ENTREPRENEUR',def:'A person who <strong>starts a business</strong>, taking on financial risk.',hint:'Ends in -EUR'},
-  {word:'CONSCIENTIOUS',def:'Being <strong>very careful and thorough</strong> in your work.',hint:'Silent C after S'},
-  {word:'MILLENNIUM',def:'A period of <strong>one thousand years</strong>.',hint:'2 L\'s, 2 N\'s'},
-  {word:'EMBARRASS',def:'To make someone feel <strong>awkward or ashamed</strong>.',hint:'2 R\'s, 2 S\'s'},
-  {word:'OCCURRENCE',def:'An event or <strong>incident that happens</strong>.',hint:'2 C\'s, 2 R\'s'},
-  {word:'PRIVILEGE',def:'A special <strong>right or advantage</strong> given to a person.',hint:'No D before the GE'},
-  {word:'SEPARATE',def:'To <strong>divide or move apart</strong>.',hint:'There\'s a RAT in sepaRATE'},
-  {word:'COLLEAGUES',def:'People you <strong>work with</strong>.',hint:'Ends in -AGUES'},
-  {word:'LIAISON',def:'A <strong>communication or connection</strong> between groups.',hint:'Two I\'s'},
-  {word:'COMMITMENT',def:'A <strong>promise or obligation</strong> to do something.',hint:'2 M\'s, 2 T\'s'},
-  {word:'EXAGGERATE',def:'To <strong>overstate</strong> something, making it seem more than it is.',hint:'2 G\'s'},
-  {word:'HIERARCHY',def:'A <strong>ranking system</strong> where some are above others.',hint:'IE not EI'},
-  {word:'BUREAUCRACY',def:'A system with <strong>complex rules and processes</strong>.',hint:'Starts with BURE-'},
-  {word:'SUPERSEDE',def:'To <strong>replace</strong> something older with something newer.',hint:'Ends in -SEDE not -CEDE'},
-  {word:'PARLIAMENT',def:'The <strong>lawmaking body</strong> of a country.',hint:'There\'s LIAM in parLIAMent'},
-  {word:'INDEPENDENT',def:'Free from <strong>outside control</strong>; self-governing.',hint:'Ends in -ENT not -ANT'},
-  {word:'PARTICULARLY',def:'<strong>Especially</strong> or to a greater degree than usual.',hint:'Don\'t forget the -ARLY'},
-  {word:'QUESTIONNAIRE',def:'A <strong>list of questions</strong> given to many people.',hint:'Double N'},
+const EASY_WORDS = [
+  {word:'NECESSARY',   def:'Something you cannot do without; essential for a purpose.',
+   hint1:'Has one C and two S\'s',         hint2:'ne-CES-sa-ry (stress the first syllable)'},
+  {word:'ACCOMMODATION', def:'A place to stay or live, especially temporarily.',
+   hint1:'Has two C\'s and two M\'s',       hint2:'Think: ACC-OMM-odation'},
+  {word:'EMBARRASS',  def:'To make someone feel awkward or ashamed in front of others.',
+   hint1:'Has two R\'s and two S\'s',       hint2:'em-BAR-RASS (double consonants after the A)'},
+  {word:'OCCURRENCE', def:'An event or incident that takes place.',
+   hint1:'Has two C\'s and two R\'s',       hint2:'oc-CUR-RENCE (double the C and the R)'},
+  {word:'PRIVILEGE',  def:'A special right or advantage belonging to a particular person.',
+   hint1:'No D before the final -GE',       hint2:'priv-I-lege (three syllables, no D)'},
+  {word:'SEPARATE',   def:'To divide things, or to set them apart from each other.',
+   hint1:'There is a rat hiding inside it', hint2:'sep-A-rate (the middle vowel is A not E)'},
+  {word:'COMMITMENT', def:'A promise or firm decision to do something.',
+   hint1:'Has two M\'s and two T\'s',       hint2:'com-MIT-MENT (double the T)'},
+  {word:'EXAGGERATE', def:'To describe something as greater or more extreme than it really is.',
+   hint1:'Has two G\'s',                    hint2:'ex-AGG-erate (double G in the middle)'},
+  {word:'PARLIAMENT', def:'The legislative body that makes laws for a country.',
+   hint1:'Ends in -ment (not -mint)',       hint2:'parlia-MENT (three syllables, no extra letters)'},
+  {word:'INDEPENDENT', def:'Free from outside control; not depending on others.',
+   hint1:'Ends in -ent (not -ant)',         hint2:'in-de-PEN-dent (focus on the -PEND- part)'},
 ];
 
-const base = dailyIndex(ALL_WORDS.length);
-const ROUND = Array.from({length:8}, (_,i) => ALL_WORDS[(base+i)%ALL_WORDS.length]);
+const HARD_WORDS = [
+  {word:'CONSCIENTIOUS', def:'Being very careful and thorough in your work; doing everything properly.',
+   hint1:'Has a silent C after the S',      hint2:'con-sci-EN-tious (7 syllables, silent C)'},
+  {word:'MILLENNIUM',    def:'A period of one thousand years.',
+   hint1:'Has two L\'s and two N\'s',       hint2:'mil-LEN-nium (LL then NN)'},
+  {word:'LIAISON',       def:'A communication or working relationship between two groups.',
+   hint1:'Has two I\'s (not just one)',      hint2:'li-AI-son (the AI in the middle)'},
+  {word:'QUESTIONNAIRE', def:'A list of questions given to many people to gather information.',
+   hint1:'Has two N\'s before the -aire',   hint2:'question-NAIRE (double N before the ending)'},
+  {word:'SUPERSEDE',     def:'To take the place of something older or less effective.',
+   hint1:'Ends in -sede, not -cede or -seed',hint2:'super-SEDE (unique spelling among -cede words)'},
+  {word:'BUREAUCRACY',   def:'A system of government or management with many complicated rules.',
+   hint1:'Starts with B-U-R-E-A-U',         hint2:'bureau-CRACY (bureau + cracy)'},
+  {word:'HIERARCHY',     def:'A ranking system where some people or things are above others.',
+   hint1:'Contains -IE- (not -EI-)',         hint2:'hier-ARCHY (hi-er-ar-ky, 4 syllables)'},
+  {word:'PARTICULARLY',  def:'Especially, or to a greater degree than usual.',
+   hint1:'Ends in -arly (not -erly)',        hint2:'particu-LARLY (6 syllables)'},
+  {word:'ENTREPRENEUR',  def:'A person who starts a business and takes on financial risk.',
+   hint1:'Borrowed from French; ends in -eur',hint2:'entre-pre-NEUR (French origin, silent final R in French)'},
+  {word:'CONSCIOUSLY',   def:'In a way that is intentional and fully aware.',
+   hint1:'Has a silent C after the S',       hint2:'con-SCI-ously (3 syllables: con-shus-ly)'},
+];
+
 const ROUND_SIZE = 8;
+let diff = 'easy', wordBank = EASY_WORDS;
+let roundWords = [], current = 0, score = 0, streak = 0, skipsLeft = 3, extraHintUsed = false;
+let attempts = 0, h1Shown = false, h2Shown = false;
+let results = []; // {word, status: 'correct'|'wrong'|'skip', pts}
 
-let current = 0, streak = 0, roundScore = 0, attempts = 0, hintUsed = false;
+function setDiff(d) {
+  diff = d;
+  wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
+  document.getElementById('tabE').classList.toggle('active', d==='easy');
+  document.getElementById('tabH').classList.toggle('active', d==='hard');
+  restartGame();
+}
 
-function init() {
-  buildDots(); loadWord(); loadLeaderboard();
-  document.getElementById('spellInput').addEventListener('keydown', e => { if(e.key==='Enter') checkSpelling(); });
+function initRound() {
+  const base = dailyIndex(wordBank.length);
+  roundWords = Array.from({length: ROUND_SIZE}, (_,i) => wordBank[(base+i) % wordBank.length]);
+  current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = [];
+  document.getElementById('scoreVal').textContent  = 0;
+  document.getElementById('streakVal').textContent = '🔥0';
+  document.getElementById('skipsVal').textContent  = 3;
+  document.getElementById('qCard').style.display   = 'flex';
+  document.getElementById('endCard').style.display = 'none';
+  buildDots(); loadWord();
+  renderLeaderboard('spellit_' + diff, 'lbBody');
 }
 
 function buildDots() {
   const el = document.getElementById('dots'); el.innerHTML = '';
-  for(let i=0;i<ROUND_SIZE;i++){const d=document.createElement('div');d.className='dot';d.id='dot'+i;el.appendChild(d);}
+  for (let i=0;i<ROUND_SIZE;i++) {
+    const d = document.createElement('div'); d.className='dot'; d.id='dot'+i; el.appendChild(d);
+  }
 }
 
 function loadWord() {
-  const w = ROUND[current];
-  document.getElementById('roundLabel').textContent = `Word ${current+1} of ${ROUND_SIZE}`;
-  document.getElementById('defText').innerHTML = w.def;
-  document.getElementById('letterCount').textContent = `${w.word.length} letters`;
+  const w = roundWords[current];
+  document.getElementById('qMeta').textContent = `Word ${current+1} of ${ROUND_SIZE}`;
+  document.getElementById('defText').textContent = w.def;
+  document.getElementById('letterHint').textContent = `${w.word.length} letters`;
   document.getElementById('spellInput').value = '';
   document.getElementById('spellInput').className = 'spell-input';
   document.getElementById('spellInput').disabled = false;
+  document.getElementById('hintBox').textContent = 'Click a hint button below to reveal';
+  document.getElementById('hintBox').classList.remove('revealed');
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
-  document.getElementById('revealWord').style.display = 'none';
-  document.getElementById('nextBtn').style.display = 'none';
-  document.getElementById('hintBtn').style.display = 'inline-block';
-  hintUsed = false; attempts = 0;
-  setTimeout(()=>document.getElementById('spellInput').focus(), 100);
+  document.getElementById('hint1Btn').style.display = 'inline-block';
+  document.getElementById('hint2Btn').style.display = extraHintUsed ? 'none' : 'inline-block';
+  document.getElementById('skipBtn').style.display  = skipsLeft > 0 ? 'inline-block' : 'none';
+  document.getElementById('hint1Btn').disabled = false;
+  attempts = 0; h1Shown = false; h2Shown = false;
+  setTimeout(() => document.getElementById('spellInput').focus(), 80);
 }
 
-function showHint() {
-  const w = ROUND[current];
-  document.getElementById('feedback').textContent = `💡 ${w.hint}`;
-  document.getElementById('feedback').className = 'feedback';
-  document.getElementById('hintBtn').style.display = 'none';
-  hintUsed = true;
+function showHint1() {
+  if (h1Shown) return;
+  h1Shown = true;
+  const h = document.getElementById('hintBox');
+  h.textContent = roundWords[current].hint1;
+  h.classList.add('revealed');
+  document.getElementById('hint1Btn').disabled = true;
+  // deduct points only if not yet answered
+  // tracked in checkSpelling via h1Shown flag
 }
+
+function showHint2() {
+  if (extraHintUsed || h2Shown) return;
+  extraHintUsed = true; h2Shown = true;
+  const h = document.getElementById('hintBox');
+  h.textContent = roundWords[current].hint2;
+  h.classList.add('revealed');
+  document.getElementById('hint2Btn').style.display = 'none';
+}
+
+function skipWord() {
+  if (skipsLeft <= 0) return;
+  skipsLeft--;
+  score = Math.max(0, score - 8);
+  streak = 0;
+  document.getElementById('skipsVal').textContent = skipsLeft;
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = '🔥' + streak;
+  document.getElementById('dot'+current).className = 'dot skip';
+  results.push({word: roundWords[current].word, status:'skip', pts:-8});
+  advanceWord();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('spellInput').addEventListener('keydown', e => { if(e.key==='Enter') checkSpelling(); });
+});
 
 function checkSpelling() {
   const inp = document.getElementById('spellInput');
   const guess = inp.value.trim().toUpperCase();
-  const target = ROUND[current].word;
+  const target = roundWords[current].word.toUpperCase();
   attempts++;
+
   if (guess === target) {
-    inp.className = 'spell-input correct';
-    const pts = hintUsed ? 5 : (attempts === 1 ? 15 : 10);
-    roundScore += pts; streak++;
-    document.getElementById('streakVal').textContent = streak;
-    document.getElementById('feedback').textContent = `✓ Correct! +${pts} pts`;
-    document.getElementById('feedback').className = 'feedback ok';
+    inp.className = 'spell-input ok';
+    let pts = 15;
+    if (h1Shown) pts -= 3;
+    if (h2Shown) pts -= 5;
+    if (attempts > 1) pts -= (attempts - 1) * 3;
+    pts = Math.max(2, pts);
+    score += pts; streak++;
+    document.getElementById('scoreVal').textContent  = score;
+    document.getElementById('streakVal').textContent = '🔥' + streak;
+    document.getElementById('feedback').textContent  = `✓ Correct! +${pts} pts`;
+    document.getElementById('feedback').className    = 'feedback ok';
     document.getElementById('dot'+current).className = 'dot done';
     inp.disabled = true;
-    document.getElementById('hintBtn').style.display = 'none';
-    if (current + 1 < ROUND_SIZE) {
-      document.getElementById('nextBtn').style.display = 'inline-block';
-    } else { setTimeout(endRound, 900); }
+    results.push({word: target, status:'correct', pts});
+    setTimeout(advanceWord, 900);
   } else {
-    inp.className = 'spell-input wrong';
-    streak = 0; document.getElementById('streakVal').textContent = 0;
+    inp.className = 'spell-input bad';
+    streak = 0;
+    document.getElementById('streakVal').textContent = '🔥0';
     if (attempts >= 3) {
-      document.getElementById('revealWord').textContent = target;
-      document.getElementById('revealWord').style.display = 'block';
-      document.getElementById('feedback').textContent = 'Better luck next time!';
-      document.getElementById('feedback').className = 'feedback no';
+      score = Math.max(0, score - 2);
+      document.getElementById('scoreVal').textContent = score;
+      document.getElementById('feedback').textContent = `✗ The answer was: ${roundWords[current].word}`;
+      document.getElementById('feedback').className   = 'feedback bad';
       document.getElementById('dot'+current).className = 'dot wrong';
       inp.disabled = true;
-      document.getElementById('hintBtn').style.display = 'none';
-      if (current + 1 < ROUND_SIZE) { document.getElementById('nextBtn').style.display = 'inline-block'; }
-      else { setTimeout(endRound, 1200); }
+      results.push({word: target, status:'wrong', pts:0});
+      setTimeout(advanceWord, 1400);
     } else {
-      document.getElementById('feedback').textContent = `✗ Try again (attempt ${attempts}/3)`;
-      document.getElementById('feedback').className = 'feedback no';
-      setTimeout(()=>{ inp.className='spell-input'; }, 400);
+      document.getElementById('feedback').textContent = `✗ Try again (${attempts}/3)`;
+      document.getElementById('feedback').className   = 'feedback bad';
+      setTimeout(() => { inp.className='spell-input'; inp.value=''; inp.focus(); }, 400);
     }
   }
 }
 
-function nextWord() { current++; loadWord(); }
+function advanceWord() {
+  current++;
+  if (current >= ROUND_SIZE) { endRound(); return; }
+  loadWord();
+}
 
 function endRound() {
-  document.getElementById('gameCard').style.display = 'none';
+  document.getElementById('qCard').style.display  = 'none';
   document.getElementById('endCard').style.display = 'flex';
-  document.getElementById('endScore').textContent = roundScore + ' pts';
-  const max = ROUND_SIZE * 15;
-  document.getElementById('endMsg').textContent = roundScore >= max*0.8 ? '🎉 Outstanding!' : roundScore >= max*0.5 ? '👏 Well done!' : 'Keep practising your spelling!';
-  document.getElementById('endCard').dataset.score = roundScore;
+  document.getElementById('endScore').textContent  = score + ' pts';
+  const maxPts = ROUND_SIZE * 15;
+  document.getElementById('endMsg').textContent = score >= maxPts * .8 ? '🎉 Outstanding spelling!' : score >= maxPts * .5 ? '👏 Solid effort!' : 'Keep at it — spelling improves with practice!';
+  document.getElementById('endCard').dataset.score = score;
+
+  // Words review
+  const rev = document.getElementById('wordsReview'); rev.innerHTML = '';
+  results.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'review-item';
+    el.innerHTML = `<span class="rword">${r.word}</span><span class="rstatus ${r.status}">${r.status === 'correct' ? `+${r.pts} pts` : r.status === 'skip' ? 'skipped' : 'missed'}</span>`;
+    el.addEventListener('click', () => showDefinitionModal(r.word));
+    rev.appendChild(el);
+  });
 }
 
-function restartGame() {
-  current = 0; streak = 0; roundScore = 0;
-  document.getElementById('streakVal').textContent = 0;
-  document.getElementById('gameCard').style.display = 'flex';
-  document.getElementById('endCard').style.display = 'none';
-  buildDots(); loadWord();
+function restartGame() { initRound(); }
+
+async function doSubmit() {
+  const area = document.getElementById('endCard');
+  await handleScoreSubmit('spellit_' + diff, parseInt(area.dataset.score), 'nameInput', 'submitArea', 'lbBody');
 }
 
-async function handleSubmit() {
-  const name = document.getElementById('nameInput').value.trim(); if(!name) return;
-  const sc = parseInt(document.getElementById('endCard').dataset.score);
-  await submitScore(GAME, name, sc);
-  document.querySelector('.score-submit').innerHTML = '<p style="color:var(--accent);font-size:.85rem">✓ Score submitted!</p>';
-  loadLeaderboard();
-}
-
-async function loadLeaderboard() {
-  const data = await getLeaderboard(GAME);
-  const tbody = document.getElementById('lbBody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted)">No scores yet — be first!</td></tr>';return;}
-  tbody.innerHTML = data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.player_name}</td><td>${r.score}</td></tr>`).join('');
-}
-
-init();
+initRound();
 </script>
 </body>
 </html>
