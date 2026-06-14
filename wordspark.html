@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WordSpark — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 1rem 2rem; gap:1rem; max-width:520px; margin:0 auto; width:100%; }
 
@@ -100,28 +102,228 @@ main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 
 <script>
 // ── Word banks ─────────────────────────────────────────────────────
 const WORDS4 = [
-  {w:'BOLD',t:'Personality'},{w:'CALM',t:'Emotions'},{w:'DARE',t:'Actions'},
-  {w:'EARN',t:'Work'},{w:'FAIR',t:'Values'},{w:'GAIN',t:'Progress'},
-  {w:'HOPE',t:'Emotions'},{w:'IDEA',t:'Thinking'},{w:'JUST',t:'Values'},
-  {w:'KIND',t:'Personality'},{w:'LAZY',t:'Personality'},{w:'MIND',t:'Thinking'},
-  {w:'NEAT',t:'Appearance'},{w:'OPEN',t:'Personality'},{w:'PACE',t:'Movement'},
-  {w:'QUIT',t:'Actions'},{w:'RISK',t:'Actions'},{w:'SAFE',t:'Values'},
-  {w:'TASK',t:'Work'},{w:'URGE',t:'Emotions'},{w:'VAST',t:'Size'},
-  {w:'WISE',t:'Personality'},{w:'ZEAL',t:'Emotions'},{w:'ABLE',t:'Skills'},
-  {w:'BASE',t:'Structure'},{w:'CORE',t:'Structure'},{w:'DEEP',t:'Concepts'},
-  {w:'EDGE',t:'Position'},{w:'FLOW',t:'Movement'},{w:'GLOW',t:'Light'},
+  {w:'BOLD',t:'Personality'},
+  {w:'CALM',t:'Emotions'},
+  {w:'KIND',t:'Personality'},
+  {w:'WISE',t:'Personality'},
+  {w:'GLAD',t:'Emotions'},
+  {w:'GRIM',t:'Emotions'},
+  {w:'KEEN',t:'Personality'},
+  {w:'MILD',t:'Personality'},
+  {w:'VAIN',t:'Personality'},
+  {w:'WARM',t:'Personality'},
+  {w:'COLD',t:'Personality'},
+  {w:'FIRM',t:'Personality'},
+  {w:'TAME',t:'Personality'},
+  {w:'WILD',t:'Personality'},
+  {w:'LAZY',t:'Personality'},
+  {w:'SANE',t:'Thinking'},
+  {w:'RUDE',t:'Behaviour'},
+  {w:'COSY',t:'Feelings'},
+  {w:'DULL',t:'Feelings'},
+  {w:'SMUG',t:'Personality'},
+  {w:'DARE',t:'Actions'},
+  {w:'EARN',t:'Work'},
+  {w:'GAIN',t:'Progress'},
+  {w:'GROW',t:'Change'},
+  {w:'HEAL',t:'Health'},
+  {w:'HIDE',t:'Actions'},
+  {w:'JUMP',t:'Movement'},
+  {w:'KICK',t:'Actions'},
+  {w:'LIFT',t:'Actions'},
+  {w:'MEND',t:'Actions'},
+  {w:'RACE',t:'Sport'},
+  {w:'RISE',t:'Movement'},
+  {w:'RUSH',t:'Movement'},
+  {w:'SINK',t:'Movement'},
+  {w:'SOAR',t:'Movement'},
+  {w:'SPIN',t:'Movement'},
+  {w:'TRIP',t:'Travel'},
+  {w:'WAIT',t:'Time'},
+  {w:'WALK',t:'Movement'},
+  {w:'WRAP',t:'Actions'},
+  {w:'BARK',t:'Nature'},
+  {w:'CAVE',t:'Nature'},
+  {w:'CLAY',t:'Nature'},
+  {w:'COAL',t:'Nature'},
+  {w:'DUNE',t:'Nature'},
+  {w:'FERN',t:'Nature'},
+  {w:'GALE',t:'Weather'},
+  {w:'HAIL',t:'Weather'},
+  {w:'HILL',t:'Nature'},
+  {w:'LAKE',t:'Nature'},
+  {w:'LEAF',t:'Nature'},
+  {w:'MIST',t:'Weather'},
+  {w:'MOON',t:'Space'},
+  {w:'MOSS',t:'Nature'},
+  {w:'PEAT',t:'Nature'},
+  {w:'REED',t:'Nature'},
+  {w:'REEF',t:'Nature'},
+  {w:'SAND',t:'Nature'},
+  {w:'SNOW',t:'Weather'},
+  {w:'TIDE',t:'Nature'},
+  {w:'ARCH',t:'Buildings'},
+  {w:'BARN',t:'Buildings'},
+  {w:'BOLT',t:'Objects'},
+  {w:'CAGE',t:'Objects'},
+  {w:'CART',t:'Transport'},
+  {w:'DOCK',t:'Places'},
+  {w:'DOOR',t:'Buildings'},
+  {w:'DRUM',t:'Music'},
+  {w:'FORK',t:'Food'},
+  {w:'GATE',t:'Buildings'},
+  {w:'HOOK',t:'Objects'},
+  {w:'HOSE',t:'Objects'},
+  {w:'LAMP',t:'Objects'},
+  {w:'LOCK',t:'Objects'},
+  {w:'LOFT',t:'Buildings'},
+  {w:'MASK',t:'Objects'},
+  {w:'NAIL',t:'Objects'},
+  {w:'OVEN',t:'Food'},
+  {w:'PIPE',t:'Objects'},
+  {w:'ROPE',t:'Objects'},
+  {w:'CLUE',t:'Thinking'},
+  {w:'DEBT',t:'Finance'},
+  {w:'DOOM',t:'Concepts'},
+  {w:'DUTY',t:'Values'},
+  {w:'EDGE',t:'Concepts'},
+  {w:'ENVY',t:'Emotions'},
+  {w:'FACT',t:'Thinking'},
+  {w:'FATE',t:'Concepts'},
+  {w:'FLAW',t:'Concepts'},
+  {w:'GIFT',t:'Concepts'},
+  {w:'GIST',t:'Communication'},
+  {w:'GOAL',t:'Concepts'},
+  {w:'HINT',t:'Communication'},
+  {w:'HOPE',t:'Emotions'},
+  {w:'IDEA',t:'Thinking'},
+  {w:'JEST',t:'Communication'},
+  {w:'LORE',t:'Knowledge'},
+  {w:'LURE',t:'Concepts'},
+  {w:'MYTH',t:'Knowledge'},
+  {w:'OATH',t:'Values'}
 ];
+
 const WORDS6 = [
-  {w:'BRIGHT',t:'Light'},{w:'CASTLE',t:'Buildings'},{w:'DANGER',t:'Concepts'},
-  {w:'ESCAPE',t:'Actions'},{w:'FAMINE',t:'Society'},{w:'GATHER',t:'Actions'},
-  {w:'HERALD',t:'History'},{w:'IMPACT',t:'Concepts'},{w:'JOYFUL',t:'Emotions'},
-  {w:'KINDLY',t:'Personality'},{w:'LAUNCH',t:'Actions'},{w:'MANNER',t:'Behaviour'},
-  {w:'NATION',t:'Society'},{w:'OBJECT',t:'Things'},{w:'PATRON',t:'People'},
-  {w:'QUAINT',t:'Appearance'},{w:'REVEAL',t:'Actions'},{w:'SIGNAL',t:'Communication'},
-  {w:'TENDER',t:'Personality'},{w:'UNFOLD',t:'Actions'},{w:'VANISH',t:'Movement'},
-  {w:'WANDER',t:'Movement'},{w:'YEOMAN',t:'History'},{w:'ZEALOT',t:'People'},
-  {w:'ABLAZE',t:'Nature'},{w:'BOUNTY',t:'Concepts'},{w:'CUSTOM',t:'Society'},
-  {w:'DARING',t:'Personality'},{w:'ELAPSE',t:'Time'},{w:'FERVOR',t:'Emotions'},
+  {w:'BRIGHT',t:'Personality'},
+  {w:'CANDID',t:'Personality'},
+  {w:'CLEVER',t:'Personality'},
+  {w:'FICKLE',t:'Personality'},
+  {w:'GENTLE',t:'Personality'},
+  {w:'HONEST',t:'Values'},
+  {w:'JOVIAL',t:'Personality'},
+  {w:'LIVELY',t:'Personality'},
+  {w:'MODEST',t:'Personality'},
+  {w:'PLACID',t:'Personality'},
+  {w:'SERENE',t:'Emotions'},
+  {w:'SHREWD',t:'Personality'},
+  {w:'TENDER',t:'Personality'},
+  {w:'WICKED',t:'Personality'},
+  {w:'HUMBLE',t:'Personality'},
+  {w:'ABSORB',t:'Actions'},
+  {w:'ADMIRE',t:'Emotions'},
+  {w:'ASSERT',t:'Communication'},
+  {w:'BETRAY',t:'Actions'},
+  {w:'COMPEL',t:'Actions'},
+  {w:'CONVEY',t:'Communication'},
+  {w:'DEBATE',t:'Communication'},
+  {w:'ENDURE',t:'Actions'},
+  {w:'EVOLVE',t:'Change'},
+  {w:'EXPAND',t:'Change'},
+  {w:'FALTER',t:'Actions'},
+  {w:'FOSTER',t:'Actions'},
+  {w:'GATHER',t:'Actions'},
+  {w:'IGNITE',t:'Actions'},
+  {w:'INVADE',t:'Actions'},
+  {w:'LINGER',t:'Movement'},
+  {w:'MANAGE',t:'Work'},
+  {w:'OBTAIN',t:'Actions'},
+  {w:'PURSUE',t:'Actions'},
+  {w:'REVEAL',t:'Communication'},
+  {w:'ARCTIC',t:'Nature'},
+  {w:'CANOPY',t:'Nature'},
+  {w:'CAVERN',t:'Nature'},
+  {w:'COBALT',t:'Colours'},
+  {w:'CRAGGY',t:'Nature'},
+  {w:'DESERT',t:'Nature'},
+  {w:'FALLOW',t:'Nature'},
+  {w:'FOREST',t:'Nature'},
+  {w:'FOSSIL',t:'Nature'},
+  {w:'FROZEN',t:'Weather'},
+  {w:'GRAVEL',t:'Nature'},
+  {w:'HARBOR',t:'Places'},
+  {w:'JUNGLE',t:'Nature'},
+  {w:'MARSHY',t:'Nature'},
+  {w:'MEADOW',t:'Nature'},
+  {w:'MOLTEN',t:'Nature'},
+  {w:'PEBBLE',t:'Nature'},
+  {w:'POLLEN',t:'Nature'},
+  {w:'RAPIDS',t:'Nature'},
+  {w:'MISTLE',t:'Nature'},
+  {w:'ANCHOR',t:'Objects'},
+  {w:'ARCADE',t:'Places'},
+  {w:'AWNING',t:'Objects'},
+  {w:'BAKERY',t:'Places'},
+  {w:'BEACON',t:'Objects'},
+  {w:'BRIDGE',t:'Buildings'},
+  {w:'CASTLE',t:'Buildings'},
+  {w:'CELLAR',t:'Buildings'},
+  {w:'CHISEL',t:'Objects'},
+  {w:'COBBLE',t:'Objects'},
+  {w:'COLUMN',t:'Buildings'},
+  {w:'CRADLE',t:'Objects'},
+  {w:'EMBLEM',t:'Objects'},
+  {w:'FENDER',t:'Objects'},
+  {w:'GROTTO',t:'Places'},
+  {w:'HEARTH',t:'Buildings'},
+  {w:'HELMET',t:'Objects'},
+  {w:'KETTLE',t:'Objects'},
+  {w:'LADDER',t:'Objects'},
+  {w:'LOCKET',t:'Objects'},
+  {w:'BOUNTY',t:'Concepts'},
+  {w:'BREACH',t:'Concepts'},
+  {w:'BURDEN',t:'Concepts'},
+  {w:'CANDOR',t:'Values'},
+  {w:'CENSOR',t:'Society'},
+  {w:'COMBAT',t:'Conflict'},
+  {w:'CUSTOM',t:'Society'},
+  {w:'DEFECT',t:'Concepts'},
+  {w:'ENIGMA',t:'Concepts'},
+  {w:'FERVOR',t:'Emotions'},
+  {w:'FRENZY',t:'Emotions'},
+  {w:'GLAMOR',t:'Concepts'},
+  {w:'GRUDGE',t:'Emotions'},
+  {w:'HERALD',t:'History'},
+  {w:'MARVEL',t:'Concepts'},
+  {w:'ORDEAL',t:'Concepts'},
+  {w:'PLIGHT',t:'Concepts'},
+  {w:'QUALMS',t:'Emotions'},
+  {w:'REBUKE',t:'Communication'},
+  {w:'REFUGE',t:'Places'},
+  {w:'RIPPLE',t:'Nature'},
+  {w:'RUGGED',t:'Nature'},
+  {w:'RUSTLE',t:'Nature'},
+  {w:'SAVOUR',t:'Senses'},
+  {w:'SCORCH',t:'Actions'},
+  {w:'SCULPT',t:'Actions'},
+  {w:'SERMON',t:'Communication'},
+  {w:'SIGNAL',t:'Communication'},
+  {w:'SIGNET',t:'Objects'},
+  {w:'SIMMER',t:'Actions'},
+  {w:'SINFUL',t:'Values'},
+  {w:'SKETCH',t:'Arts'},
+  {w:'SMOKEY',t:'Nature'},
+  {w:'SNATCH',t:'Actions'},
+  {w:'SPIRAL',t:'Shapes'},
+  {w:'STARVE',t:'Health'},
+  {w:'STIGMA',t:'Concepts'},
+  {w:'STROLL',t:'Movement'},
+  {w:'STURDY',t:'Personality'},
+  {w:'SUBTLE',t:'Personality'},
+  {w:'SUMMIT',t:'Nature'},
+  {w:'SUNDER',t:'Actions'},
+  {w:'SUNSET',t:'Nature'},
+  {w:'SUPPLE',t:'Personality'}
 ];
 
 // Large valid-word set (5000+ common English words via inline list)
@@ -266,29 +468,83 @@ function updateKeys(guess, result) {
 function shakeRow(r) { rows[r].forEach(t => { t.classList.add('shake'); setTimeout(() => t.classList.remove('shake'), 500); }); }
 function showMsg(m) { const el = document.getElementById('message'); el.textContent = m; setTimeout(() => { if(el.textContent===m) el.textContent=''; }, 2200); }
 
+// ── Smart definition fetcher ─────────────────────────────────────
+// Searches all meanings + definitions to find the best one:
+// prefers entries with an example, avoids circular definitions
+// (where the definition contains the word itself), falls back to Datamuse.
+async function fetchBestDefinition(word) {
+  const w = word.toLowerCase();
+
+  // Level 1: Free Dictionary API — search all meanings for the best definition
+  try {
+    const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w)}`);
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data) && data[0]) {
+        // Collect all definitions across all meanings
+        const candidates = [];
+        for (const entry of data) {
+          for (const meaning of (entry.meanings || [])) {
+            for (const defObj of (meaning.definitions || [])) {
+              if (!defObj.definition) continue;
+              const defLower = defObj.definition.toLowerCase();
+              // Skip circular: definition starts with "to <word>" or contains just the word
+              const circular = defLower.startsWith(`to ${w}`) ||
+                               defLower === w + '.' ||
+                               defLower.startsWith(`${w} `) && defLower.length < w.length + 15;
+              if (!circular) {
+                candidates.push({
+                  pos: meaning.partOfSpeech || '',
+                  def: defObj.definition,
+                  ex:  defObj.example || ''
+                });
+              }
+            }
+          }
+        }
+        if (candidates.length) {
+          // Prefer candidates that have an example sentence
+          const withExample = candidates.filter(c => c.ex);
+          const best = withExample.length ? withExample[0] : candidates[0];
+          return best;
+        }
+      }
+    }
+  } catch(e) { /* fall through */ }
+
+  // Level 2: Datamuse API
+  try {
+    const r = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(w)}&md=d&max=1`);
+    if (r.ok) {
+      const data = await r.json();
+      const defs = data?.[0]?.defs;
+      if (defs?.length) {
+        const parts = defs[0].split('\t');
+        const posMap = {n:'noun',v:'verb',adj:'adjective',adv:'adverb'};
+        return { pos: posMap[parts[0]] || '', def: parts[1] || '', ex: '' };
+      }
+    }
+  } catch(e) { /* fall through */ }
+
+  return { pos: '', def: 'Definition not available.', ex: '' };
+}
+
 function endGame(won) {
   gameOver = true;
   const sc = won ? Math.max(10, 120 - guesses.length * 20) : 0;
-  showMsg(won ? `🎉 Brilliant! Score: ${sc} pts` : `The word was ${TARGET}`);
+  showMsg(won ? `🎉 Brilliant! Score: ${sc} pts` : `Better luck tomorrow — see the definition below`);
 
   // Show word + definition from Free Dictionary API
   const rev = document.getElementById('winReveal');
   rev.style.display = 'block';
   rev.innerHTML = `<div class="win-word">${TARGET}</div><div class="win-def" style="color:var(--gold)">Looking up definition…</div>`;
 
-  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${TARGET.toLowerCase()}`)
-    .then(r => r.json())
-    .then(data => {
-      if (!Array.isArray(data)) throw new Error();
-      const def = data[0]?.meanings?.[0]?.definitions?.[0];
-      rev.innerHTML = `
-        <div class="win-word">${TARGET}</div>
-        <div class="win-def">${def?.definition || 'Definition not available.'}</div>
-        ${def?.example ? `<div class="win-ex">"${def.example}"</div>` : ''}`;
-    })
-    .catch(() => {
-      rev.innerHTML = `<div class="win-word">${TARGET}</div><div class="win-def" style="color:var(--muted)">Definition not available.</div>`;
-    });
+  fetchBestDefinition(TARGET).then(result => {
+    rev.innerHTML = `
+      <div class="win-word">${TARGET}</div>
+      <div class="win-def">${result.def}</div>
+      ${result.ex ? `<div class="win-ex">"${result.ex}"</div>` : ''}`;
+  });
 
   if (won) {
     document.getElementById('submitArea').style.display = 'block';
