@@ -47,10 +47,11 @@ body {
   color:#4fc3f7; letter-spacing:.08em;
 }
 #muteBtn {
-  width:34px; height:34px; border-radius:50%;
+  height:34px; padding:0 .65rem; border-radius:17px;
   background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
-  color:#fff; font-size:1rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:.72rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:.3rem;
+  font-family:'Orbitron',monospace; letter-spacing:.06em; white-space:nowrap;
   transition:background .2s;
 }
 #muteBtn:hover { background:rgba(255,255,255,.15); }
@@ -116,7 +117,7 @@ body {
 <nav id="topNav">
   <a href="index.html">← GAMES</a>
   <span class="nav-title">✈ ENGLISH ACE</span>
-  <button id="muteBtn" title="Toggle sound">🔊</button>
+  <button id="muteBtn" title="Music volume">🔊 100%</button>
 </nav>
 
 <!-- Start screen -->
@@ -651,7 +652,17 @@ document.getElementById('submitBtn').addEventListener('click',async()=>{
 // ═══════════════════════════════════════════════════════════════════
 // AUDIO — lazy-initialised inside startAudio()
 // ═══════════════════════════════════════════════════════════════════
-let audioReady=false,muted=false;
+let audioReady=false;
+let musicGain=null; // separate gain for music-only volume
+// Volume states: 0=100%, 1=50%, 2=muted
+const VOL_STATES = [
+  { label:'🔊 100%', musicVol:0,   sfxVol:0,        muted:false },
+  { label:'🔉  50%', musicVol:-12, sfxVol:-6,       muted:false },
+  { label:'🔇  OFF', musicVol:-Infinity, sfxVol:-Infinity, muted:true  },
+];
+let volState = 0; // start at 100%
+// Convenience getters
+function isMuted(){ return VOL_STATES[volState].muted; }
 let lead,bass,padSynth,fxSynth,noiseFX;
 let menuSeq=null,gameSeq=null;
 let lastWaveBpm=0;
@@ -675,13 +686,15 @@ async function startAudio(){
     console.log('Tone.start() OK, state:', Tone.context.state);
 
     // Build instruments now that AudioContext exists
-    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.1, sustain:.5,release:.15},volume:-8 }).toDestination();
-    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.18,sustain:.35,release:.1}, volume:-12}).toDestination();
+    // SFX instruments → destination directly (unaffected by music volume)
     fxSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0,release:.08},volume:-8 }).toDestination();
     noiseFX = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.005,decay:.07,sustain:0,release:.02},volume:-16}).toDestination();
 
-    // Pad with reverb
-    const rev = new Tone.Reverb({decay:2, wet:.4}).toDestination();
+    // Music instruments → musicGain → destination (separate volume control)
+    musicGain = new Tone.Gain(1).toDestination();
+    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.1, sustain:.5,release:.15},volume:-8 }).connect(musicGain);
+    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.18,sustain:.35,release:.1}, volume:-14}).connect(musicGain);
+    const rev = new Tone.Reverb({decay:2, wet:.4}).connect(musicGain);
     padSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator:{type:'sine'}, envelope:{attack:.4,decay:.3,sustain:.7,release:1.5}, volume:-20
     }).connect(rev);
@@ -708,7 +721,7 @@ function scheduleMusic(mode){
   const interval = mode === 'menu' ? '16n' : '16n';
 
   musicEventId = Tone.getTransport().scheduleRepeat(time => {
-    if(muted || !audioReady) return;
+    if(isMuted() || !audioReady) return;
 
     if(musicMode === 'menu'){
       // Arpeggio lead
@@ -756,47 +769,56 @@ function updateBpm(){
 }
 
 function sfxCorrect(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   fxSynth.triggerAttackRelease('C5','16n',now);
   fxSynth.triggerAttackRelease('G5','16n',now+0.12);
 }
 function sfxWrong(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   fxSynth.triggerAttackRelease('C3','16n',now);
   noiseFX.triggerAttackRelease('16n',now);
 }
 function sfxShield(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   fxSynth.triggerAttackRelease('E5','8n',now);
   fxSynth.triggerAttackRelease('G5','8n',now+.1);
   fxSynth.triggerAttackRelease('C6','8n',now+.2);
 }
 function sfxPowerup(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   ['C5','E5','G5','C6'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'16n',now+i*.08));
 }
 function sfxGameOver(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   ['G3','F3','E3','C3'].forEach((n,i)=>bass.triggerAttackRelease(n,'8n',now+i*.18));
 }
 function sfxWaveUp(){
-  if(!audioReady||muted)return;
+  if(!audioReady||isMuted())return;
   const now=Tone.now();
   ['C4','E4','G4','C5'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'16n',now+i*.07));
 }
 
 // ── Mute button ────────────────────────────────────────────────────
-document.getElementById('muteBtn').addEventListener('click',async()=>{
+document.getElementById('muteBtn').addEventListener('click', async () => {
   await startAudio();
-  muted=!muted;
-  document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';
-  Tone.getDestination().volume.value=muted?-Infinity:0;
+  volState = (volState + 1) % VOL_STATES.length;
+  applyVolume();
 });
+
+function applyVolume(){
+  const v = VOL_STATES[volState];
+  document.getElementById('muteBtn').textContent = v.label;
+  // Music volume via Tone master — only affects the music bus
+  // We route music through a separate Gain node (set up in startAudio)
+  if(musicGain) musicGain.gain.rampTo(
+    v.musicVol === -Infinity ? 0 : Math.pow(10, v.musicVol/20), 0.1
+  );
+}
 
 // ── Boot ───────────────────────────────────────────────────────────
 document.getElementById('startHi').textContent='BEST: '+bestScore;
