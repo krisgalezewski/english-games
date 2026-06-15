@@ -40,14 +40,41 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .opt.wrong   { background:var(--wrong-dim);   border-color:var(--wrong);   color:var(--wrong);   pointer-events:none; animation:shake .35s; }
 .opt.used    { opacity:.3; pointer-events:none; }
 
-/* Mode 3: matching pairs */
-.pairs-area { display:grid; grid-template-columns:1fr 1fr; gap:1rem; width:100%; }
-.pairs-col h3 { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:.5rem; }
-.pair-item { background:var(--surface2); border:2px solid var(--border); border-radius:6px; padding:.5rem .9rem; font-weight:600; cursor:pointer; margin-bottom:.4rem; transition:all .16s; text-align:center; font-size:.9rem; }
-.pair-item:hover { border-color:var(--gold); }
-.pair-item.selected { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
-.pair-item.matched  { border-color:var(--correct); background:var(--correct-dim); color:var(--correct); pointer-events:none; cursor:default; }
-.pair-item.wrong-flash { border-color:var(--wrong); background:var(--wrong-dim); animation:shake .35s; }
+/* Mode 3: fun card-matching */
+.cards-area { width:100%; }
+.cards-label { font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem; text-align:center; }
+.cards-grid { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; }
+.match-card {
+  background:var(--surface2); border:2px solid var(--border2);
+  border-radius:10px; padding:.55rem 1rem;
+  font-family:'DM Sans',sans-serif; font-size:.92rem; font-weight:600;
+  cursor:pointer; transition:all .18s; text-align:center;
+  min-width:80px; position:relative; user-select:none;
+}
+.match-card::before {
+  content:''; position:absolute; inset:0; border-radius:8px;
+  background:linear-gradient(135deg,rgba(255,255,255,.06),transparent);
+  pointer-events:none;
+}
+.match-card:hover:not(.matched):not(.selected) {
+  border-color:var(--gold); transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(212,175,55,.2);
+}
+.match-card.selected {
+  border-color:var(--gold); background:var(--gold-dim); color:var(--gold);
+  transform:translateY(-3px); box-shadow:0 8px 24px rgba(212,175,55,.3);
+}
+.match-card.matched {
+  border-color:var(--correct); background:var(--correct-dim); color:var(--correct);
+  pointer-events:none; transform:scale(.97);
+}
+.match-card.wrong-flash {
+  border-color:var(--wrong); background:var(--wrong-dim);
+  animation:shake .35s;
+}
+.match-card.verb-card { border-left:3px solid rgba(212,175,55,.5); }
+.match-card.particle-card { border-left:3px solid rgba(79,195,247,.5); font-style:italic; }
+.m3-progress { font-family:'Space Mono',monospace; font-size:.7rem; color:var(--muted); text-align:center; }
 
 /* Mode 3 typed */
 .type-input-wrap { display:flex; gap:.5rem; width:100%; max-width:380px; }
@@ -77,6 +104,19 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .lb-section { width:100%; max-width:600px; padding:0 1rem 2.5rem; }
 
 #phase-intro, #phase-game, #phase-result { width:100%; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+
+/* Gentle blink on inactive mode tabs to draw attention */
+@keyframes modePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.55; }
+}
+.diff-tab:not(.active), .mode-tab:not(.active) {
+  animation: modePulse 2.8s ease-in-out infinite;
+}
+.diff-tab:not(.active):hover, .mode-tab:not(.active):hover {
+  animation: none;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -137,12 +177,13 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     </div>
   </div>
 
-  <!-- Mode 3: match pairs -->
-  <div id="m3area" style="display:none;width:100%">
-    <div class="instruction" style="margin-bottom:.5rem">Click a verb, then its matching particle</div>
-    <div class="pairs-area">
-      <div><h3>Verbs</h3><div id="m3verbs"></div></div>
-      <div><h3>Particles</h3><div id="m3parts"></div></div>
+  <!-- Mode 3: fun card matching -->
+  <div id="m3area" style="display:none;width:100%;flex-direction:column;align-items:center;gap:.75rem">
+    <div class="instruction">Match each verb with its particle · Wrong pair = −5 seconds</div>
+    <div class="m3-progress" id="m3progress"></div>
+    <div class="cards-area">
+      <div class="cards-label">Tap a verb, then its matching particle</div>
+      <div class="cards-grid" id="m3grid"></div>
     </div>
   </div>
 
@@ -167,6 +208,11 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
       <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
       <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
     </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem">
+    <button class="btn-ghost" onclick="resetGame()">Play again</button>
+    <button class="btn-ghost" onclick="goToIntro()">Change mode</button>
+    <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
   </div>
 </div>
 </main>
@@ -556,7 +602,8 @@ function selectMode(n) {
 }
 
 function init() {
-  const vi = dailyIndex(VERBS.length);
+  const vi = freshDailyIndex('phrasalblitz', VERBS.length);
+  markSeen('phrasalblitz', vi);
   currentVerb = VERBS[vi];
   document.getElementById('introVerb').textContent = currentVerb.verb;
   selectMode(1);
@@ -649,70 +696,118 @@ function submitTyped() {
   setTimeout(() => { inp.className = 'type-input'; inp.focus(); }, 400);
 }
 
-// ── Mode 3: Match pairs ────────────────────────────────────────────
-let m3selectedVerb = null, m3selectedPart = null;
-const m3pairs = []; // [{verb, particle, def, ex}]
+// ── Mode 3: Fun card matching ───────────────────────────────────────
+// Key rules:
+// 1. Verbs are unique — no verb appears twice
+// 2. Particles are unique on screen — pick pairs where particles don't clash
+// 3. All cards mixed in one shuffled grid
+let m3pairs = [];
+let m3selectedCard = null; // {el, idx, type: 'verb'|'particle'}
 
 function buildMode3() {
-  // Pick 6 pairs from today's verb + 2 other verbs (mix)
-  m3pairs.length = 0;
-  // Use currentVerb pairs, max 4
-  const mainPairs = currentVerb.pairs.slice(0, 4).map(p => ({verb: currentVerb.verb, particle: p.p, def: p.def, ex: p.ex}));
-  // Add 2 pairs from another verb
-  const otherVerb = VERBS[(dailyIndex(VERBS.length) + 1) % VERBS.length];
-  const extraPairs = otherVerb.pairs.slice(0, 2).map(p => ({verb: otherVerb.verb, particle: p.p, def: p.def, ex: p.ex}));
-  m3pairs.push(...mainPairs, ...extraPairs);
+  // Build a set of unambiguous pairs from available verbs
+  m3pairs = [];
+  const usedParticles = new Set();
+  const usedVerbs     = new Set();
 
-  const shuffledVerbs    = dailyShuffle(m3pairs.map((_,i) => i));
-  const shuffledParticles = dailyShuffle(m3pairs.map((_,i) => i));
+  // Shuffle all available verbs
+  const allVerbs = [...VERBS].sort(() => Math.random() - .5);
 
-  const verbsCol = document.getElementById('m3verbs'); verbsCol.innerHTML = '';
-  const partsCol = document.getElementById('m3parts'); partsCol.innerHTML = '';
+  for (const verb of allVerbs) {
+    if (m3pairs.length >= 6) break;
+    if (usedVerbs.has(verb.verb)) continue;
+    // Find a particle for this verb that isn't already used
+    const availPairs = verb.pairs.filter(p => !usedParticles.has(p.p));
+    if (availPairs.length === 0) continue;
+    // Pick a random available pair
+    const chosen = availPairs[Math.floor(Math.random() * availPairs.length)];
+    m3pairs.push({ verb: verb.verb, particle: chosen.p, def: chosen.def, ex: chosen.ex });
+    usedVerbs.add(verb.verb);
+    usedParticles.add(chosen.p);
+  }
 
-  shuffledVerbs.forEach(idx => {
-    const el = document.createElement('div');
-    el.className = 'pair-item'; el.textContent = m3pairs[idx].verb; el.dataset.idx = idx; el.dataset.role = 'verb';
-    el.addEventListener('click', () => m3click(el, 'verb', idx));
-    verbsCol.appendChild(el);
+  // Build cards: each pair contributes a verb card + particle card
+  // All cards are mixed together in one grid
+  const cards = [];
+  m3pairs.forEach((pair, idx) => {
+    cards.push({ text: pair.verb,     type: 'verb',     idx });
+    cards.push({ text: pair.particle, type: 'particle', idx });
   });
-  shuffledParticles.forEach(idx => {
+  // True random shuffle
+  cards.sort(() => Math.random() - .5);
+
+  const grid = document.getElementById('m3grid'); grid.innerHTML = '';
+  cards.forEach(card => {
     const el = document.createElement('div');
-    el.className = 'pair-item'; el.textContent = m3pairs[idx].particle; el.dataset.idx = idx; el.dataset.role = 'part';
-    el.addEventListener('click', () => m3click(el, 'part', idx));
-    partsCol.appendChild(el);
+    el.className = `match-card ${card.type}-card`;
+    el.textContent = card.type === 'verb'
+      ? card.text                         // verb shown as-is
+      : card.text;                        // particle shown as-is
+    el.dataset.idx  = card.idx;
+    el.dataset.type = card.type;
+    el.addEventListener('click', () => m3click(el, card.idx, card.type));
+    grid.appendChild(el);
   });
+
+  m3selectedCard = null;
   document.getElementById('gameVerb').textContent = '';
-  document.getElementById('gameInstruction').textContent = 'Click a verb, then its particle';
+  document.getElementById('gameInstruction').textContent = `Match ${m3pairs.length} verb–particle pairs`;
+  updateM3Progress();
 }
 
-function m3click(el, role, idx) {
+function updateM3Progress() {
+  const matched = found.size;
+  const total   = m3pairs.length;
+  const el = document.getElementById('m3progress');
+  if (el) el.textContent = `${matched} / ${total} matched`;
+}
+
+function m3click(el, idx, type) {
   if (el.classList.contains('matched')) return;
-  if (role === 'verb') {
-    document.querySelectorAll('#m3verbs .pair-item').forEach(e => e.classList.remove('selected'));
-    el.classList.add('selected'); m3selectedVerb = idx;
+
+  if (!m3selectedCard) {
+    // First selection — just highlight it
+    el.classList.add('selected');
+    m3selectedCard = { el, idx, type };
+    return;
+  }
+
+  // Second selection
+  const prev = m3selectedCard;
+
+  if (prev.el === el) {
+    // Clicked same card — deselect
+    el.classList.remove('selected');
+    m3selectedCard = null;
+    return;
+  }
+
+  // Must select one verb and one particle, matching the same pair index
+  const sameIdx  = prev.idx === idx;
+  const diffType = prev.type !== type;
+
+  if (sameIdx && diffType) {
+    // ✅ Correct match!
+    prev.el.classList.replace('selected', 'matched');
+    el.classList.add('matched');
+    found.add(idx);
+    addFoundChip(m3pairs[idx].verb + ' ' + m3pairs[idx].particle, String(idx));
+    finalScore++;
+    document.getElementById('scoreVal').textContent = finalScore;
+    updateM3Progress();
+    if (found.size === m3pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
-    document.querySelectorAll('#m3parts .pair-item').forEach(e => e.classList.remove('selected'));
-    el.classList.add('selected'); m3selectedPart = idx;
+    // ❌ Wrong — flash both red, penalise
+    prev.el.classList.add('wrong-flash');
+    el.classList.add('wrong-flash');
+    penalise();
+    setTimeout(() => {
+      prev.el.classList.remove('wrong-flash', 'selected');
+      el.classList.remove('wrong-flash', 'selected');
+    }, 600);
   }
-  if (m3selectedVerb !== null && m3selectedPart !== null) {
-    const vEl = document.querySelector(`#m3verbs [data-idx="${m3selectedVerb}"]`);
-    const pEl = document.querySelector(`#m3parts [data-idx="${m3selectedPart}"]`);
-    if (m3selectedVerb === m3selectedPart) {
-      // Correct!
-      vEl.classList.replace('selected','matched');
-      pEl.classList.replace('selected','matched');
-      found.add(m3selectedVerb);
-      addFoundChip(m3pairs[m3selectedVerb].verb + ' ' + m3pairs[m3selectedVerb].particle, String(m3selectedVerb));
-      finalScore++;
-      document.getElementById('scoreVal').textContent = finalScore;
-      if (found.size === m3pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
-    } else {
-      vEl.classList.add('wrong-flash'); pEl.classList.add('wrong-flash');
-      penalise();
-      setTimeout(() => { vEl.classList.remove('wrong-flash','selected'); pEl.classList.remove('wrong-flash','selected'); }, 600);
-    }
-    m3selectedVerb = null; m3selectedPart = null;
-  }
+
+  m3selectedCard = null;
 }
 
 // ── Shared helpers ────────────────────────────────────────────────
@@ -814,6 +909,12 @@ function endGame() {
 function resetGame() {
   document.getElementById('phase-result').style.display = 'none';
   document.getElementById('phase-intro').style.display = 'flex';
+  document.getElementById('m2input')?.removeEventListener('keydown', m2keydown);
+}
+function goToIntro() {
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-game').style.display   = 'none';
+  document.getElementById('phase-intro').style.display  = 'flex';
   document.getElementById('m2input')?.removeEventListener('keydown', m2keydown);
 }
 

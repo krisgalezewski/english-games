@@ -58,6 +58,19 @@ main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 
 
 /* Submit / LB area */
 .lb-section { width:100%; max-width:520px; padding:0 1rem 2.5rem; }
+
+/* Gentle blink on inactive mode tabs to draw attention */
+@keyframes modePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.55; }
+}
+.diff-tab:not(.active), .mode-tab:not(.active) {
+  animation: modePulse 2.8s ease-in-out infinite;
+}
+.diff-tab:not(.active):hover, .mode-tab:not(.active):hover {
+  animation: none;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -86,6 +99,11 @@ main { display:flex; flex-direction:column; align-items:center; padding:1.25rem 
     <div class="submit-row">
       <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
       <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">
+      <button class="btn-ghost" onclick="initGame()">Play again</button>
+      <button class="btn-ghost" onclick="setMode(mode===4?6:4)" id="wsSwitchBtn"></button>
+      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
     </div>
   </div>
 </main>
@@ -370,7 +388,9 @@ function initGame() {
   document.getElementById('message').textContent = '';
 
   const bank = mode === 4 ? WORDS4 : WORDS6;
-  const entry = bank[dailyIndex(bank.length)];
+  const wsIdx = freshDailyIndex('wordspark_'+mode, bank.length);
+  markSeen('wordspark_'+mode, wsIdx);
+  const entry = bank[wsIdx];
   TARGET = entry.w; THEME = entry.t;
   document.getElementById('themeBadge').textContent = `Theme: ${THEME}`;
 
@@ -552,7 +572,13 @@ function endGame(won) {
     document.getElementById('submitArea').style.display = 'block';
     document.getElementById('submitArea').dataset.score = sc;
     document.getElementById('submitArea').dataset.game = 'wordspark_' + mode;
+  } else {
+    document.getElementById('submitArea').style.display = 'block';
+    document.getElementById('submitArea').dataset.score = 0;
+    document.getElementById('submitArea').dataset.game = 'wordspark_' + mode;
   }
+  const wsSwBtn = document.getElementById('wsSwitchBtn');
+  if(wsSwBtn) wsSwBtn.textContent = mode===4 ? 'Switch to Hard (6 letters)' : 'Switch to Easy (4 letters)';
 }
 
 async function doSubmit() {

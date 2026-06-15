@@ -51,6 +51,19 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .review-answer.bad { color:var(--wrong); }
 
 .lb-section { width:100%; max-width:560px; padding:0 1rem 2.5rem; }
+
+/* Gentle blink on inactive mode tabs to draw attention */
+@keyframes modePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.55; }
+}
+.diff-tab:not(.active), .mode-tab:not(.active) {
+  animation: modePulse 2.8s ease-in-out infinite;
+}
+.diff-tab:not(.active):hover, .mode-tab:not(.active):hover {
+  animation: none;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -97,7 +110,11 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
         <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
-    <button class="btn-ghost" onclick="restartGame()">Play again</button>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem">
+      <button class="btn-ghost" onclick="restartGame()">Play again</button>
+      <button class="btn-ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="ccSwitchLabel"></span></button>
+      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    </div>
   </div>
 </main>
 
@@ -966,8 +983,9 @@ function shuffle(arr) {
 }
 
 function initRound() {
-  const base = dailyIndex(qBank.length);
-  roundQs = Array.from({length: Math.min(ROUND_SIZE, qBank.length)}, (_,i) => qBank[(base+i)%qBank.length]);
+  const ccIndices = freshIndices('collocationcrash_'+diff, qBank, Math.min(ROUND_SIZE, qBank.length));
+  ccIndices.forEach(i => markSeen('collocationcrash_'+diff, i));
+  roundQs = ccIndices.map(i => qBank[i]);
   current = 0; score = 0; roundResults = [];
   document.getElementById('scoreVal').textContent = 0;
   document.getElementById('qCard').style.display  = 'flex';
@@ -1031,6 +1049,8 @@ function endRound() {
   document.getElementById('finalScore').textContent = `${score} / ${max}`;
   document.getElementById('endMsg').textContent = score >= max*.8 ? '🎉 Collocation master!' : score >= max*.5 ? '👏 Solid work!' : 'Keep practising — collocations take time to master!';
   document.getElementById('endCard').dataset.score = score;
+  const ccsl = document.getElementById('ccSwitchLabel');
+  if(ccsl) ccsl.textContent = diff==='easy' ? 'Hard' : 'Easy';
 
   const rg = document.getElementById('reviewGrid'); rg.innerHTML = '';
   roundResults.forEach(({q, chosen}) => {

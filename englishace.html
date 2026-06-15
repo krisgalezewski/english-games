@@ -352,14 +352,20 @@ const WAVE_DUR=18;
 const plane={x:0,y:0,w:44,h:52,targetX:0,invincible:0};
 
 // ── Input ──────────────────────────────────────────────────────────
-let dragActive=false,dragStartX=0,planeStartX=0;
+let dragActive=false,dragStartX=0,planeStartX=0,lastTap=0;
 canvas.addEventListener('pointerdown',e=>{
   if(state!=='playing') return;
   dragActive=true; dragStartX=e.clientX; planeStartX=plane.x;
   canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove',e=>{ if(!dragActive) return; plane.targetX=planeStartX+(e.clientX-dragStartX); });
-canvas.addEventListener('pointerup',   ()=>{ dragActive=false; });
+canvas.addEventListener('pointerup', e=>{
+  dragActive=false;
+  // Double-tap detection for pause (mobile)
+  const now = Date.now();
+  if(now - lastTap < 300 && (state==='playing'||state==='paused')) togglePause();
+  lastTap = now;
+});
 canvas.addEventListener('pointercancel',()=>{ dragActive=false; });
 const keys={};
 window.addEventListener('keydown',e=>{ keys[e.key]=true; });
@@ -380,9 +386,12 @@ function spawnWave(){
   currentQ=pickQuestion();
   const W=canvas.width;
   const wrongCount=Math.min(3,1+Math.floor(wave/3));
+  // Limit answers on narrow screens to prevent overlap
+  const maxAnswers = canvas.width < 420 ? 2 : (canvas.width < 600 ? 3 : wrongCount+1);
+  const limitedWrong = Math.min(wrongCount, maxAnswers - 1);
   const answers=[
     {text:currentQ.correct,correct:true},
-    ...[...currentQ.wrong].sort(()=>Math.random()-.5).slice(0,wrongCount).map(w=>({text:w,correct:false}))
+    ...[...currentQ.wrong].sort(()=>Math.random()-.5).slice(0,limitedWrong).map(w=>({text:w,correct:false}))
   ].sort(()=>Math.random()-.5);
   const spacing=W/(answers.length+1);
   const baseSpeed=65+wave*10+Math.random()*15;
@@ -480,8 +489,9 @@ function drawPlane(x,y,alpha){
 function drawToken(t){
   ctx.save();
   ctx.globalAlpha=t.alpha;
-  ctx.font='bold 15px Orbitron, monospace';
-  if(!t.w) t.w=ctx.measureText(t.text).width+36;
+  const tFontSize = canvas.width < 420 ? 11 : 15;
+  ctx.font=`bold ${tFontSize}px Orbitron, monospace`;
+  if(!t.w) t.w=ctx.measureText(t.text).width+(canvas.width<420?20:36);
   const wobbleX=Math.sin(frameCount*t.wobble+t.wobbleOff)*2;
   ctx.translate(t.x+wobbleX,t.y);
   const rx=-t.w/2,ry=-t.h/2,rw=t.w,rh=t.h,rad=10;
@@ -508,7 +518,7 @@ function drawToken(t){
 
   // Text — dark navy for maximum readability on white
   ctx.fillStyle='#0a1628';
-  ctx.font='bold 15px Orbitron, monospace';
+  ctx.font=`bold ${tFontSize}px Orbitron, monospace`;
   ctx.textAlign='center';ctx.textBaseline='middle';
   // Subtle text shadow for crispness
   ctx.shadowColor='rgba(0,0,50,0.2)';ctx.shadowBlur=2;
@@ -793,105 +803,118 @@ let lastWaveBpm=0;
 // C major / F major / G major / Am  (fanfare progression)
 // Dotted-rhythm lead gives it that march/fanfare feel
 const MENU_TRACK = {
-  name: 'Menu', bpm: 60,
-  // Bass: half-note feel, stately
+  // Star Wars opening fanfare feel — heroic, major, stately
+  // C major progression with dotted march rhythm
+  name: 'Menu',
+  bpm: 60,
   bass: [
+    // Stately half-note bass — fanfare feel
     'C2','C2','C2','C2', 'F2','F2','F2','F2',
     'G2','G2','G2','G2', 'C2','C2','C2','C2',
   ],
-  // Lead: dotted fanfare melody — C C C  E G  (5-note motif, iconic rhythm)
-  // Represented as 16th steps: long-short-long pattern
-  // steps: 0=C4, 1=rest, 2=C4, 3=rest, 4=C4, 5=rest, 6=E4, 7=rest,
-  //        8=G4, 9=rest, 10=rest, 11=rest, 12=G4...
   melody: [
-    // C major fanfare motif (bars 1-2)
-    'C4',null,'C4',null,'C4',null,'E4',null,
-    'G4',null,null,null,'G4',null,null,null,
-    // F major response (bars 3-4)
-    'F4',null,'F4',null,'F4',null,'A4',null,
-    'C5',null,null,null,'C5',null,null,null,
+    // The iconic 5-note fanfare motif: C C C (short) E♭ G / G G G F E♭ D C
+    // Represented in 16th steps with rests for the dotted rhythm feel
+    'C4',null,'C4',null, 'C4',null,'Eb4',null,
+    'G4',null,null,null,  'G4',null,null,null,
+    // Second phrase: Bb Ab G F Eb
+    'Bb4',null,'Ab4',null,'G4',null,'F4',null,
+    'Eb4',null,null,null,  null,null,null,null,
+    // Repeat with variation
+    'C4',null,'C4',null, 'C4',null,'Eb4',null,
+    'G4',null,'G4',null,  'F4',null,'Eb4',null,
+    'D4',null,'C4',null,  null,null,null,null,
+    null,null,null,null,  null,null,null,null,
   ],
-  pad: [['C3','E3','G3'],['F2','A2','C3'],['G2','B2','D3'],['C3','E3','G3']],
+  pad: [
+    ['C3','E3','G3'],   // C major
+    ['F2','A2','C3'],   // F major
+    ['G2','B2','D3'],   // G major
+    ['C3','E3','G3'],   // C major
+  ],
 };
-
 // ── GAME TRACKS ───────────────────────────────────────────────────
 const TRACKS = [
   {
-    // ── Track 1: DASH (Dm–Bb–F–C) ────────────────────────────────
-    // Smalltown Boy vibe — driving minor arpeggio, pulsing 16th bass
-    // 4-on-the-floor kick, melancholic hi-NRG
+    // ── DASH: Bach's Toccata & Fugue in D minor (public domain) ──
+    // Iconic opening: D4-A4-G#4-A4 descending motif, dramatic
     name: 'Dash —',
     bpmGame: 70,
     bass: [
-      'D2','D2','D2','D2', 'Bb1','Bb1','Bb1','Bb1',
-      'F2','F2','F2','F2', 'C2','C2','C2','C2',
+      // D minor pedal, organ-like quarter-note bass
+      'D1','D1','A1','D1', 'D1','D1','A1','D1',
+      'G1','G1','D2','G1', 'A1','A1','E2','A1',
     ],
     arp: [
-      'D4','F4','A4','D5','A4','F4','D4','F4',
-      'Bb3','D4','F4','Bb4','F4','D4','Bb3','D4',
-      'F3','A3','C4','F4','C4','A3','F3','A3',
-      'C4','E4','G4','C5','G4','E4','C4','E4',
+      // Toccata opening motif: D5 A4 G#4 A4 | F4 E4 D4 — then ornaments
+      'D5','A4','Bb4','A4', 'F4','E4','D4','E4',
+      'F4','G4','A4','Bb4', 'A4','G4','F4','E4',
+      'D4','F4','A4','D5',  'C5','Bb4','A4','G4',
+      'F4','G4','A4','F4',  'E4','D4','E4','A4',
     ],
-    pad: [['D3','F3','A3'],['Bb2','D3','F3'],['F2','A2','C3'],['C3','E3','G3']],
+    pad: [
+      ['D2','F2','A2'],    // Dm
+      ['G2','Bb2','D3'],   // Gm
+      ['A2','C#3','E3'],   // A major (tension)
+      ['D2','F2','A2'],    // Dm resolve
+    ],
     kick: true,
   },
   {
-    // ── Track 2: HYPHEN (Am–G–C–F) ───────────────────────────────
-    // Riptide by Vance Joy — bright, carefree, ukulele-like arpeggios
-    // Major feel despite Am start, light bouncy rhythm
-    // Key: Am–G–C–F (same as Riptide)
+    // ── HYPHEN: Inspired by Billie Jean energy ───────────────────
+    // Am groove, syncopated bass, iconic 4-on-the-floor feel
+    // Original composition inspired by the feel, not the notes
     name: 'Hyphen -',
     bpmGame: 60,
     bass: [
-      'A1','A1','A1','A1', 'G2','G2','G2','G2',
-      'C2','C2','C2','C2', 'F2','F2','F2','F2',
+      // Classic Am groove bass — syncopated, punchy
+      'A1','A1','E2','A1', 'A1','G1','A1','E1',
+      'D2','D2','A1','D2', 'E2','E2','B1','E2',
     ],
-    // Bright staccato arp — ukulele-like, bouncy
     arp: [
-      // Am — bright, not brooding
-      'A3','E4','A4','C5','A4','E4','C4','E4',
-      // G — lifts, hopeful
-      'G3','D4','G4','B4','G4','D4','B3','D4',
-      // C — warm major
-      'C4','E4','G4','C5','G4','E4','C4','E4',
-      // F — gentle resolution
-      'F3','A3','C4','F4','C4','A3','F3','A3',
+      // Bright staccato melody over Am — danceable, propulsive
+      'A4','C5','E5','A5', 'E5','C5','A4','C5',
+      'G4','B4','D5','G5', 'D5','B4','G4','B4',
+      'F4','A4','C5','F5', 'C5','A4','F4','A4',
+      'E4','G4','B4','E5', 'B4','G4','E4','G4',
     ],
-    pad: [['A2','C3','E3'],['G2','B2','D3'],['C3','E3','G3'],['F2','A2','C3']],
-    kick: false, // lighter, no heavy kick for Riptide feel
+    pad: [
+      ['A2','C3','E3'],   // Am
+      ['D3','F3','A3'],   // Dm
+      ['F2','A2','C3'],   // F
+      ['E2','G#2','B2'],  // E (tension)
+    ],
+    kick: false,
   },
   {
-    // ── Track 3: ELLIPSIS (Am–E–Am–E / Für Elise melody) ─────────
-    // Für Elise feel — classical minor melody, waltz-like bass
-    // The iconic E–D#–E–D#–E–B–D–C–A melody over Am
+    // ── ELLIPSIS: Rhythm Is a Dancer inspired ────────────────────
+    // Driving 4/4 eurodance feel, Cm, pulsing bass, bright melody
+    // Original composition with that 90s trance/dance energy
     name: 'Ellipsis …',
     bpmGame: 80,
     bass: [
-      // Am — waltz feel: root on 1, fifth on 2&3
-      'A1','E2','A1','A1', 'E2','A1','A1','E2',
-      // E7 — tension
-      'E2','B2','E2','E2', 'B1','E2','E2','B1',
-      // Am return
-      'A1','E2','A1','A1', 'E2','A1','A1','E2',
-      // E7 resolve back
-      'E2','B1','E2','B1', 'E2','B1','E2','E2',
+      // Cm pulsing 8th-note bass — eurodance staple
+      'C2','C2','G1','C2', 'C2','C2','G1','Bb1',
+      'Ab1','Ab1','Eb2','Ab1', 'Ab1','Ab1','Eb1','G1',
+      'Eb2','Eb2','Bb1','Eb2', 'Eb2','Eb2','Bb1','Db2',
+      'G1','G1','D2','G1',  'G1','G1','D2','F1',
     ],
-    // Für Elise melody — the iconic opening phrase as 16th notes
     arp: [
-      // bar 1: E D# E D# E B D C
-      'E5','Eb5','E5','Eb5','E5','B4','D5','C5',
-      // bar 2: A (long) C E A
-      'A4',null,'C4','E4','A4',null,'E4',null,
-      // bar 3: E D# E D# E B D C
-      'E5','Eb5','E5','Eb5','E5','B4','D5','C5',
-      // bar 4: A (long) E A —
-      'A4',null,'E4',null,'A4',null,null,null,
+      // Bright synth melody, rhythmic, anthem-like
+      'C5','Eb5','G5','C6', 'G5','Eb5','C5','Eb5',
+      'Ab4','C5','Eb5','Ab5','Eb5','C5','Ab4','C5',
+      'Eb5','G5','Bb5','Eb6','Bb5','G5','Eb5','G5',
+      'G4','Bb4','D5','G5', 'D5','Bb4','G4','Bb4',
     ],
-    pad: [['A2','C3','E3'],['E2','G#2','B2'],['A2','C3','E3'],['E2','B2','E3']],
-    kick: false, // classical — no kick drum
+    pad: [
+      ['C3','Eb3','G3'],    // Cm
+      ['Ab2','C3','Eb3'],   // Ab
+      ['Eb3','G3','Bb3'],   // Eb
+      ['G2','B2','D3'],     // G major (bright lift)
+    ],
+    kick: true,
   },
 ];
-
 // ── Scheduler IDs ─────────────────────────────────────────────────
 let musicEventId = null;
 let musicStep    = 0;
@@ -1131,11 +1154,13 @@ document.getElementById('startHi').textContent='BEST: '+bestScore;
 lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 
-// Start audio on first interaction with the start screen (FLY button or any tap)
-// Using 'click' on the whole start screen ensures it fires after a real gesture
-document.getElementById('startScreen').addEventListener('click', async () => {
-  await startAudio();
-}, {once:true});
+// Start audio on FIRST interaction anywhere on the page
+// This ensures menu music begins as soon as the user touches/clicks anything
+['click','keydown','touchstart','pointerdown'].forEach(evt => {
+  document.addEventListener(evt, async () => {
+    await startAudio();
+  }, {once: true, passive: true});
+});
 </script>
 </body>
 </html>

@@ -54,6 +54,19 @@ main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .rstatus.skip { color:#b8860b; }
 
 .lb-section { width:100%; max-width:520px; padding:0 1rem 2.5rem; }
+
+/* Gentle blink on inactive mode tabs to draw attention */
+@keyframes modePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.55; }
+}
+.diff-tab:not(.active), .mode-tab:not(.active) {
+  animation: modePulse 2.8s ease-in-out infinite;
+}
+.diff-tab:not(.active):hover, .mode-tab:not(.active):hover {
+  animation: none;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -104,7 +117,11 @@ main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
         <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
-    <button class="btn-ghost" onclick="restartGame()">Play again</button>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem">
+      <button class="btn-ghost" onclick="restartGame()">Play again</button>
+      <button class="btn-ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="switchLabel"></span></button>
+      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    </div>
   </div>
 </main>
 
@@ -599,8 +616,9 @@ function setDiff(d) {
 }
 
 function initRound() {
-  const base = dailyIndex(wordBank.length);
-  roundWords = Array.from({length: ROUND_SIZE}, (_,i) => wordBank[(base+i) % wordBank.length]);
+  const indices = freshIndices('spellit_'+diff, wordBank, ROUND_SIZE);
+  indices.forEach(i => markSeen('spellit_'+diff, i));
+  roundWords = indices.map(i => wordBank[i]);
   current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = [];
   document.getElementById('scoreVal').textContent  = 0;
   document.getElementById('streakVal').textContent = '🔥0';
@@ -731,6 +749,8 @@ function endRound() {
   const maxPts = ROUND_SIZE * 15;
   document.getElementById('endMsg').textContent = score >= maxPts * .8 ? '🎉 Outstanding spelling!' : score >= maxPts * .5 ? '👏 Solid effort!' : 'Keep at it — spelling improves with practice!';
   document.getElementById('endCard').dataset.score = score;
+  const sl = document.getElementById('switchLabel');
+  if(sl) sl.textContent = diff==='easy' ? 'Hard' : 'Easy';
 
   // Words review
   const rev = document.getElementById('wordsReview'); rev.innerHTML = '';

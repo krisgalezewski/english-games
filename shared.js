@@ -186,3 +186,57 @@ function showPhrasalModal(phrasalVerb, definition, example) {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+
+// ── 10-day word/question repetition tracker ──────────────────────
+// Stores seen items per game with timestamps; filters them out for
+// at least 10 days before allowing them to appear again.
+const REPEAT_KEY_PREFIX = 'seen_';
+const REPEAT_DAYS = 10;
+
+function markSeen(game, item) {
+  const key  = REPEAT_KEY_PREFIX + game;
+  const now  = Date.now();
+  let data;
+  try { data = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { data = {}; }
+  data[String(item)] = now;
+  // Prune old entries (> 30 days) to keep storage small
+  for (const k in data) {
+    if (now - data[k] > 30 * 86400000) delete data[k];
+  }
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+}
+
+function wasSeen(game, item) {
+  const key  = REPEAT_KEY_PREFIX + game;
+  const now  = Date.now();
+  let data;
+  try { data = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { return false; }
+  const ts = data[String(item)];
+  return ts && (now - ts < REPEAT_DAYS * 86400000);
+}
+
+// Returns a fresh daily index that avoids recently seen items.
+// Falls back to pure dailyIndex if everything has been seen recently.
+function freshDailyIndex(game, max) {
+  const base = dailyIndex(max);
+  for (let offset = 0; offset < max; offset++) {
+    const idx = (base + offset) % max;
+    if (!wasSeen(game, idx)) return idx;
+  }
+  return base; // all seen — just use today's
+}
+
+// Pick N unique fresh indices for a round
+function freshIndices(game, bank, count) {
+  const base  = dailyIndex(bank.length);
+  const fresh = [];
+  const fallback = [];
+  for (let offset = 0; offset < bank.length; offset++) {
+    const idx = (base + offset) % bank.length;
+    if (!wasSeen(game, idx)) fresh.push(idx);
+    else fallback.push(idx);
+  }
+  const pool = [...fresh, ...fallback];
+  return pool.slice(0, count);
+}
