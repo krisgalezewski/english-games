@@ -321,6 +321,22 @@ function textPop(x,y,txt,colour) {
   particles.push({type:'text', x, y, vy:-65, vx:0, txt, colour, life:1});
 }
 
+// ── roundRect polyfill (ctx.roundRect not supported on all browsers) ──
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y,   x+w, y+r,   r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x,   y+h, x,   y+h-r, r);
+  ctx.lineTo(x,   y+r);
+  ctx.arcTo(x,   y,   x+r, y,     r);
+  ctx.closePath();
+}
+
 // ── Draw helpers ───────────────────────────────────────────────────
 // ALWAYS wrap in save/restore and reset alpha to 1 afterwards
 
@@ -415,7 +431,7 @@ function drawToken(t, dt) {
 
   // Backdrop
   ctx.fillStyle = 'rgba(8,24,58,0.88)';
-  ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, rad); ctx.fill();
+  ctx.beginPath(); roundRect(ctx, rx, ry, rw, rh, rad); ctx.fill();
 
   // Shimmer gradient overlay
   const shimmer = ctx.createLinearGradient(rx, ry, rx, ry+rh);
@@ -423,13 +439,13 @@ function drawToken(t, dt) {
   shimmer.addColorStop(0.45,'rgba(255,255,255,0.03)');
   shimmer.addColorStop(1,  'rgba(255,255,255,0.07)');
   ctx.fillStyle = shimmer;
-  ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, rad); ctx.fill();
+  ctx.beginPath(); roundRect(ctx, rx, ry, rw, rh, rad); ctx.fill();
 
   // Border
   ctx.shadowBlur  = 0;
   ctx.strokeStyle = 'rgba(79,195,247,0.55)';
   ctx.lineWidth   = 1.5;
-  ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, rad); ctx.stroke();
+  ctx.beginPath(); roundRect(ctx, rx, ry, rw, rh, rad); ctx.stroke();
 
   // Top highlight line
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
@@ -632,6 +648,7 @@ function masterLoop(ts) {
         burst(t.x, t.y, '#4fc3f7', 20);
         textPop(plane.x, plane.y-35, `+${pts}`, '#ffd54f');
         spawnTimer = 0;
+        plane.invincible = 20; // brief grace period after correct hit
       } else {
         if(shielded){
           shielded=false;
@@ -674,7 +691,7 @@ function masterLoop(ts) {
   // ── Plane — ALWAYS drawn after everything else ─────────────────
   // Blink when invincible
   const showPlane = plane.invincible===0 || Math.floor(plane.invincible/6)%2===0;
-  drawPlane(plane.x, plane.y, showPlane ? 1 : 0.25);
+  drawPlane(plane.x, plane.y, showPlane ? 1 : 0);
 
   // ── HUD — topmost layer ────────────────────────────────────────
   drawHUD();
