@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>English Ace — English Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background:#03050f;
+  font-family:'DM Sans',sans-serif;
+  color:#e8eaf6;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+  user-select:none;
+  -webkit-user-select:none;
+}
+a.back-link {
+  position:fixed; top:.8rem; left:1rem; z-index:200;
+  font-size:.75rem; color:rgba(255,255,255,.4); text-decoration:none;
+  font-family:'Orbitron',monospace; letter-spacing:.1em;
+  transition:color .2s;
+}
+a.back-link:hover { color:#fff; }
+
+/* ── CANVAS ── */
+#gameCanvas {
+  display:block;
+  touch-action:none;
+  cursor:none;
+}
+
+/* ── OVERLAY SCREENS ── */
+.screen {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:1.25rem;
+  padding:2rem 1.5rem;
+  z-index:100;
+  background:rgba(3,5,15,.92);
+  backdrop-filter:blur(4px);
+}
+.screen.hidden { display:none; }
+
+.logo {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(2rem,8vw,3.5rem);
+  font-weight:900;
+  letter-spacing:.06em;
+  text-align:center;
+  line-height:1.1;
+}
+.logo .ace  { color:#fff; }
+.logo .english { color:#4fc3f7; }
+
+.tagline {
+  font-size:.88rem; color:rgba(255,255,255,.5);
+  text-align:center; max-width:320px; line-height:1.6;
+  letter-spacing:.03em;
+}
+
+.hiscore-display {
+  font-family:'Orbitron',monospace;
+  font-size:.75rem; color:#ffd54f;
+  letter-spacing:.12em;
+}
+
+.btn {
+  background:linear-gradient(135deg,#4fc3f7,#1565c0);
+  color:#fff; border:none; border-radius:6px;
+  padding:.75rem 2.5rem;
+  font-family:'Orbitron',monospace;
+  font-size:.85rem; font-weight:700;
+  letter-spacing:.1em; cursor:pointer;
+  transition:opacity .15s, transform .1s;
+  text-transform:uppercase;
+  box-shadow:0 0 24px rgba(79,195,247,.35);
+}
+.btn:hover { opacity:.88; transform:scale(1.03); }
+.btn.secondary {
+  background:transparent;
+  border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.6);
+  box-shadow:none;
+  font-size:.75rem;
+}
+
+.instructions {
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  padding:1rem 1.25rem;
+  font-size:.8rem;
+  color:rgba(255,255,255,.55);
+  line-height:1.8;
+  max-width:340px;
+  text-align:left;
+}
+.instructions strong { color:#4fc3f7; }
+
+/* end screen extras */
+.end-score-big {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(2.5rem,10vw,4rem);
+  font-weight:900;
+  color:#ffd54f;
+  text-shadow:0 0 30px rgba(255,213,79,.4);
+}
+.end-stats-row {
+  display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;
+}
+.end-stat { text-align:center; }
+.end-stat .v { font-family:'Orbitron',monospace; font-size:1.4rem; font-weight:700; color:#4fc3f7; }
+.end-stat .l { font-size:.65rem; color:rgba(255,255,255,.4); letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
+
+/* leaderboard */
+.lb-wrap { width:100%; max-width:340px; }
+.lb-wrap h3 { font-family:'Orbitron',monospace; font-size:.75rem; letter-spacing:.12em; color:#ffd54f; margin-bottom:.6rem; }
+.lb-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.lb-table th { text-align:left; color:rgba(255,255,255,.3); font-weight:400; font-size:.65rem; letter-spacing:.1em; padding:.3rem .4rem; border-bottom:1px solid rgba(255,255,255,.07); }
+.lb-table td { padding:.35rem .4rem; border-bottom:1px solid rgba(255,255,255,.04); }
+.lb-table tbody tr:first-child td { color:#ffd54f; font-weight:600; }
+.submit-row { display:flex; gap:.5rem; margin-bottom:.75rem; }
+.submit-row input { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:4px; padding:.5rem .75rem; color:#fff; font-family:'DM Sans',sans-serif; font-size:.88rem; }
+.submit-row input:focus { outline:none; border-color:#4fc3f7; }
+.btn-sm { background:linear-gradient(135deg,#4fc3f7,#1565c0); color:#fff; border:none; border-radius:4px; padding:.5rem 1rem; font-family:'Orbitron',monospace; font-size:.65rem; font-weight:700; letter-spacing:.08em; cursor:pointer; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← GAMES</a>
+
+<!-- START SCREEN -->
+<div class="screen" id="startScreen">
+  <div class="logo"><span class="english">ENGLISH</span><br><span class="ace">ACE ✈</span></div>
+  <div class="tagline">Fly into correct answers. Dodge the wrong ones. How long can you stay airborne?</div>
+  <div class="hiscore-display" id="startHi">BEST: 0</div>
+  <button class="btn" onclick="startGame()">FLY →</button>
+  <div class="instructions">
+    <strong>STEER</strong> — drag the plane left and right<br>
+    <strong>COLLECT</strong> — fly into the correct answer<br>
+    <strong>DODGE</strong> — avoid the wrong words<br>
+    <strong>STREAK</strong> — 3 correct → ×2, 5 → ×3<br>
+    <strong>LIVES</strong> — 5 planes. Hit wrong = lose one.
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="screen hidden" id="endScreen">
+  <div class="logo" style="font-size:1.4rem">MISSION<br>COMPLETE</div>
+  <div class="end-score-big" id="endScoreNum">0</div>
+  <div class="end-stats-row">
+    <div class="end-stat"><div class="v" id="endWave">1</div><div class="l">Wave</div></div>
+    <div class="end-stat"><div class="v" id="endCorrect">0</div><div class="l">Correct</div></div>
+    <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
+  </div>
+  <div class="lb-wrap">
+    <h3>🏆 LEADERBOARD</h3>
+    <div class="submit-row">
+      <input id="nameInput" placeholder="Your call sign" maxlength="20"/>
+      <button class="btn-sm" onclick="submitScore()">SUBMIT</button>
+    </div>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"><tr><td colspan="3" style="color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <button class="btn" onclick="startGame()">FLY AGAIN →</button>
+  <button class="btn secondary" onclick="document.getElementById('endScreen').classList.add('hidden');document.getElementById('startScreen').classList.remove('hidden')">MENU</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script src="shared.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// ENGLISH ACE — Main game engine
+// ═══════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// ── Resize canvas to fill screen ───────────────────────────────────
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── Question bank ──────────────────────────────────────────────────
+const QUESTIONS = [
+  // Collocations — MAKE
+  { q:'___ a decision',    correct:'MAKE',    wrong:['DO','TAKE','HAVE'] },
+  { q:'___ a mistake',     correct:'MAKE',    wrong:['DO','SAY','TAKE'] },
+  { q:'___ progress',      correct:'MAKE',    wrong:['DO','REACH','WIN'] },
+  { q:'___ an effort',     correct:'MAKE',    wrong:['DO','TAKE','GIVE'] },
+  { q:'___ a suggestion',  correct:'MAKE',    wrong:['GIVE','SAY','DO'] },
+  { q:'___ a promise',     correct:'MAKE',    wrong:['GIVE','DO','TAKE'] },
+  { q:'___ a difference',  correct:'MAKE',    wrong:['DO','HAVE','GIVE'] },
+  { q:'___ friends',       correct:'MAKE',    wrong:['DO','FIND','GET'] },
+  // Collocations — DO / TAKE / GIVE / HAVE
+  { q:'___ homework',      correct:'DO',      wrong:['MAKE','TAKE','HAVE'] },
+  { q:'___ research',      correct:'DO',      wrong:['MAKE','RUN','TAKE'] },
+  { q:'___ a photo',       correct:'TAKE',    wrong:['MAKE','DO','SHOOT'] },
+  { q:'___ a risk',        correct:'TAKE',    wrong:['MAKE','DO','RUN'] },
+  { q:'___ a break',       correct:'TAKE',    wrong:['MAKE','DO','HAVE'] },
+  { q:'___ advice',        correct:'GIVE',    wrong:['MAKE','SAY','TELL'] },
+  { q:'___ a speech',      correct:'GIVE',    wrong:['MAKE','DO','SAY'] },
+  { q:'___ a lecture',     correct:'GIVE',    wrong:['MAKE','DO','SAY'] },
+  { q:'___ a shower',      correct:'HAVE',    wrong:['TAKE','DO','MAKE'] },
+  { q:'___ fun',           correct:'HAVE',    wrong:['MAKE','DO','GET'] },
+  { q:'___ attention',     correct:'PAY',     wrong:['GIVE','MAKE','DO'] },
+  { q:'___ a record',      correct:'SET',     wrong:['MAKE','BREAK','DO'] },
+  // Phrasal verbs — GIVE
+  { q:'give ___ (stop)',         correct:'UP',    wrong:['IN','ON','OUT'] },
+  { q:'give ___ (distribute)',   correct:'OUT',   wrong:['UP','AWAY','OFF'] },
+  { q:'give ___ (donate)',       correct:'AWAY',  wrong:['OUT','BACK','UP'] },
+  { q:'give ___ (return)',       correct:'BACK',  wrong:['OUT','UP','AWAY'] },
+  { q:'give ___ (surrender)',    correct:'IN',    wrong:['UP','OUT','BACK'] },
+  // Phrasal verbs — TAKE
+  { q:'take ___ (start hobby)',  correct:'UP',    wrong:['ON','OFF','OUT'] },
+  { q:'take ___ (depart)',       correct:'OFF',   wrong:['ON','UP','OUT'] },
+  { q:'take ___ (control)',      correct:'OVER',  wrong:['ON','OFF','UP'] },
+  { q:'take ___ (accept work)',  correct:'ON',    wrong:['UP','OFF','OVER'] },
+  // Phrasal verbs — TURN / GET / PUT
+  { q:'turn ___ (refuse)',       correct:'DOWN',  wrong:['OFF','OUT','BACK'] },
+  { q:'turn ___ (switch off)',   correct:'OFF',   wrong:['DOWN','OUT','BACK'] },
+  { q:'turn ___ (arrive)',       correct:'UP',    wrong:['ON','OUT','IN'] },
+  { q:'get ___ (recover)',       correct:'OVER',  wrong:['ON','BACK','OUT'] },
+  { q:'get ___ (wake up)',       correct:'UP',    wrong:['ON','OUT','OVER'] },
+  { q:'put ___ (postpone)',      correct:'OFF',   wrong:['ON','BACK','OUT'] },
+  { q:'put ___ (wear)',          correct:'ON',    wrong:['OFF','UP','OUT'] },
+  { q:'look ___ (investigate)',  correct:'INTO',  wrong:['UP','OUT','BACK'] },
+  { q:'look ___ (search info)',  correct:'UP',    wrong:['INTO','OUT','BACK'] },
+  { q:'come ___ (find by chance)',correct:'ACROSS',wrong:['OVER','UP','IN'] },
+  { q:'call ___ (cancel)',       correct:'OFF',   wrong:['OUT','UP','BACK'] },
+  // Past tense
+  { q:'Past of WRITE',     correct:'WROTE',   wrong:['WRITED','WRITTEN','WRIT'] },
+  { q:'Past of SPEAK',     correct:'SPOKE',   wrong:['SPEAKED','SPOKEN','SPAKED'] },
+  { q:'Past of BREAK',     correct:'BROKE',   wrong:['BREAKED','BROKEN','BROKED'] },
+  { q:'Past of KNOW',      correct:'KNEW',    wrong:['KNOWED','KNOWN','KNEWED'] },
+  { q:'Past of TAKE',      correct:'TOOK',    wrong:['TAKED','TAKEN','TOOKED'] },
+  { q:'Past of GIVE',      correct:'GAVE',    wrong:['GIVED','GIVEN','GAVED'] },
+  { q:'Past of RUN',       correct:'RAN',     wrong:['RUNNED','RUNS','RUNED'] },
+  { q:'Past of THINK',     correct:'THOUGHT', wrong:['THINKED','THUNK','THINKT'] },
+  { q:'Past of FALL',      correct:'FELL',    wrong:['FALLED','FALLEN','FELLT'] },
+  { q:'Past of BRING',     correct:'BROUGHT', wrong:['BRINGED','BRUNG','BRINGT'] },
+  { q:'Past of CHOOSE',    correct:'CHOSE',   wrong:['CHOOSED','CHOSEN','CHOSED'] },
+  { q:'Past of RISE',      correct:'ROSE',    wrong:['RISED','RISEN','ROSED'] },
+  { q:'Past of CATCH',     correct:'CAUGHT',  wrong:['CATCHED','CATCHT','COUGHT'] },
+  { q:'Past of TEACH',     correct:'TAUGHT',  wrong:['TEACHED','TOUGHT','TEACHTED'] },
+  { q:'Past of BUY',       correct:'BOUGHT',  wrong:['BUYED','BUYED','BOUGHTED'] },
+  { q:'Past of MEET',      correct:'MET',     wrong:['MEETED','METED','MEETT'] },
+  { q:'Past of GROW',      correct:'GREW',    wrong:['GROWED','GROWN','GREWED'] },
+  { q:'Past of LOSE',      correct:'LOST',    wrong:['LOSED','LOSTED','LOSSED'] },
+  { q:'Past of FEEL',      correct:'FELT',    wrong:['FEELED','FELLT','FEELT'] },
+  { q:'Past of HOLD',      correct:'HELD',    wrong:['HOLDED','HOLTED','HELLED'] },
+  // Spelling
+  { q:'Spell: essential',        correct:'NECESSARY',     wrong:['NESSECARY','NECESARY','NECCESSARY'] },
+  { q:'Spell: place to stay',    correct:'ACCOMMODATION', wrong:['ACCOMODATION','ACOMMODATION','ACCOMMODATON'] },
+  { q:'Spell: feel ashamed',     correct:'EMBARRASS',     wrong:['EMBARASS','EMBARRASS','EMBARRAS'] },
+  { q:'Spell: an event',         correct:'OCCURRENCE',    wrong:['OCCURENCE','OCCURRANCE','OCURRENCE'] },
+  { q:'Spell: a special right',  correct:'PRIVILEGE',     wrong:['PRIVILEDGE','PRIVELEGE','PRIVILAGE'] },
+  { q:'Spell: to divide',        correct:'SEPARATE',      wrong:['SEPERATE','SEPERRATE','SEPARETE'] },
+  { q:'Spell: a pledge',         correct:'COMMITMENT',    wrong:['COMITTMENT','COMMITTMENT','COMMITMANT'] },
+  { q:'Spell: law-making body',  correct:'PARLIAMENT',    wrong:['PARLIMENT','PARLAIMENT','PARLIAMANT'] },
+  { q:'Spell: month 2',          correct:'FEBRUARY',      wrong:['FEBUARY','FEBRURAY','FEBURARY'] },
+  { q:'Spell: day 4',            correct:'WEDNESDAY',     wrong:['WENSDAY','WENDSDAY','WEDNSDAY'] },
+  { q:'Spell: not real',         correct:'IMAGINARY',     wrong:['IMAGINERY','IMAGINRY','IMAGINAIRY'] },
+  { q:'Spell: to overstate',     correct:'EXAGGERATE',    wrong:['EXAGERATE','EXAGGERRATE','EXAGGARATE'] },
+  // Synonyms / vocab
+  { q:'Synonym of BRAVE',        correct:'COURAGEOUS',    wrong:['NERVOUS','TIMID','ANXIOUS'] },
+  { q:'Synonym of SAD',          correct:'MELANCHOLY',    wrong:['JOYFUL','ELATED','GLEEFUL'] },
+  { q:'Synonym of FAST',         correct:'SWIFT',         wrong:['SLOW','SLUGGISH','GRADUAL'] },
+  { q:'Synonym of BIG',          correct:'ENORMOUS',      wrong:['TINY','MINUTE','PETITE'] },
+  { q:'Synonym of DIFFICULT',    correct:'ARDUOUS',       wrong:['SIMPLE','TRIVIAL','EASY'] },
+  { q:'Synonym of HAPPY',        correct:'ELATED',        wrong:['GLOOMY','SULLEN','MISERABLE'] },
+  { q:'Opposite of ANCIENT',     correct:'MODERN',        wrong:['OLDER','HISTORIC','ANTIQUE'] },
+  { q:'Opposite of GENEROUS',    correct:'STINGY',        wrong:['KIND','GIVING','NOBLE'] },
+];
+
+// ── Star field ─────────────────────────────────────────────────────
+const STARS = Array.from({length:180}, () => ({
+  x: Math.random() * 2000,
+  y: Math.random() * 2000,
+  r: Math.random() * 1.4 + 0.2,
+  speed: Math.random() * 0.4 + 0.1,
+  alpha: Math.random() * 0.6 + 0.3,
+}));
+
+// ── Game state ──────────────────────────────────────────────────────
+let state = 'idle'; // idle | playing | dead
+let score = 0, wave = 1, lives = 5, streak = 0, bestStreak = 0, correctCount = 0;
+let multiplier = 1;
+let bestScore = parseInt(localStorage.getItem('ace_best') || '0');
+let currentQ = null;
+let tokens = [];          // falling word tokens
+let particles = [];       // visual effects
+let powerups = [];        // shield / slow / heart
+let shielded = false;
+let slowTimer = 0;
+let frameCount = 0;
+let lastTime = 0;
+let spawnTimer = 0;
+let waveTimer  = 0;
+const WAVE_DURATION = 18; // seconds per wave
+
+// ── Plane ──────────────────────────────────────────────────────────
+const plane = {
+  x: 0, y: 0,
+  w: 44, h: 52,
+  vx: 0,
+  targetX: 0,
+  invincible: 0,  // frames of invincibility after hit
+};
+
+// ── Input ──────────────────────────────────────────────────────────
+let dragActive = false;
+let dragStartX = 0, planeStartX = 0;
+
+canvas.addEventListener('pointerdown', e => {
+  dragActive = true;
+  dragStartX  = e.clientX;
+  planeStartX = plane.x;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragActive) return;
+  plane.targetX = planeStartX + (e.clientX - dragStartX);
+});
+canvas.addEventListener('pointerup',   () => { dragActive = false; });
+canvas.addEventListener('pointercancel',() => { dragActive = false; });
+
+// keyboard
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key] = true; });
+window.addEventListener('keyup',   e => { keys[e.key] = false; });
+
+// ── Question picker ────────────────────────────────────────────────
+let usedQs = new Set();
+function pickQuestion() {
+  if (usedQs.size >= QUESTIONS.length) usedQs.clear();
+  let idx;
+  do { idx = Math.floor(Math.random() * QUESTIONS.length); } while (usedQs.has(idx));
+  usedQs.add(idx);
+  return QUESTIONS[idx];
+}
+
+// ── Token spawner ──────────────────────────────────────────────────
+function spawnWave() {
+  currentQ = pickQuestion();
+  const W = canvas.width;
+
+  // Build answer pool: 1 correct + 1–3 wrong (depending on wave)
+  const wrongCount = Math.min(3, 1 + Math.floor(wave / 3));
+  const wrongPool  = [...currentQ.wrong].sort(() => Math.random()-.5).slice(0, wrongCount);
+  const answers    = [{ text: currentQ.correct, correct: true },
+                      ...wrongPool.map(w => ({ text: w, correct: false }))];
+
+  // Shuffle and spread across screen width
+  answers.sort(() => Math.random() - .5);
+  const spacing = W / (answers.length + 1);
+  const baseSpeed = 60 + wave * 8 + Math.random() * 20;
+
+  answers.forEach((a, i) => {
+    tokens.push({
+      text:     a.text,
+      correct:  a.correct,
+      x:        spacing * (i + 1),
+      y:        -40,
+      vy:       (slowTimer > 0 ? baseSpeed * .4 : baseSpeed),
+      baseVy:   baseSpeed,
+      w:        0,  // computed on first draw
+      h:        38,
+      hit:      false,
+      alpha:    1,
+      glow:     0,
+    });
+  });
+
+  // Occasional power-up
+  if (Math.random() < .18 && wave >= 2) {
+    const types = ['shield','slow','heart'];
+    const t = types[Math.floor(Math.random() * types.length)];
+    powerups.push({ type: t, x: Math.random() * (W - 60) + 30, y: -40, vy: 55, hit: false, alpha: 1 });
+  }
+}
+
+// ── Particles ──────────────────────────────────────────────────────
+function burst(x, y, colour, count = 16) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + Math.random() * .5;
+    const spd   = Math.random() * 120 + 40;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      r:  Math.random() * 4 + 2,
+      life: 1,
+      colour,
+    });
+  }
+}
+
+function textPop(x, y, txt, colour) {
+  particles.push({ type:'text', x, y, vy:-60, txt, colour, life:1 });
+}
+
+// ── Draw plane ─────────────────────────────────────────────────────
+function drawPlane(x, y, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+
+  // Engine glow
+  const grd = ctx.createRadialGradient(0, 18, 2, 0, 18, 22);
+  grd.addColorStop(0, 'rgba(79,195,247,.9)');
+  grd.addColorStop(1, 'rgba(79,195,247,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.ellipse(0, 22, 14, 14, 0, 0, Math.PI*2); ctx.fill();
+
+  // Exhaust trail
+  for (let i = 1; i <= 3; i++) {
+    ctx.fillStyle = `rgba(79,195,247,${.25/i})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 26 + i*7, 6/i, 5/i, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Fuselage
+  ctx.fillStyle = '#e8eaf6';
+  ctx.beginPath();
+  ctx.moveTo(0,-26); ctx.lineTo(8,10); ctx.lineTo(5,20); ctx.lineTo(-5,20); ctx.lineTo(-8,10);
+  ctx.closePath(); ctx.fill();
+
+  // Wings
+  ctx.fillStyle = '#4fc3f7';
+  ctx.beginPath();
+  ctx.moveTo(-8,4); ctx.lineTo(-26,18); ctx.lineTo(-22,22); ctx.lineTo(-6,14);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(8,4); ctx.lineTo(26,18); ctx.lineTo(22,22); ctx.lineTo(6,14);
+  ctx.closePath(); ctx.fill();
+
+  // Tail fins
+  ctx.fillStyle = '#1565c0';
+  ctx.beginPath();
+  ctx.moveTo(-5,14); ctx.lineTo(-12,22); ctx.lineTo(-5,20); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(5,14); ctx.lineTo(12,22); ctx.lineTo(5,20); ctx.closePath(); ctx.fill();
+
+  // Cockpit
+  ctx.fillStyle = '#4fc3f7';
+  ctx.beginPath(); ctx.ellipse(0,-10,5,9,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.beginPath(); ctx.ellipse(-1,-11,2,4,-.3,0,Math.PI*2); ctx.fill();
+
+  // Shield ring
+  if (shielded) {
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = .7 + Math.sin(frameCount*.15)*.3;
+    ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// ── HUD ────────────────────────────────────────────────────────────
+function drawHUD() {
+  const W = canvas.width;
+
+  // Top bar
+  ctx.fillStyle = 'rgba(3,5,15,.6)';
+  ctx.fillRect(0, 0, W, 52);
+
+  // Score
+  ctx.fillStyle = '#ffd54f';
+  ctx.font = 'bold 18px Orbitron, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(score.toString().padStart(6,'0'), 14, 32);
+
+  // Multiplier
+  if (multiplier > 1) {
+    ctx.fillStyle = streak >= 5 ? '#ff6b6b' : '#4fc3f7';
+    ctx.font = 'bold 13px Orbitron, monospace';
+    ctx.fillText(`×${multiplier}`, 100, 32);
+  }
+
+  // Wave
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '11px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`WAVE ${wave}`, W/2, 22);
+
+  // Wave progress bar
+  const wPct = Math.max(0, 1 - waveTimer / WAVE_DURATION);
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fillRect(W/2 - 60, 28, 120, 4);
+  ctx.fillStyle = '#4fc3f7';
+  ctx.fillRect(W/2 - 60, 28, 120 * wPct, 4);
+
+  // Lives
+  ctx.font = '16px serif';
+  ctx.textAlign = 'right';
+  for (let i = 0; i < 5; i++) {
+    ctx.globalAlpha = i < lives ? 1 : .15;
+    ctx.fillText('✈', W - 14 - i * 22, 32);
+  }
+  ctx.globalAlpha = 1;
+
+  // Slow active
+  if (slowTimer > 0) {
+    ctx.fillStyle = '#b39ddb';
+    ctx.font = '10px Orbitron, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`SLOW ${Math.ceil(slowTimer)}s`, W/2, 44);
+  }
+
+  // Question banner
+  const bH = 42;
+  const bY = 55;
+  ctx.fillStyle = 'rgba(21,101,192,.55)';
+  ctx.fillRect(0, bY, W, bH);
+  ctx.strokeStyle = 'rgba(79,195,247,.25)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0, bY, W, bH);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 16px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  if (currentQ) ctx.fillText(currentQ.q, W/2, bY + 27);
+}
+
+// ── Draw token ─────────────────────────────────────────────────────
+function drawToken(t) {
+  ctx.save();
+  ctx.globalAlpha = t.alpha;
+
+  // Measure width once
+  ctx.font = 'bold 15px Orbitron, monospace';
+  if (!t.w) t.w = ctx.measureText(t.text).width + 28;
+
+  const r = 8;
+  const x = t.x - t.w/2, y = t.y - t.h/2;
+
+  // Glow halo for correct
+  if (t.correct && t.glow > 0) {
+    ctx.shadowColor = '#69f0ae';
+    ctx.shadowBlur  = 18 * t.glow;
+  }
+
+  // Background
+  const grad = ctx.createLinearGradient(x, y, x, y + t.h);
+  if (t.correct) {
+    grad.addColorStop(0, 'rgba(41,182,100,.85)');
+    grad.addColorStop(1, 'rgba(27,120,66,.85)');
+    ctx.strokeStyle = '#69f0ae';
+  } else {
+    grad.addColorStop(0, 'rgba(183,28,28,.8)');
+    grad.addColorStop(1, 'rgba(100,13,13,.8)');
+    ctx.strokeStyle = 'rgba(239,83,80,.5)';
+  }
+  ctx.fillStyle   = grad;
+  ctx.lineWidth   = 1.5;
+
+  ctx.beginPath();
+  ctx.roundRect(x, y, t.w, t.h, r);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Text
+  ctx.fillStyle = '#fff';
+  ctx.font      = 'bold 15px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t.text, t.x, t.y);
+
+  ctx.restore();
+}
+
+// ── Draw power-up ──────────────────────────────────────────────────
+const PU_ICONS = { shield:'🛡️', slow:'⏱️', heart:'❤️' };
+function drawPowerup(p) {
+  ctx.save();
+  ctx.globalAlpha = p.alpha;
+  ctx.font = '26px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // pulsing glow
+  ctx.shadowColor = '#ffd54f';
+  ctx.shadowBlur  = 10 + Math.sin(frameCount * .12) * 6;
+  ctx.fillText(PU_ICONS[p.type], p.x, p.y);
+  ctx.restore();
+}
+
+// ── Draw stars ─────────────────────────────────────────────────────
+function drawStars(dt) {
+  const W = canvas.width, H = canvas.height;
+  for (const s of STARS) {
+    s.y += s.speed * dt * (slowTimer > 0 ? 40 : 80);
+    if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+    ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x % W, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ── Collision ──────────────────────────────────────────────────────
+function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+// ── Main loop ──────────────────────────────────────────────────────
+function gameLoop(ts) {
+  if (state !== 'playing') return;
+  requestAnimationFrame(gameLoop);
+
+  const dt = Math.min((ts - lastTime) / 1000, .05);
+  lastTime = ts;
+  frameCount++;
+
+  const W = canvas.width, H = canvas.height;
+
+  // ── Background ──────────────────────────────────────────────────
+  // Deep space gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#010209');
+  bg.addColorStop(1, '#03050f');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars(dt);
+
+  // ── Timers ──────────────────────────────────────────────────────
+  waveTimer  -= dt;
+  spawnTimer -= dt;
+  if (slowTimer > 0) slowTimer -= dt;
+  if (plane.invincible > 0) plane.invincible--;
+
+  // Next wave
+  if (waveTimer <= 0) {
+    wave++;
+    waveTimer  = WAVE_DURATION;
+    spawnTimer = 0;
+    tokens     = [];
+  }
+
+  // Spawn tokens
+  if (spawnTimer <= 0 && tokens.filter(t => !t.hit).length === 0) {
+    spawnWave();
+    spawnTimer = .6;
+  }
+
+  // ── Plane movement ───────────────────────────────────────────────
+  // Keyboard
+  const speed = 320;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) plane.targetX -= speed * dt;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) plane.targetX += speed * dt;
+
+  // Clamp target
+  const hw = plane.w / 2;
+  plane.targetX = Math.max(hw, Math.min(W - hw, plane.targetX));
+
+  // Smooth follow
+  plane.x += (plane.targetX - plane.x) * Math.min(1, 12 * dt);
+  plane.y = H - 100;
+
+  // ── Tokens ──────────────────────────────────────────────────────
+  for (const t of tokens) {
+    if (t.hit) { t.alpha -= dt * 3; continue; }
+    t.vy = slowTimer > 0 ? t.baseVy * .35 : t.baseVy;
+    t.y += t.vy * dt;
+
+    // Glow pulse for correct
+    if (t.correct) t.glow = .5 + Math.sin(frameCount * .12) * .5;
+
+    // Off-screen
+    if (t.y > H + 40) { t.hit = true; continue; }
+
+    drawToken(t);
+
+    // Collision with plane
+    if (plane.invincible === 0 &&
+        rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
+                     t.x - t.w/2, t.y - t.h/2, t.w, t.h)) {
+      t.hit = true;
+      if (t.correct) {
+        // ✅ Correct
+        const pts = 10 * wave * multiplier;
+        score += pts;
+        streak++;
+        correctCount++;
+        if (streak > bestStreak) bestStreak = streak;
+        multiplier = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
+        burst(t.x, t.y, '#69f0ae', 20);
+        textPop(plane.x, plane.y - 30, `+${pts}`, '#ffd54f');
+        spawnTimer = 0; // spawn next immediately
+      } else {
+        // ❌ Wrong
+        if (shielded) {
+          shielded = false;
+          burst(plane.x, plane.y, '#ffd54f', 14);
+          textPop(plane.x, plane.y - 30, 'SHIELD!', '#ffd54f');
+        } else {
+          lives--;
+          streak = 0; multiplier = 1;
+          plane.invincible = 90; // ~1.5s
+          burst(plane.x, plane.y, '#ef5350', 22);
+          textPop(plane.x, plane.y - 30, '✈ −1', '#ef5350');
+          if (lives <= 0) { endGame(); return; }
+        }
+      }
+    }
+  }
+  tokens = tokens.filter(t => t.alpha > 0);
+
+  // ── Power-ups ────────────────────────────────────────────────────
+  for (const p of powerups) {
+    if (p.hit) { p.alpha -= dt * 2; continue; }
+    p.y += p.vy * dt;
+    if (p.y > H + 40) { p.hit = true; continue; }
+    drawPowerup(p);
+
+    if (rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
+                     p.x - 16, p.y - 16, 32, 32)) {
+      p.hit = true;
+      if (p.type === 'shield')  { shielded = true; textPop(plane.x, plane.y-30, '🛡️ SHIELD', '#ffd54f'); }
+      if (p.type === 'slow')    { slowTimer = 6;   textPop(plane.x, plane.y-30, '⏱️ SLOW',   '#b39ddb'); }
+      if (p.type === 'heart' && lives < 5) { lives++; textPop(plane.x, plane.y-30, '❤️ +LIFE', '#ef5350'); }
+      burst(p.x, p.y, '#ffd54f', 12);
+    }
+  }
+  powerups = powerups.filter(p => p.alpha > 0);
+
+  // ── Particles ────────────────────────────────────────────────────
+  for (const p of particles) {
+    p.life -= dt * (p.type === 'text' ? 1.4 : 1.8);
+    p.x  += (p.vx || 0) * dt;
+    p.y  += (p.vy || 0) * dt;
+    if (p.type === 'text') {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle   = p.colour;
+      ctx.font        = 'bold 15px Orbitron, monospace';
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.txt, p.x, p.y);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle   = p.colour;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // ── Plane ────────────────────────────────────────────────────────
+  const planeAlpha = plane.invincible > 0 ? (Math.floor(plane.invincible / 6) % 2 === 0 ? 0.3 : 1) : 1;
+  drawPlane(plane.x, plane.y, planeAlpha);
+
+  // ── HUD ──────────────────────────────────────────────────────────
+  drawHUD();
+}
+
+// ── Start / end ────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.add('hidden');
+
+  score = 0; wave = 1; lives = 5; streak = 0; bestStreak = 0;
+  correctCount = 0; multiplier = 1;
+  tokens = []; particles = []; powerups = [];
+  shielded = false; slowTimer = 0;
+  spawnTimer = 0; waveTimer = WAVE_DURATION;
+  frameCount = 0; usedQs.clear(); currentQ = null;
+
+  plane.x = canvas.width / 2;
+  plane.targetX = plane.x;
+  plane.y = canvas.height - 100;
+  plane.invincible = 0;
+
+  state = 'playing';
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  state = 'idle';
+  clearInterval(timerInterval);
+
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('ace_best', bestScore);
+  }
+  document.getElementById('startHi').textContent = `BEST: ${bestScore}`;
+
+  document.getElementById('endScoreNum').textContent = score;
+  document.getElementById('endWave').textContent     = wave;
+  document.getElementById('endCorrect').textContent  = correctCount;
+  document.getElementById('endStreak').textContent   = bestStreak;
+  document.getElementById('endScreen').classList.remove('hidden');
+
+  renderLeaderboard('englishace', 'lbBody');
+}
+
+async function submitScore() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  await handleScoreSubmit('englishace', score, 'nameInput', null, 'lbBody');
+  // manual submit since we don't have a standard submitArea div
+  await submitScore_direct(name);
+}
+
+async function submitScore_direct(name) {
+  if (!name) return;
+  const ok = await window.submitScore('englishace', name, score);
+  if (ok) {
+    document.getElementById('nameInput').value = '';
+    renderLeaderboard('englishace', 'lbBody');
+  }
+}
+
+// Fix: override submit to use direct method
+document.querySelector('.btn-sm').onclick = async () => {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  const ok = await window.submitScore('englishace', name, score);
+  if (ok) {
+    document.getElementById('nameInput').value = '';
+    renderLeaderboard('englishace', 'lbBody');
+  }
+};
+
+// Show best on start
+document.getElementById('startHi').textContent = `BEST: ${bestScore}`;
+
+// Draw idle screen (starfield animation while on menu)
+function idleLoop(ts) {
+  if (state === 'playing') return;
+  requestAnimationFrame(idleLoop);
+  const dt = Math.min((ts - lastTime) / 1000, .05);
+  lastTime = ts;
+  frameCount++;
+
+  const W = canvas.width, H = canvas.height;
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#010209');
+  bg.addColorStop(1, '#03050f');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  drawStars(dt);
+  // Idle plane drift
+  drawPlane(W/2 + Math.sin(frameCount * .02) * 30, H * .6, 1);
+}
+lastTime = performance.now();
+requestAnimationFrame(idleLoop);
+</script>
+</body>
+</html>
