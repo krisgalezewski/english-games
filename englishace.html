@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>English Ace — English Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 body {
@@ -77,6 +78,19 @@ a.back-link:hover { color:#fff; }
 .submit-row input { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:4px; padding:.5rem .75rem; color:#fff; font-family:'DM Sans',sans-serif; font-size:.88rem; }
 .submit-row input:focus { outline:none; border-color:#4fc3f7; }
 .btn-sm { background:linear-gradient(135deg,#4fc3f7,#1565c0); color:#fff; border:none; border-radius:4px; padding:.5rem 1rem; font-family:'Orbitron',monospace; font-size:.65rem; font-weight:700; letter-spacing:.08em; cursor:pointer; }
+
+/* Mute button */
+#muteBtn {
+  position:fixed; bottom:1rem; right:1rem; z-index:200;
+  width:42px; height:42px; border-radius:50%;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff; font-size:1.1rem;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background .2s;
+  backdrop-filter:blur(4px);
+}
+#muteBtn:hover { background:rgba(255,255,255,.16); }
 </style>
 </head>
 <body>
@@ -119,6 +133,7 @@ a.back-link:hover { color:#fff; }
   <button class="btn secondary" onclick="showStart()">MENU</button>
 </div>
 
+<button id="muteBtn" title="Toggle sound">🔊</button>
 <canvas id="gameCanvas"></canvas>
 <script src="shared.js"></script>
 <script>
@@ -606,7 +621,7 @@ function masterLoop(ts) {
   if(slowTimer>0) slowTimer -= dt;
   if(plane.invincible>0) plane.invincible--;
 
-  if(waveTimer<=0){ wave++; waveTimer=WAVE_DUR; spawnTimer=0; tokens=[]; }
+  if(waveTimer<=0){ wave++; waveTimer=WAVE_DUR; spawnTimer=0; tokens=[]; sfxWaveUp(); updateBpm(); }
 
   if(spawnTimer<=0 && tokens.filter(t=>!t.hit).length===0){
     spawnWave(); spawnTimer=.5;
@@ -645,18 +660,21 @@ function masterLoop(ts) {
         score += pts; streak++; correctCount++;
         if(streak>bestStreak) bestStreak=streak;
         multiplier = streak>=5?3 : streak>=3?2 : 1;
+        sfxCorrect();
         burst(t.x, t.y, '#4fc3f7', 20);
         textPop(plane.x, plane.y-35, `+${pts}`, '#ffd54f');
         spawnTimer = 0;
         plane.invincible = 20; // brief grace period after correct hit
       } else {
         if(shielded){
+          sfxShield();
           shielded=false;
           burst(plane.x, plane.y, '#ffd54f', 14);
           textPop(plane.x, plane.y-35, 'SHIELD!', '#ffd54f');
         } else {
           lives--;
           streak=0; multiplier=1;
+          sfxWrong();
           plane.invincible=100;
           burst(plane.x, plane.y, '#ef5350', 24);
           textPop(plane.x, plane.y-35, '✈ −1', '#ef5350');
@@ -676,9 +694,9 @@ function masterLoop(ts) {
     drawPowerup(p);
     if(overlap(plane.x-hw,plane.y-26,plane.w,plane.h,p.x-16,p.y-16,32,32)){
       p.hit=true;
-      if(p.type==='shield'){ shielded=true;     textPop(plane.x,plane.y-35,'🛡️ SHIELD','#ffd54f'); }
-      if(p.type==='slow')  { slowTimer=6;        textPop(plane.x,plane.y-35,'⏱️ SLOW','#b39ddb'); }
-      if(p.type==='heart'&&lives<5){ lives++;    textPop(plane.x,plane.y-35,'❤️ +LIFE','#ef5350'); }
+      if(p.type==='shield'){ sfxPowerup(); shielded=true;     textPop(plane.x,plane.y-35,'🛡️ SHIELD','#ffd54f'); }
+      if(p.type==='slow')  { sfxPowerup(); slowTimer=6;        textPop(plane.x,plane.y-35,'⏱️ SLOW','#b39ddb'); }
+      if(p.type==='heart'&&lives<5){ sfxPowerup(); lives++;    textPop(plane.x,plane.y-35,'❤️ +LIFE','#ef5350'); }
       burst(p.x,p.y,'#ffd54f',12);
     }
     return true;
@@ -712,10 +730,13 @@ function startGame(){
 
   state='playing';
   lastTime=performance.now();
+  switchToGameMusic();
 }
 
 function endGame(){
   state='idle';
+  sfxGameOver();
+  switchToMenuMusic();
   if(score>bestScore){
     bestScore=score;
     localStorage.setItem('ace_best', bestScore);
@@ -742,6 +763,214 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     document.getElementById('nameInput').value='';
     renderLeaderboard('englishace','lbBody');
   }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO ENGINE — Tone.js
+// ═══════════════════════════════════════════════════════════════════
+let audioReady = false;
+let muted = false;
+let menuLoop = null, gameLoop_ = null;
+
+// ── Instruments ────────────────────────────────────────────────────
+// Lead synth — bright square wave for melody
+const lead = new Tone.Synth({
+  oscillator: { type: 'square' },
+  envelope:   { attack:.01, decay:.08, sustain:.4, release:.12 },
+  volume: -10,
+}).toDestination();
+
+// Bass synth — punchy sawtooth
+const bass = new Tone.Synth({
+  oscillator: { type: 'sawtooth' },
+  envelope:   { attack:.01, decay:.15, sustain:.3, release:.08 },
+  volume: -14,
+}).toDestination();
+
+// Pad — atmospheric chords
+const pad = new Tone.PolySynth(Tone.Synth, {
+  oscillator: { type: 'sine' },
+  envelope:   { attack:.3, decay:.4, sustain:.6, release:1.2 },
+  volume: -22,
+}).toDestination();
+
+// FX synth for SFX
+const fx = new Tone.Synth({
+  oscillator: { type: 'triangle' },
+  envelope:   { attack:.005, decay:.12, sustain:0, release:.08 },
+  volume: -8,
+}).toDestination();
+
+// Noise for hit impact
+const noiseFX = new Tone.NoiseSynth({
+  noise: { type:'white' },
+  envelope: { attack:.005, decay:.06, sustain:0, release:.02 },
+  volume: -18,
+}).toDestination();
+
+// ── Reverb on pad only ─────────────────────────────────────────────
+const rev = new Tone.Reverb({ decay:2.5, wet:.35 }).toDestination();
+pad.disconnect(); pad.connect(rev);
+
+// ── Music patterns ─────────────────────────────────────────────────
+
+// Menu theme — slower, mysterious arpeggio
+const MENU_NOTES = ['C3','E3','G3','B3','G3','E3','C4','B3'];
+const MENU_BASS  = ['C2','C2','G2','G2','A2','A2','F2','F2'];
+const MENU_PAD   = [['C3','E3','G3'],['G2','B2','D3'],['A2','C3','E3'],['F2','A2','C3']];
+
+// Game theme — driving, changes speed with wave
+const GAME_NOTES = ['C4','E4','G4','C5','B4','G4','E4','G4','A4','C5','B4','A4','G4','E4','C4','E4'];
+const GAME_BASS  = ['C2','C2','C2','C2','G2','G2','G2','G2','A2','A2','A2','A2','F2','F2','F2','F2'];
+
+let menuStep=0, gameStep=0, padStep=0;
+
+function getGameBpm() {
+  // Speeds up with each wave: 120 → 160 over waves 1–5
+  return Math.min(160, 120 + (wave-1)*8);
+}
+
+// ── Sequence builders ──────────────────────────────────────────────
+function buildMenuSequence() {
+  if(menuLoop) { menuLoop.dispose(); menuLoop=null; }
+
+  let step=0, padTick=0;
+  menuLoop = new Tone.Sequence((time)=>{
+    if(muted) return;
+    // Lead arpeggio
+    lead.triggerAttackRelease(MENU_NOTES[step % MENU_NOTES.length], '16n', time);
+    // Bass every 2 steps
+    if(step % 2 === 0)
+      bass.triggerAttackRelease(MENU_BASS[Math.floor(step/2) % MENU_BASS.length], '8n', time);
+    // Pad chord every 4 steps
+    if(step % 4 === 0)
+      pad.triggerAttackRelease(MENU_PAD[padTick++ % MENU_PAD.length], '2n', time);
+    step++;
+  }, null, '16n');
+
+  menuLoop.start(0);
+  Tone.getTransport().bpm.value = 90;
+}
+
+function buildGameSequence() {
+  if(gameLoop_) { gameLoop_.dispose(); gameLoop_=null; }
+
+  let step=0;
+  gameLoop_ = new Tone.Sequence((time)=>{
+    if(muted) return;
+    const n = GAME_NOTES[step % GAME_NOTES.length];
+    // Lead plays every other step, rest is rest
+    if(step % 3 !== 1)
+      lead.triggerAttackRelease(n, '16n', time);
+    // Bass every 2 steps
+    if(step % 2 === 0)
+      bass.triggerAttackRelease(GAME_BASS[Math.floor(step/4) % GAME_BASS.length], '8n', time);
+    step++;
+  }, null, '16n');
+
+  gameLoop_.start(0);
+  Tone.getTransport().bpm.value = getGameBpm();
+}
+
+// ── Update BPM when wave changes ───────────────────────────────────
+let lastWaveBpm = 0;
+function updateBpm() {
+  const bpm = getGameBpm();
+  if(bpm !== lastWaveBpm) {
+    lastWaveBpm = bpm;
+    Tone.getTransport().bpm.rampTo(bpm, 2);
+  }
+}
+
+// ── SFX ───────────────────────────────────────────────────────────
+function sfxCorrect() {
+  if(!audioReady || muted) return;
+  // Rising two-note chime
+  const now = Tone.now();
+  fx.triggerAttackRelease('C5', '16n', now);
+  fx.triggerAttackRelease('G5', '16n', now + 0.12);
+}
+
+function sfxWrong() {
+  if(!audioReady || muted) return;
+  // Descending buzz
+  const now = Tone.now();
+  fx.triggerAttackRelease('C3', '16n', now);
+  noiseFX.triggerAttackRelease('16n', now);
+}
+
+function sfxShield() {
+  if(!audioReady || muted) return;
+  const now = Tone.now();
+  fx.triggerAttackRelease('E5', '8n', now);
+  fx.triggerAttackRelease('G5', '8n', now+.1);
+  fx.triggerAttackRelease('C6', '8n', now+.2);
+}
+
+function sfxPowerup() {
+  if(!audioReady || muted) return;
+  const now = Tone.now();
+  ['C5','E5','G5','C6'].forEach((n,i)=>{
+    fx.triggerAttackRelease(n, '16n', now + i*0.08);
+  });
+}
+
+function sfxGameOver() {
+  if(!audioReady || muted) return;
+  const now = Tone.now();
+  ['G3','F3','E3','C3'].forEach((n,i)=>{
+    bass.triggerAttackRelease(n, '8n', now + i*0.18);
+  });
+}
+
+function sfxWaveUp() {
+  if(!audioReady || muted) return;
+  const now = Tone.now();
+  ['C4','E4','G4','C5'].forEach((n,i)=>{
+    fx.triggerAttackRelease(n, '16n', now + i*0.07);
+  });
+}
+
+// ── Audio start (must be triggered by user gesture) ────────────────
+async function startAudio() {
+  if(audioReady) return;
+  try {
+    await Tone.start();
+    audioReady = true;
+    buildMenuSequence();
+    Tone.getTransport().start();
+  } catch(e) { console.warn('Audio failed:', e); }
+}
+
+function switchToMenuMusic() {
+  if(!audioReady) return;
+  if(gameLoop_) { gameLoop_.stop(); gameLoop_.dispose(); gameLoop_=null; }
+  buildMenuSequence();
+}
+
+function switchToGameMusic() {
+  if(!audioReady) return;
+  if(menuLoop) { menuLoop.stop(); menuLoop.dispose(); menuLoop=null; }
+  buildGameSequence();
+}
+
+// ── Mute button ────────────────────────────────────────────────────
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', async () => {
+  await startAudio(); // ensure audio context started
+  muted = !muted;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  if(muted) {
+    Tone.getDestination().volume.value = -Infinity;
+  } else {
+    Tone.getDestination().volume.value = 0;
+  }
+});
+
+// Start audio on any interaction with the page
+['pointerdown','keydown'].forEach(evt=>{
+  window.addEventListener(evt, ()=>startAudio(), {once:true});
 });
 
 // ── Boot ───────────────────────────────────────────────────────────
