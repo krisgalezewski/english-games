@@ -619,160 +619,6 @@ function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
   return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }
 
-// ── Main loop ──────────────────────────────────────────────────────
-function gameLoop(ts) {
-  if (state !== 'playing') return;
-  requestAnimationFrame(gameLoop);
-
-  const dt = Math.min((ts - lastTime) / 1000, .05);
-  lastTime = ts;
-  frameCount++;
-
-  const W = canvas.width, H = canvas.height;
-
-  // ── Background ──────────────────────────────────────────────────
-  // Deep space gradient
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#010209');
-  bg.addColorStop(1, '#03050f');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  drawStars(dt);
-
-  // ── Timers ──────────────────────────────────────────────────────
-  waveTimer  -= dt;
-  spawnTimer -= dt;
-  if (slowTimer > 0) slowTimer -= dt;
-  if (plane.invincible > 0) plane.invincible--;
-
-  // Next wave
-  if (waveTimer <= 0) {
-    wave++;
-    waveTimer  = WAVE_DURATION;
-    spawnTimer = 0;
-    tokens     = [];
-  }
-
-  // Spawn tokens
-  if (spawnTimer <= 0 && tokens.filter(t => !t.hit).length === 0) {
-    spawnWave();
-    spawnTimer = .6;
-  }
-
-  // ── Plane movement ───────────────────────────────────────────────
-  // Keyboard
-  const speed = 320;
-  if (keys['ArrowLeft']  || keys['a'] || keys['A']) plane.targetX -= speed * dt;
-  if (keys['ArrowRight'] || keys['d'] || keys['D']) plane.targetX += speed * dt;
-
-  // Clamp target
-  const hw = plane.w / 2;
-  plane.targetX = Math.max(hw, Math.min(W - hw, plane.targetX));
-
-  // Smooth follow
-  plane.x += (plane.targetX - plane.x) * Math.min(1, 12 * dt);
-  plane.y = H - 100;
-
-  // ── Tokens ──────────────────────────────────────────────────────
-  for (const t of tokens) {
-    if (t.hit) { t.alpha -= dt * 3; continue; }
-    t.vy = slowTimer > 0 ? t.baseVy * .35 : t.baseVy;
-    t.y += t.vy * dt;
-
-    // Glow pulse for correct
-    if (t.correct) t.glow = .5 + Math.sin(frameCount * .12) * .5;
-
-    // Off-screen
-    if (t.y > H + 40) { t.hit = true; continue; }
-
-    drawToken(t);
-
-    // Collision with plane
-    if (plane.invincible === 0 &&
-        rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
-                     t.x - t.w/2, t.y - t.h/2, t.w, t.h)) {
-      t.hit = true;
-      if (t.correct) {
-        // ✅ Correct
-        const pts = 10 * wave * multiplier;
-        score += pts;
-        streak++;
-        correctCount++;
-        if (streak > bestStreak) bestStreak = streak;
-        multiplier = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
-        burst(t.x, t.y, '#69f0ae', 20);
-        textPop(plane.x, plane.y - 30, `+${pts}`, '#ffd54f');
-        spawnTimer = 0; // spawn next immediately
-      } else {
-        // ❌ Wrong
-        if (shielded) {
-          shielded = false;
-          burst(plane.x, plane.y, '#ffd54f', 14);
-          textPop(plane.x, plane.y - 30, 'SHIELD!', '#ffd54f');
-        } else {
-          lives--;
-          streak = 0; multiplier = 1;
-          plane.invincible = 90; // ~1.5s
-          burst(plane.x, plane.y, '#ef5350', 22);
-          textPop(plane.x, plane.y - 30, '✈ −1', '#ef5350');
-          if (lives <= 0) { endGame(); return; }
-        }
-      }
-    }
-  }
-  tokens = tokens.filter(t => t.alpha > 0);
-
-  // ── Power-ups ────────────────────────────────────────────────────
-  for (const p of powerups) {
-    if (p.hit) { p.alpha -= dt * 2; continue; }
-    p.y += p.vy * dt;
-    if (p.y > H + 40) { p.hit = true; continue; }
-    drawPowerup(p);
-
-    if (rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
-                     p.x - 16, p.y - 16, 32, 32)) {
-      p.hit = true;
-      if (p.type === 'shield')  { shielded = true; textPop(plane.x, plane.y-30, '🛡️ SHIELD', '#ffd54f'); }
-      if (p.type === 'slow')    { slowTimer = 6;   textPop(plane.x, plane.y-30, '⏱️ SLOW',   '#b39ddb'); }
-      if (p.type === 'heart' && lives < 5) { lives++; textPop(plane.x, plane.y-30, '❤️ +LIFE', '#ef5350'); }
-      burst(p.x, p.y, '#ffd54f', 12);
-    }
-  }
-  powerups = powerups.filter(p => p.alpha > 0);
-
-  // ── Particles ────────────────────────────────────────────────────
-  for (const p of particles) {
-    p.life -= dt * (p.type === 'text' ? 1.4 : 1.8);
-    p.x  += (p.vx || 0) * dt;
-    p.y  += (p.vy || 0) * dt;
-    if (p.type === 'text') {
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle   = p.colour;
-      ctx.font        = 'bold 15px Orbitron, monospace';
-      ctx.textAlign   = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(p.txt, p.x, p.y);
-      ctx.globalAlpha = 1;
-    } else {
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle   = p.colour;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-  }
-  particles = particles.filter(p => p.life > 0);
-
-  // ── Plane ────────────────────────────────────────────────────────
-  const planeAlpha = plane.invincible > 0 ? (Math.floor(plane.invincible / 6) % 2 === 0 ? 0.3 : 1) : 1;
-  drawPlane(plane.x, plane.y, planeAlpha);
-
-  // ── HUD ──────────────────────────────────────────────────────────
-  drawHUD();
-}
-
 // ── Start / end ────────────────────────────────────────────────────
 function startGame() {
   document.getElementById('startScreen').classList.add('hidden');
@@ -792,12 +638,11 @@ function startGame() {
 
   state = 'playing';
   lastTime = performance.now();
-  requestAnimationFrame(gameLoop);
+  // masterLoop is already running — state change to 'playing' is enough
 }
 
 function endGame() {
-  state = 'idle';
-  clearInterval(timerInterval);
+  state = 'idle';  // masterLoop continues but draws idle screen
 
   if (score > bestScore) {
     bestScore = score;
@@ -845,26 +690,150 @@ document.querySelector('.btn-sm').onclick = async () => {
 // Show best on start
 document.getElementById('startHi').textContent = `BEST: ${bestScore}`;
 
-// Draw idle screen (starfield animation while on menu)
-function idleLoop(ts) {
-  if (state === 'playing') return;
-  requestAnimationFrame(idleLoop);
+// ── Single master loop — handles both idle and playing states ─────
+function masterLoop(ts) {
+  requestAnimationFrame(masterLoop);  // always re-queues itself, ONE loop only
+
   const dt = Math.min((ts - lastTime) / 1000, .05);
   lastTime = ts;
   frameCount++;
 
   const W = canvas.width, H = canvas.height;
+
+  // Background (shared)
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#010209');
   bg.addColorStop(1, '#03050f');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   drawStars(dt);
-  // Idle plane drift
-  drawPlane(W/2 + Math.sin(frameCount * .02) * 30, H * .6, 1);
+
+  if (state !== 'playing') {
+    // Idle: just show a drifting plane behind the overlay screens
+    drawPlane(W/2 + Math.sin(frameCount * .02) * 30, H * .6, 1);
+    return;
+  }
+
+  // ── PLAYING ────────────────────────────────────────────────────
+  waveTimer  -= dt;
+  spawnTimer -= dt;
+  if (slowTimer > 0) slowTimer -= dt;
+  if (plane.invincible > 0) plane.invincible--;
+
+  // Next wave
+  if (waveTimer <= 0) {
+    wave++;
+    waveTimer  = WAVE_DURATION;
+    spawnTimer = 0;
+    tokens     = [];
+  }
+
+  // Spawn tokens
+  if (spawnTimer <= 0 && tokens.filter(t => !t.hit).length === 0) {
+    spawnWave();
+    spawnTimer = .6;
+  }
+
+  // Plane movement
+  const speed = 320;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) plane.targetX -= speed * dt;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) plane.targetX += speed * dt;
+  const hw = plane.w / 2;
+  plane.targetX = Math.max(hw, Math.min(W - hw, plane.targetX));
+  plane.x += (plane.targetX - plane.x) * Math.min(1, 12 * dt);
+  plane.y = H - 100;
+
+  // Tokens
+  for (const t of tokens) {
+    if (t.hit) { t.alpha -= dt * 3; continue; }
+    t.vy = slowTimer > 0 ? t.baseVy * .35 : t.baseVy;
+    t.y += t.vy * dt;
+    if (t.correct) t.glow = .5 + Math.sin(frameCount * .12) * .5;
+    if (t.y > H + 40) { t.hit = true; continue; }
+    drawToken(t);
+
+    if (plane.invincible === 0 &&
+        rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
+                     t.x - t.w/2, t.y - t.h/2, t.w, t.h)) {
+      t.hit = true;
+      if (t.correct) {
+        const pts = 10 * wave * multiplier;
+        score += pts;
+        streak++; correctCount++;
+        if (streak > bestStreak) bestStreak = streak;
+        multiplier = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
+        burst(t.x, t.y, '#69f0ae', 20);
+        textPop(plane.x, plane.y - 30, `+${pts}`, '#ffd54f');
+        spawnTimer = 0;
+      } else {
+        if (shielded) {
+          shielded = false;
+          burst(plane.x, plane.y, '#ffd54f', 14);
+          textPop(plane.x, plane.y - 30, 'SHIELD!', '#ffd54f');
+        } else {
+          lives--;
+          streak = 0; multiplier = 1;
+          plane.invincible = 90;
+          burst(plane.x, plane.y, '#ef5350', 22);
+          textPop(plane.x, plane.y - 30, '✈ −1', '#ef5350');
+          if (lives <= 0) { endGame(); return; }
+        }
+      }
+    }
+  }
+  tokens = tokens.filter(t => t.alpha > 0);
+
+  // Power-ups
+  for (const p of powerups) {
+    if (p.hit) { p.alpha -= dt * 2; continue; }
+    p.y += p.vy * dt;
+    if (p.y > H + 40) { p.hit = true; continue; }
+    drawPowerup(p);
+    if (rectsOverlap(plane.x - hw, plane.y - 26, plane.w, plane.h,
+                     p.x - 16, p.y - 16, 32, 32)) {
+      p.hit = true;
+      if (p.type === 'shield')            { shielded = true; textPop(plane.x, plane.y-30, '🛡️ SHIELD', '#ffd54f'); }
+      if (p.type === 'slow')              { slowTimer = 6;   textPop(plane.x, plane.y-30, '⏱️ SLOW',   '#b39ddb'); }
+      if (p.type === 'heart' && lives < 5){ lives++;         textPop(plane.x, plane.y-30, '❤️ +LIFE',  '#ef5350'); }
+      burst(p.x, p.y, '#ffd54f', 12);
+    }
+  }
+  powerups = powerups.filter(p => p.alpha > 0);
+
+  // Particles
+  for (const p of particles) {
+    p.life -= dt * (p.type === 'text' ? 1.4 : 1.8);
+    p.x  += (p.vx || 0) * dt;
+    p.y  += (p.vy || 0) * dt;
+    if (p.type === 'text') {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle   = p.colour;
+      ctx.font        = 'bold 15px Orbitron, monospace';
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.txt, p.x, p.y);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle   = p.colour;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // Plane (drawn AFTER tokens/particles so it's always on top)
+  const planeAlpha = plane.invincible > 0 ? (Math.floor(plane.invincible / 6) % 2 === 0 ? 0.3 : 1) : 1;
+  drawPlane(plane.x, plane.y, planeAlpha);
+
+  // HUD drawn last — always on top
+  drawHUD();
 }
+
 lastTime = performance.now();
-requestAnimationFrame(idleLoop);
+requestAnimationFrame(masterLoop);
 </script>
 </body>
 </html>
