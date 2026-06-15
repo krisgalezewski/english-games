@@ -656,79 +656,103 @@ let lead,bass,padSynth,fxSynth,noiseFX;
 let menuSeq=null,gameSeq=null;
 let lastWaveBpm=0;
 
+// ── Note patterns ─────────────────────────────────────────────────
 const MENU_NOTES=['C3','E3','G3','B3','G3','E3','C4','B3'];
 const MENU_BASS =['C2','C2','G2','G2','A2','A2','F2','F2'];
 const MENU_PAD  =[['C3','E3','G3'],['G2','B2','D3'],['A2','C3','E3'],['F2','A2','C3']];
 const GAME_NOTES=['C4','E4','G4','C5','B4','G4','E4','G4','A4','C5','B4','A4','G4','E4','C4','E4'];
 const GAME_BASS =['C2','C2','C2','C2','G2','G2','G2','G2','A2','A2','A2','A2','F2','F2','F2','F2'];
 
+// ── Scheduler IDs ─────────────────────────────────────────────────
+let musicEventId = null;  // Tone.Transport.scheduleRepeat id
+let musicStep    = 0;
+let musicMode    = 'none'; // 'menu' | 'game' | 'none'
+
 async function startAudio(){
   if(audioReady) return;
   try {
     await Tone.start();
+    console.log('Tone.start() OK, state:', Tone.context.state);
 
-    // Create ALL instruments AFTER Tone.start() — AudioContext must exist first
-    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.08,sustain:.4, release:.12},volume:-10}).toDestination();
-    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.15,sustain:.3, release:.08},volume:-14}).toDestination();
-    fxSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0, release:.08},volume:-8 }).toDestination();
-    noiseFX = new Tone.NoiseSynth({noise:{type:'white'},   envelope:{attack:.005,decay:.06,sustain:0, release:.02},volume:-18}).toDestination();
+    // Build instruments now that AudioContext exists
+    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.1, sustain:.5,release:.15},volume:-8 }).toDestination();
+    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.18,sustain:.35,release:.1}, volume:-12}).toDestination();
+    fxSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0,release:.08},volume:-8 }).toDestination();
+    noiseFX = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.005,decay:.07,sustain:0,release:.02},volume:-16}).toDestination();
+
+    // Pad with reverb
+    const rev = new Tone.Reverb({decay:2, wet:.4}).toDestination();
     padSynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator:{type:'sine'}, envelope:{attack:.3,decay:.4,sustain:.6,release:1.2}, volume:-22
-    });
-    const rev = new Tone.Reverb({decay:2.5, wet:.35}).toDestination();
-    padSynth.connect(rev);
+      oscillator:{type:'sine'}, envelope:{attack:.4,decay:.3,sustain:.7,release:1.5}, volume:-20
+    }).connect(rev);
 
     audioReady = true;
+    Tone.getTransport().bpm.value = 90;
     Tone.getTransport().start();
-    buildMenuSeq(); // ← start menu music immediately
-    console.log('Audio ready, menu music started');
-  } catch(e){ console.warn('Audio init failed:',e); }
+    console.log('Transport started, scheduling music...');
+    scheduleMusic('menu');
+  } catch(e){ console.error('Audio init failed:', e); }
 }
 
-function getGameBpm(){ return Math.min(160,120+(wave-1)*8); }
+function scheduleMusic(mode){
+  // Cancel any existing music event
+  if(musicEventId !== null){
+    Tone.getTransport().cancel(musicEventId);
+    musicEventId = null;
+  }
+  musicMode = mode;
+  musicStep = 0;
 
-function buildMenuSeq(){
-  if(menuSeq){menuSeq.dispose();menuSeq=null;}
-  let step=0,padTick=0;
-  menuSeq=new Tone.Sequence(time=>{
-    if(muted)return;
-    lead.triggerAttackRelease(MENU_NOTES[step%MENU_NOTES.length],'16n',time);
-    if(step%2===0) bass.triggerAttackRelease(MENU_BASS[Math.floor(step/2)%MENU_BASS.length],'8n',time);
-    if(step%4===0) padSynth.triggerAttackRelease(MENU_PAD[padTick++%MENU_PAD.length],'2n',time);
-    step++;
-  },null,'16n');
-  menuSeq.start(0);
-  Tone.getTransport().bpm.value=90;
+  if(mode === 'none') return;
+
+  const interval = mode === 'menu' ? '16n' : '16n';
+
+  musicEventId = Tone.getTransport().scheduleRepeat(time => {
+    if(muted || !audioReady) return;
+
+    if(musicMode === 'menu'){
+      // Arpeggio lead
+      lead.triggerAttackRelease(MENU_NOTES[musicStep % MENU_NOTES.length], '16n', time);
+      // Bass on every other beat
+      if(musicStep % 2 === 0)
+        bass.triggerAttackRelease(MENU_BASS[Math.floor(musicStep/2) % MENU_BASS.length], '8n', time);
+      // Pad chord every 4 steps
+      if(musicStep % 4 === 0){
+        const chord = MENU_PAD[Math.floor(musicStep/4) % MENU_PAD.length];
+        padSynth.triggerAttackRelease(chord, '2n', time);
+      }
+    } else if(musicMode === 'game'){
+      // Driving lead (skip every 3rd step for rhythm)
+      if(musicStep % 3 !== 1)
+        lead.triggerAttackRelease(GAME_NOTES[musicStep % GAME_NOTES.length], '16n', time);
+      // Bass on every 2nd step
+      if(musicStep % 2 === 0)
+        bass.triggerAttackRelease(GAME_BASS[Math.floor(musicStep/4) % GAME_BASS.length], '8n', time);
+    }
+
+    musicStep++;
+  }, interval, 0);
+
+  console.log('Music scheduled, mode:', mode, 'eventId:', musicEventId);
 }
 
-function buildGameSeq(){
-  if(gameSeq){gameSeq.dispose();gameSeq=null;}
-  let step=0;
-  gameSeq=new Tone.Sequence(time=>{
-    if(muted)return;
-    if(step%3!==1) lead.triggerAttackRelease(GAME_NOTES[step%GAME_NOTES.length],'16n',time);
-    if(step%2===0) bass.triggerAttackRelease(GAME_BASS[Math.floor(step/4)%GAME_BASS.length],'8n',time);
-    step++;
-  },null,'16n');
-  gameSeq.start(0);
-  Tone.getTransport().bpm.value=getGameBpm();
-}
+function getGameBpm(){ return Math.min(160, 120 + (wave-1)*8); }
 
 function switchToMenuMusic(){
-  if(!audioReady)return;
-  if(gameSeq){gameSeq.stop();gameSeq.dispose();gameSeq=null;}
-  buildMenuSeq();
+  if(!audioReady) return;
+  Tone.getTransport().bpm.rampTo(90, 1);
+  scheduleMusic('menu');
 }
 
 function switchToGameMusic(){
-  if(!audioReady)return;
-  if(menuSeq){menuSeq.stop();menuSeq.dispose();menuSeq=null;}
-  buildGameSeq();
+  if(!audioReady) return;
+  Tone.getTransport().bpm.value = getGameBpm();
+  scheduleMusic('game');
 }
 
 function updateBpm(){
-  const bpm=getGameBpm();
-  if(bpm!==lastWaveBpm){lastWaveBpm=bpm;Tone.getTransport().bpm.rampTo(bpm,2);}
+  const bpm = getGameBpm();
+  if(bpm !== lastWaveBpm){ lastWaveBpm=bpm; Tone.getTransport().bpm.rampTo(bpm, 2); }
 }
 
 function sfxCorrect(){
