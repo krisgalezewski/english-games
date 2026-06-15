@@ -13,7 +13,10 @@ body {
   min-height:100vh; display:flex; flex-direction:column; align-items:center;
   overflow:hidden; user-select:none; -webkit-user-select:none;
 }
-#gameCanvas { display:block; touch-action:none; cursor:none; }
+#gameCanvas {
+  display:block; touch-action:none; cursor:none;
+  position:fixed; top:48px; left:0;
+}
 
 /* ── Overlay screens ── */
 .screen {
@@ -167,7 +170,7 @@ const NAV_H  = 48; // height of top nav bar
 
 function resize() {
   canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.height = window.innerHeight - NAV_H;
 }
 resize();
 window.addEventListener('resize', resize);
@@ -317,7 +320,7 @@ function spawnWave(){
   answers.forEach((a,i)=>{
     tokens.push({
       text:a.text,correct:a.correct,
-      x:spacing*(i+1),y:NAV_H-60,
+      x:spacing*(i+1),y:-50,
       vy:baseSpeed,baseVy:baseSpeed,
       w:0,h:42,hit:false,alpha:1,
       wobble:(Math.random()-.5)*.04,
@@ -326,7 +329,7 @@ function spawnWave(){
   });
   if(Math.random()<.18&&wave>=2){
     const types=['shield','slow','heart'];
-    powerups.push({type:types[Math.floor(Math.random()*types.length)],x:Math.random()*(W-80)+40,y:NAV_H-60,vy:55,hit:false,alpha:1});
+    powerups.push({type:types[Math.floor(Math.random()*types.length)],x:Math.random()*(W-80)+40,y:-50,vy:55,hit:false,alpha:1});
   }
 }
 
@@ -360,7 +363,7 @@ function drawStars(dt){
   const W=canvas.width,H=canvas.height;
   for(const s of STARS){
     s.y+=s.speed*dt*(slowTimer>0?40:80);
-    if(s.y>H){s.y=NAV_H;s.x=Math.random()*W;}
+    if(s.y>H){s.y=0;s.x=Math.random()*W;}
     ctx.globalAlpha=s.alpha;
     ctx.fillStyle='#fff';
     ctx.beginPath();ctx.arc(s.x%W,s.y,s.r,0,Math.PI*2);ctx.fill();
@@ -443,49 +446,47 @@ function drawPowerup(p){
 function drawHUD(){
   ctx.save();
   const W=canvas.width;
-  // In-game HUD bar (below nav)
-  const HUD_Y=NAV_H;
-  ctx.fillStyle='rgba(3,5,15,.75)';ctx.fillRect(0,HUD_Y,W,44);
+  // In-game HUD bar (canvas already starts below #topNav)
+  ctx.fillStyle='rgba(3,5,15,.85)';ctx.fillRect(0,0,W,44);
   ctx.strokeStyle='rgba(79,195,247,.15)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,HUD_Y+44);ctx.lineTo(W,HUD_Y+44);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,44);ctx.lineTo(W,44);ctx.stroke();
 
   // Score
   ctx.fillStyle='#ffd54f';ctx.font='bold 17px Orbitron, monospace';
   ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText(String(score).padStart(6,'0'),14,HUD_Y+22);
+  ctx.fillText(String(score).padStart(6,'0'),14,22);
   // Multiplier
   if(multiplier>1){
     ctx.fillStyle=streak>=5?'#ff6b6b':'#4fc3f7';
     ctx.font='bold 12px Orbitron, monospace';
-    ctx.fillText('×'+multiplier,102,HUD_Y+22);
+    ctx.fillText('×'+multiplier,102,22);
   }
   // Wave
   ctx.fillStyle='rgba(255,255,255,.45)';ctx.font='10px Orbitron, monospace';
-  ctx.textAlign='center';ctx.fillText('WAVE '+wave,W/2,HUD_Y+12);
+  ctx.textAlign='center';ctx.fillText('WAVE '+wave,W/2,12);
   // Wave progress bar
   const wPct=Math.max(0,1-waveTimer/WAVE_DUR);
-  ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(W/2-55,HUD_Y+22,110,4);
-  ctx.fillStyle='#4fc3f7';ctx.fillRect(W/2-55,HUD_Y+22,110*wPct,4);
+  ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(W/2-55,22,110,4);
+  ctx.fillStyle='#4fc3f7';ctx.fillRect(W/2-55,22,110*wPct,4);
   // Lives
   ctx.font='14px serif';ctx.textAlign='right';ctx.textBaseline='middle';
-  for(let i=0;i<5;i++){ctx.globalAlpha=i<lives?1:.15;ctx.fillText('✈',W-10-i*20,HUD_Y+22);}
+  for(let i=0;i<5;i++){ctx.globalAlpha=i<lives?1:.15;ctx.fillText('✈',W-10-i*20,22);}
   ctx.globalAlpha=1;
   // Slow indicator
   if(slowTimer>0){
     ctx.fillStyle='#b39ddb';ctx.font='9px Orbitron, monospace';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,HUD_Y+36);
+    ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,36);
   }
 
   // Question banner
-  const QY=HUD_Y+44;
-  ctx.fillStyle='rgba(21,101,192,.55)';ctx.fillRect(0,QY,W,38);
+  ctx.fillStyle='rgba(21,101,192,.55)';ctx.fillRect(0,44,W,38);
   ctx.strokeStyle='rgba(79,195,247,.18)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,QY+38);ctx.lineTo(W,QY+38);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,82);ctx.lineTo(W,82);ctx.stroke();
   if(currentQ){
     ctx.fillStyle='#fff';ctx.font='bold 14px DM Sans, sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(currentQ.q,W/2,QY+19);
+    ctx.fillText(currentQ.q,W/2,63);
   }
   ctx.restore();
 }
@@ -666,18 +667,21 @@ async function startAudio(){
   try {
     await Tone.start();
 
-    // Create instruments AFTER Tone.start()
-    lead=new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.01,decay:.08,sustain:.4,release:.12},volume:-10}).toDestination();
-    bass=new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.15,sustain:.3,release:.08},volume:-14}).toDestination();
-    padSynth=new Tone.PolySynth(Tone.Synth,{oscillator:{type:'sine'},envelope:{attack:.3,decay:.4,sustain:.6,release:1.2},volume:-22});
-    fxSynth=new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0,release:.08},volume:-8}).toDestination();
-    noiseFX=new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.005,decay:.06,sustain:0,release:.02},volume:-18}).toDestination();
-    const rev=new Tone.Reverb({decay:2.5,wet:.35}).toDestination();
+    // Create ALL instruments AFTER Tone.start() — AudioContext must exist first
+    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.08,sustain:.4, release:.12},volume:-10}).toDestination();
+    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.15,sustain:.3, release:.08},volume:-14}).toDestination();
+    fxSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0, release:.08},volume:-8 }).toDestination();
+    noiseFX = new Tone.NoiseSynth({noise:{type:'white'},   envelope:{attack:.005,decay:.06,sustain:0, release:.02},volume:-18}).toDestination();
+    padSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator:{type:'sine'}, envelope:{attack:.3,decay:.4,sustain:.6,release:1.2}, volume:-22
+    });
+    const rev = new Tone.Reverb({decay:2.5, wet:.35}).toDestination();
     padSynth.connect(rev);
 
-    audioReady=true;
+    audioReady = true;
     Tone.getTransport().start();
-    buildMenuSeq();
+    buildMenuSeq(); // ← start menu music immediately
+    console.log('Audio ready, menu music started');
   } catch(e){ console.warn('Audio init failed:',e); }
 }
 
@@ -775,8 +779,11 @@ document.getElementById('startHi').textContent='BEST: '+bestScore;
 lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 
-// Start audio on first interaction (menu click or key)
-document.getElementById('startScreen').addEventListener('pointerdown',()=>startAudio().then(()=>{if(state==='idle')buildMenuSeq();}),{once:true});
+// Start audio on first interaction with the start screen (FLY button or any tap)
+// Using 'click' on the whole start screen ensures it fires after a real gesture
+document.getElementById('startScreen').addEventListener('click', async () => {
+  await startAudio();
+}, {once:true});
 </script>
 </body>
 </html>
