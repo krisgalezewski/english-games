@@ -14,7 +14,7 @@ body {
   overflow:hidden; user-select:none; -webkit-user-select:none;
 }
 #gameCanvas {
-  display:block; touch-action:none; cursor:none;
+  display:block; touch-action:none; cursor:default;
   position:fixed; top:48px; left:0;
 }
 
@@ -55,6 +55,61 @@ body {
   transition:background .2s;
 }
 #muteBtn:hover { background:rgba(255,255,255,.15); }
+
+#pauseBtn {
+  height:34px; padding:0 .8rem; border-radius:17px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
+  color:#fff; font-size:.72rem; cursor:pointer;
+  display:none; align-items:center; justify-content:center; gap:.3rem;
+  font-family:'Orbitron',monospace; letter-spacing:.06em;
+  transition:background .2s;
+}
+#pauseBtn:hover { background:rgba(255,255,255,.15); }
+#pauseBtn.visible { display:flex; }
+
+/* Pause overlay */
+#pauseOverlay {
+  position:fixed; inset:0; z-index:150;
+  background:rgba(3,5,15,.82); backdrop-filter:blur(6px);
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center; gap:1.25rem;
+}
+#pauseOverlay.visible { display:flex; }
+#pauseOverlay .pause-title {
+  font-family:'Orbitron',monospace; font-size:2rem; font-weight:900;
+  color:#fff; letter-spacing:.08em;
+}
+#pauseOverlay .pause-hint {
+  font-family:'Space Mono',monospace; font-size:.75rem;
+  color:rgba(255,255,255,.4); letter-spacing:.1em;
+}
+
+/* Track selector — shown during gameplay */
+#trackSelector {
+  position:fixed; bottom:1rem; left:50%; transform:translateX(-50%);
+  z-index:200; display:none;
+  background:rgba(3,5,15,.88); border:1px solid rgba(255,255,255,.12);
+  border-radius:99px; padding:.3rem .4rem;
+  display:flex; gap:.3rem; align-items:center;
+  backdrop-filter:blur(8px);
+}
+#trackSelector .track-label {
+  font-family:'Orbitron',monospace; font-size:.58rem;
+  color:rgba(255,255,255,.35); letter-spacing:.1em; padding:0 .4rem;
+  text-transform:uppercase;
+}
+.track-btn {
+  font-family:'Orbitron',monospace; font-size:.6rem; font-weight:700;
+  letter-spacing:.06em; padding:.28rem .75rem; border-radius:99px;
+  border:1px solid rgba(255,255,255,.15); background:transparent;
+  color:rgba(255,255,255,.5); cursor:pointer; transition:all .18s;
+  text-transform:uppercase; white-space:nowrap;
+}
+.track-btn:hover { border-color:rgba(79,195,247,.6); color:#4fc3f7; }
+.track-btn.active {
+  background:linear-gradient(135deg,#4fc3f7,#1565c0);
+  border-color:#4fc3f7; color:#fff;
+}
 
 /* ── Logo ── */
 .logo {
@@ -117,8 +172,15 @@ body {
 <nav id="topNav">
   <a href="index.html">← GAMES</a>
   <span class="nav-title">✈ ENGLISH ACE</span>
+  <button id="pauseBtn" title="Pause (Space)">⏸ PAUSE</button>
   <button id="muteBtn" title="Music volume">🔊 100%</button>
 </nav>
+
+<div id="pauseOverlay">
+  <div class="pause-title">PAUSED</div>
+  <div class="pause-hint">Press SPACE or click to resume</div>
+  <button class="btn" onclick="togglePause()">▶ RESUME</button>
+</div>
 
 <!-- Start screen -->
 <div class="screen" id="startScreen">
@@ -159,6 +221,12 @@ body {
   <button class="btn secondary" onclick="showStart()">MENU</button>
 </div>
 
+<div id="trackSelector">
+  <span class="track-label">♪</span>
+  <button class="track-btn active" id="track0" onclick="selectTrack(0)">— Dash</button>
+  <button class="track-btn"        id="track1" onclick="selectTrack(1)">- Hyphen</button>
+  <button class="track-btn"        id="track2" onclick="selectTrack(2)">… Ellipsis</button>
+</div>
 <canvas id="gameCanvas"></canvas>
 <script src="shared.js"></script>
 <script>
@@ -273,7 +341,7 @@ const STARS = Array.from({length:200}, ()=>({
 }));
 
 // ── State ──────────────────────────────────────────────────────────
-let state='idle';
+let state='idle'; // 'idle' | 'playing' | 'paused'
 let score=0,wave=1,lives=5,streak=0,bestStreak=0,correctCount=0,multiplier=1;
 let bestScore=parseInt(localStorage.getItem('ace_best')||'0');
 let currentQ=null;
@@ -412,25 +480,38 @@ function drawPlane(x,y,alpha){
 function drawToken(t){
   ctx.save();
   ctx.globalAlpha=t.alpha;
-  ctx.font='bold 13px Orbitron, monospace';
-  if(!t.w) t.w=ctx.measureText(t.text).width+32;
-  const wobbleX=Math.sin(frameCount*t.wobble+t.wobbleOff)*3;
+  ctx.font='bold 15px Orbitron, monospace';
+  if(!t.w) t.w=ctx.measureText(t.text).width+36;
+  const wobbleX=Math.sin(frameCount*t.wobble+t.wobbleOff)*2;
   ctx.translate(t.x+wobbleX,t.y);
   const rx=-t.w/2,ry=-t.h/2,rw=t.w,rh=t.h,rad=10;
-  ctx.shadowColor='rgba(79,195,247,0.4)';ctx.shadowBlur=12;
-  ctx.fillStyle='rgba(8,24,58,0.88)';
+
+  // Bright outer glow
+  ctx.shadowColor='rgba(255,255,255,0.5)';
+  ctx.shadowBlur=16;
+
+  // White/cream background — maximum contrast against dark space
+  const bg=ctx.createLinearGradient(rx,ry,rx,ry+rh);
+  bg.addColorStop(0,'rgba(255,255,255,0.97)');
+  bg.addColorStop(1,'rgba(210,225,255,0.95)');
+  ctx.fillStyle=bg;
   roundRect(ctx,rx,ry,rw,rh,rad);ctx.fill();
-  const shimmer=ctx.createLinearGradient(rx,ry,rx,ry+rh);
-  shimmer.addColorStop(0,'rgba(255,255,255,0.12)');
-  shimmer.addColorStop(0.45,'rgba(255,255,255,0.03)');
-  shimmer.addColorStop(1,'rgba(255,255,255,0.07)');
-  ctx.fillStyle=shimmer;roundRect(ctx,rx,ry,rw,rh,rad);ctx.fill();
-  ctx.shadowBlur=0;ctx.strokeStyle='rgba(79,195,247,0.55)';ctx.lineWidth=1.5;
+
+  // Cyan border — clearly visible
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='#4fc3f7';ctx.lineWidth=2.5;
   roundRect(ctx,rx,ry,rw,rh,rad);ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(rx+rad,ry+1);ctx.lineTo(rx+rw-rad,ry+1);ctx.stroke();
-  ctx.fillStyle='#e8eaf6';ctx.font='bold 13px Orbitron, monospace';
+
+  // Top highlight stripe
+  ctx.fillStyle='rgba(255,255,255,0.6)';
+  roundRect(ctx,rx+2,ry+2,rw-4,rh*0.35,rad-2);ctx.fill();
+
+  // Text — dark navy for maximum readability on white
+  ctx.fillStyle='#0a1628';
+  ctx.font='bold 15px Orbitron, monospace';
   ctx.textAlign='center';ctx.textBaseline='middle';
+  // Subtle text shadow for crispness
+  ctx.shadowColor='rgba(0,0,50,0.2)';ctx.shadowBlur=2;
   ctx.fillText(t.text,0,0);
   ctx.restore();
 }
@@ -480,14 +561,31 @@ function drawHUD(){
     ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,36);
   }
 
-  // Question banner
-  ctx.fillStyle='rgba(21,101,192,.55)';ctx.fillRect(0,44,W,38);
-  ctx.strokeStyle='rgba(79,195,247,.18)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,82);ctx.lineTo(W,82);ctx.stroke();
+  // Question banner — tall, clear, hard to miss
+  // Gradient background for depth
+  const qGrad = ctx.createLinearGradient(0,44,0,106);
+  qGrad.addColorStop(0,'rgba(14,60,120,.92)');
+  qGrad.addColorStop(1,'rgba(8,30,70,.92)');
+  ctx.fillStyle=qGrad; ctx.fillRect(0,44,W,62);
+  // Top and bottom borders
+  ctx.strokeStyle='rgba(79,195,247,.35)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,44);ctx.lineTo(W,44);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,106);ctx.lineTo(W,106);ctx.stroke();
   if(currentQ){
-    ctx.fillStyle='#fff';ctx.font='bold 14px DM Sans, sans-serif';
+    // Small label
+    ctx.fillStyle='rgba(79,195,247,.7)';
+    ctx.font='bold 9px Orbitron, monospace';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(currentQ.q,W/2,63);
+    ctx.letterSpacing='0.14em';
+    ctx.fillText('COMPLETE THE PHRASE',W/2,56);
+    // Main question — large and bright
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold 20px Orbitron, monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(79,195,247,0.6)';
+    ctx.shadowBlur=8;
+    ctx.fillText(currentQ.q,W/2,82);
+    ctx.shadowBlur=0;
   }
   ctx.restore();
 }
@@ -526,9 +624,16 @@ function masterLoop(ts){
   ctx.fillStyle='#03050f';ctx.fillRect(0,0,W,H);
   drawStars(dt);
 
-  // Idle
-  if(state!=='playing'){
+  // Idle / paused — draw drifting plane but don't advance game logic
+  if(state==='idle'){
     drawPlane(W/2+Math.sin(frameCount*.02)*30,H*.6,1);
+    return;
+  }
+  if(state==='paused'){
+    // Draw frozen game state (tokens, plane) but don't update anything
+    for(const t of tokens){ if(!t.hit && t.alpha>0) drawToken(t); }
+    drawPlane(plane.x,plane.y,1);
+    drawHUD();
     return;
   }
 
@@ -536,8 +641,14 @@ function masterLoop(ts){
   waveTimer-=dt; spawnTimer-=dt;
   if(slowTimer>0) slowTimer-=dt;
   if(plane.invincible>0) plane.invincible--;
-  if(waveTimer<=0){ wave++;waveTimer=WAVE_DUR;spawnTimer=0;tokens=[];sfxWaveUp();updateBpm(); }
-  if(spawnTimer<=0&&tokens.filter(t=>!t.hit).length===0){spawnWave();spawnTimer=.5;}
+  // Only advance wave when ALL current tokens are gone — prevents question changing mid-flight
+  const activeTokens = tokens.filter(t=>!t.hit);
+  if(waveTimer<=0 && activeTokens.length===0){
+    wave++;waveTimer=WAVE_DUR;spawnTimer=0;sfxWaveUp();updateBpm();
+  }
+  if(spawnTimer<=0 && activeTokens.length===0 && waveTimer>0){
+    spawnWave();spawnTimer=.5;
+  }
 
   // Plane movement
   if(keys['ArrowLeft'] ||keys['a']||keys['A']) plane.targetX-=320*dt;
@@ -622,11 +733,17 @@ function startGame(){
   plane.y=canvas.height-100;plane.invincible=0;
   dragActive=false;
   state='playing';lastTime=performance.now();
+  document.getElementById('trackSelector').style.display='flex';
+  document.getElementById('pauseBtn').classList.add('visible');
   startAudio().then(switchToGameMusic);
 }
 
 function endGame(){
   state='idle';
+  document.getElementById('trackSelector').style.display='none';
+  document.getElementById('pauseBtn').classList.remove('visible');
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  document.getElementById('pauseOverlay').classList.remove('visible');
   sfxGameOver();switchToMenuMusic();
   if(score>bestScore){bestScore=score;localStorage.setItem('ace_best',bestScore);}
   document.getElementById('startHi').textContent='BEST: '+bestScore;
@@ -653,7 +770,8 @@ document.getElementById('submitBtn').addEventListener('click',async()=>{
 // AUDIO — lazy-initialised inside startAudio()
 // ═══════════════════════════════════════════════════════════════════
 let audioReady=false;
-let musicGain=null; // separate gain for music-only volume
+let musicGain=null;
+let kick=null; // kick drum for hi-NRG beat // separate gain for music-only volume
 // Volume states: 0=100%, 1=50%, 2=muted
 const VOL_STATES = [
   { label:'🔊 100%', musicVol:0,   sfxVol:0,        muted:false },
@@ -667,17 +785,118 @@ let lead,bass,padSynth,fxSynth,noiseFX;
 let menuSeq=null,gameSeq=null;
 let lastWaveBpm=0;
 
-// ── Note patterns ─────────────────────────────────────────────────
-const MENU_NOTES=['C3','E3','G3','B3','G3','E3','C4','B3'];
-const MENU_BASS =['C2','C2','G2','G2','A2','A2','F2','F2'];
-const MENU_PAD  =[['C3','E3','G3'],['G2','B2','D3'],['A2','C3','E3'],['F2','A2','C3']];
-const GAME_NOTES=['C4','E4','G4','C5','B4','G4','E4','G4','A4','C5','B4','A4','G4','E4','C4','E4'];
-const GAME_BASS =['C2','C2','C2','C2','G2','G2','G2','G2','A2','A2','A2','A2','F2','F2','F2','F2'];
+// ═══════════════════════════════════════════════════════════════════
+// MUSIC — MENU TRACK + THREE GAME TRACKS
+// ═══════════════════════════════════════════════════════════════════
+
+// ── MENU TRACK: Star Wars feel — heroic, major, dotted rhythm ────
+// C major / F major / G major / Am  (fanfare progression)
+// Dotted-rhythm lead gives it that march/fanfare feel
+const MENU_TRACK = {
+  name: 'Menu', bpm: 60,
+  // Bass: half-note feel, stately
+  bass: [
+    'C2','C2','C2','C2', 'F2','F2','F2','F2',
+    'G2','G2','G2','G2', 'C2','C2','C2','C2',
+  ],
+  // Lead: dotted fanfare melody — C C C  E G  (5-note motif, iconic rhythm)
+  // Represented as 16th steps: long-short-long pattern
+  // steps: 0=C4, 1=rest, 2=C4, 3=rest, 4=C4, 5=rest, 6=E4, 7=rest,
+  //        8=G4, 9=rest, 10=rest, 11=rest, 12=G4...
+  melody: [
+    // C major fanfare motif (bars 1-2)
+    'C4',null,'C4',null,'C4',null,'E4',null,
+    'G4',null,null,null,'G4',null,null,null,
+    // F major response (bars 3-4)
+    'F4',null,'F4',null,'F4',null,'A4',null,
+    'C5',null,null,null,'C5',null,null,null,
+  ],
+  pad: [['C3','E3','G3'],['F2','A2','C3'],['G2','B2','D3'],['C3','E3','G3']],
+};
+
+// ── GAME TRACKS ───────────────────────────────────────────────────
+const TRACKS = [
+  {
+    // ── Track 1: DASH (Dm–Bb–F–C) ────────────────────────────────
+    // Smalltown Boy vibe — driving minor arpeggio, pulsing 16th bass
+    // 4-on-the-floor kick, melancholic hi-NRG
+    name: 'Dash —',
+    bpmGame: 70,
+    bass: [
+      'D2','D2','D2','D2', 'Bb1','Bb1','Bb1','Bb1',
+      'F2','F2','F2','F2', 'C2','C2','C2','C2',
+    ],
+    arp: [
+      'D4','F4','A4','D5','A4','F4','D4','F4',
+      'Bb3','D4','F4','Bb4','F4','D4','Bb3','D4',
+      'F3','A3','C4','F4','C4','A3','F3','A3',
+      'C4','E4','G4','C5','G4','E4','C4','E4',
+    ],
+    pad: [['D3','F3','A3'],['Bb2','D3','F3'],['F2','A2','C3'],['C3','E3','G3']],
+    kick: true,
+  },
+  {
+    // ── Track 2: HYPHEN (Am–G–C–F) ───────────────────────────────
+    // Riptide by Vance Joy — bright, carefree, ukulele-like arpeggios
+    // Major feel despite Am start, light bouncy rhythm
+    // Key: Am–G–C–F (same as Riptide)
+    name: 'Hyphen -',
+    bpmGame: 60,
+    bass: [
+      'A1','A1','A1','A1', 'G2','G2','G2','G2',
+      'C2','C2','C2','C2', 'F2','F2','F2','F2',
+    ],
+    // Bright staccato arp — ukulele-like, bouncy
+    arp: [
+      // Am — bright, not brooding
+      'A3','E4','A4','C5','A4','E4','C4','E4',
+      // G — lifts, hopeful
+      'G3','D4','G4','B4','G4','D4','B3','D4',
+      // C — warm major
+      'C4','E4','G4','C5','G4','E4','C4','E4',
+      // F — gentle resolution
+      'F3','A3','C4','F4','C4','A3','F3','A3',
+    ],
+    pad: [['A2','C3','E3'],['G2','B2','D3'],['C3','E3','G3'],['F2','A2','C3']],
+    kick: false, // lighter, no heavy kick for Riptide feel
+  },
+  {
+    // ── Track 3: ELLIPSIS (Am–E–Am–E / Für Elise melody) ─────────
+    // Für Elise feel — classical minor melody, waltz-like bass
+    // The iconic E–D#–E–D#–E–B–D–C–A melody over Am
+    name: 'Ellipsis …',
+    bpmGame: 80,
+    bass: [
+      // Am — waltz feel: root on 1, fifth on 2&3
+      'A1','E2','A1','A1', 'E2','A1','A1','E2',
+      // E7 — tension
+      'E2','B2','E2','E2', 'B1','E2','E2','B1',
+      // Am return
+      'A1','E2','A1','A1', 'E2','A1','A1','E2',
+      // E7 resolve back
+      'E2','B1','E2','B1', 'E2','B1','E2','E2',
+    ],
+    // Für Elise melody — the iconic opening phrase as 16th notes
+    arp: [
+      // bar 1: E D# E D# E B D C
+      'E5','Eb5','E5','Eb5','E5','B4','D5','C5',
+      // bar 2: A (long) C E A
+      'A4',null,'C4','E4','A4',null,'E4',null,
+      // bar 3: E D# E D# E B D C
+      'E5','Eb5','E5','Eb5','E5','B4','D5','C5',
+      // bar 4: A (long) E A —
+      'A4',null,'E4',null,'A4',null,null,null,
+    ],
+    pad: [['A2','C3','E3'],['E2','G#2','B2'],['A2','C3','E3'],['E2','B2','E3']],
+    kick: false, // classical — no kick drum
+  },
+];
 
 // ── Scheduler IDs ─────────────────────────────────────────────────
-let musicEventId = null;  // Tone.Transport.scheduleRepeat id
+let musicEventId = null;
 let musicStep    = 0;
 let musicMode    = 'none'; // 'menu' | 'game' | 'none'
+let currentTrack = 0;      // 0 | 1 | 2
 
 async function startAudio(){
   if(audioReady) return;
@@ -690,17 +909,43 @@ async function startAudio(){
     fxSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0,release:.08},volume:-8 }).toDestination();
     noiseFX = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.005,decay:.07,sustain:0,release:.02},volume:-16}).toDestination();
 
-    // Music instruments → musicGain → destination (separate volume control)
+    // Music instruments → musicGain → destination
     musicGain = new Tone.Gain(1).toDestination();
-    lead    = new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.1, sustain:.5,release:.15},volume:-8 }).connect(musicGain);
-    bass    = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.01,decay:.18,sustain:.35,release:.1}, volume:-14}).connect(musicGain);
-    const rev = new Tone.Reverb({decay:2, wet:.4}).connect(musicGain);
+
+    // Arp synth — bright, slightly detuned square (Juno-style)
+    lead = new Tone.Synth({
+      oscillator:{ type:'square' },
+      envelope:  { attack:.005, decay:.08, sustain:.3, release:.08 },
+      volume: -12,
+    }).connect(musicGain);
+
+    // Bass synth — fat pulsing Moog-style sawtooth
+    bass = new Tone.Synth({
+      oscillator:{ type:'sawtooth' },
+      envelope:  { attack:.005, decay:.12, sustain:.6, release:.05 },
+      volume: -10,
+    }).connect(musicGain);
+
+    // Pad — lush detuned chords with reverb + chorus
+    const chorus = new Tone.Chorus(3, 2.5, 0.7).connect(musicGain).start();
+    const rev    = new Tone.Reverb({ decay:3, wet:.45 }).connect(musicGain);
     padSynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator:{type:'sine'}, envelope:{attack:.4,decay:.3,sustain:.7,release:1.5}, volume:-20
-    }).connect(rev);
+      oscillator:{ type:'sine' },
+      envelope:  { attack:.5, decay:.4, sustain:.8, release:2 },
+      volume: -18,
+    });
+    padSynth.connect(chorus);
+    padSynth.connect(rev);
+
+    // Kick drum simulation — low sine thud
+    kick = new Tone.MembraneSynth({
+      pitchDecay: .06, octaves: 8,
+      envelope:{ attack:.001, decay:.25, sustain:0, release:.1 },
+      volume: -8,
+    }).connect(musicGain);
 
     audioReady = true;
-    Tone.getTransport().bpm.value = 90;
+    Tone.getTransport().bpm.value = MENU_TRACK.bpm;
     Tone.getTransport().start();
     console.log('Transport started, scheduling music...');
     scheduleMusic('menu');
@@ -708,52 +953,82 @@ async function startAudio(){
 }
 
 function scheduleMusic(mode){
-  // Cancel any existing music event
   if(musicEventId !== null){
     Tone.getTransport().cancel(musicEventId);
     musicEventId = null;
   }
   musicMode = mode;
   musicStep = 0;
-
   if(mode === 'none') return;
-
-  const interval = mode === 'menu' ? '16n' : '16n';
 
   musicEventId = Tone.getTransport().scheduleRepeat(time => {
     if(isMuted() || !audioReady) return;
 
     if(musicMode === 'menu'){
-      // Arpeggio lead
-      lead.triggerAttackRelease(MENU_NOTES[musicStep % MENU_NOTES.length], '16n', time);
-      // Bass on every other beat
-      if(musicStep % 2 === 0)
-        bass.triggerAttackRelease(MENU_BASS[Math.floor(musicStep/2) % MENU_BASS.length], '8n', time);
-      // Pad chord every 4 steps
-      if(musicStep % 4 === 0){
-        const chord = MENU_PAD[Math.floor(musicStep/4) % MENU_PAD.length];
-        padSynth.triggerAttackRelease(chord, '2n', time);
+      // ── MENU TRACK: Star Wars fanfare style ─────────────────────
+      const M    = MENU_TRACK;
+      const step = musicStep % 32;
+      const chord= Math.floor(step / 8);
+
+      // Stately bass — quarter notes (every 4 sixteenth steps)
+      if(step % 4 === 0)
+        bass.triggerAttackRelease(M.bass[step % M.bass.length], '4n', time);
+
+      // Fanfare melody — supports null for rests
+      const note = M.melody[step % M.melody.length];
+      if(note) lead.triggerAttackRelease(note, '8n', time);
+
+      // Lush pad chords every half-bar
+      if(step % 8 === 0)
+        padSynth.triggerAttackRelease(M.pad[chord % M.pad.length], '2n', time);
+
+    } else {
+      // ── GAME TRACK ───────────────────────────────────────────────
+      const T    = TRACKS[currentTrack];
+      const step = musicStep % 32;
+      const chord= Math.floor(step / 8);
+
+      // Bass — pulsing 16th notes (every step)
+      bass.triggerAttackRelease(T.bass[step % T.bass.length], '16n', time);
+
+      // Melody/arp — supports null rests
+      const note = T.arp[step % T.arp.length];
+      if(note) lead.triggerAttackRelease(note, '16n', time);
+
+      // Pad chords
+      if(step % 8 === 0){
+        padSynth.triggerAttackRelease(T.pad[chord % T.pad.length], '4n', time);
       }
-    } else if(musicMode === 'game'){
-      // Driving lead (skip every 3rd step for rhythm)
-      if(musicStep % 3 !== 1)
-        lead.triggerAttackRelease(GAME_NOTES[musicStep % GAME_NOTES.length], '16n', time);
-      // Bass on every 2nd step
-      if(musicStep % 2 === 0)
-        bass.triggerAttackRelease(GAME_BASS[Math.floor(musicStep/4) % GAME_BASS.length], '8n', time);
+
+      // Kick — only on tracks that want it
+      if(step % 8 === 0 && kick && T.kick){
+        kick.triggerAttackRelease('C1', '8n', time);
+      }
     }
 
     musicStep++;
-  }, interval, 0);
-
-  console.log('Music scheduled, mode:', mode, 'eventId:', musicEventId);
+  }, '16n', 0);
 }
 
-function getGameBpm(){ return Math.min(160, 120 + (wave-1)*8); }
+function selectTrack(n){
+  currentTrack = n;
+  [0,1,2].forEach(i=>{
+    document.getElementById('track'+i).classList.toggle('active', i===n);
+  });
+  if(audioReady && musicMode !== 'none'){
+    const bpm = musicMode === 'menu'
+      ? MENU_TRACK.bpm
+      : TRACKS[n].bpmGame;
+    Tone.getTransport().bpm.rampTo(bpm, 0.5);
+    scheduleMusic(musicMode);
+  }
+}
+
+// getGameBpm now defined above with per-track support
 
 function switchToMenuMusic(){
   if(!audioReady) return;
-  Tone.getTransport().bpm.rampTo(90, 1);
+  Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm, 1);
   scheduleMusic('menu');
 }
 
@@ -761,6 +1036,11 @@ function switchToGameMusic(){
   if(!audioReady) return;
   Tone.getTransport().bpm.value = getGameBpm();
   scheduleMusic('game');
+}
+
+function getGameBpm(){
+  const base = TRACKS[currentTrack].bpmGame;
+  return Math.min(base + 35, base + (wave-1)*4);
 }
 
 function updateBpm(){
@@ -819,6 +1099,32 @@ function applyVolume(){
     v.musicVol === -Infinity ? 0 : Math.pow(10, v.musicVol/20), 0.1
   );
 }
+
+// ── Pause ─────────────────────────────────────────────────────────
+function togglePause(){
+  if(state === 'playing'){
+    state = 'paused';
+    document.getElementById('pauseOverlay').classList.add('visible');
+    document.getElementById('pauseBtn').textContent = '▶ RESUME';
+    if(audioReady) Tone.getTransport().pause();
+  } else if(state === 'paused'){
+    state = 'playing';
+    lastTime = performance.now(); // reset dt to avoid time jump
+    document.getElementById('pauseOverlay').classList.remove('visible');
+    document.getElementById('pauseBtn').textContent = '⏸ PAUSE';
+    if(audioReady) Tone.getTransport().start();
+  }
+}
+
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+
+// Spacebar to pause/resume
+window.addEventListener('keydown', e => {
+  if(e.code === 'Space' && (state === 'playing' || state === 'paused')){
+    e.preventDefault();
+    togglePause();
+  }
+});
 
 // ── Boot ───────────────────────────────────────────────────────────
 document.getElementById('startHi').textContent='BEST: '+bestScore;
