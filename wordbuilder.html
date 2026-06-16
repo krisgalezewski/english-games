@@ -143,9 +143,9 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   <div class="rack" id="rack"></div>
 
   <!-- Current word being built -->
-  <div class="word-display" id="wordDisplay">
-    <span class="word-placeholder" id="wordPlaceholder">Tap letters to build a word</span>
-  </div>
+  <!-- word-display only contains word-tile divs; placeholder is separate -->
+  <p class="word-placeholder" id="wordPlaceholder" style="text-align:center">Tap letters to build a word</p>
+  <div class="word-display" id="wordDisplay"></div>
 
   <!-- Actions -->
   <div class="action-row">
@@ -333,14 +333,18 @@ function selectLetter(i) {
 
 function updateWordDisplay() {
   const wd = document.getElementById('wordDisplay');
+  if(!wd) return;
+  // Clear only word-tile children, never touch the placeholder span
+  Array.from(wd.querySelectorAll('.word-tile')).forEach(el=>el.remove());
   const ph = document.getElementById('wordPlaceholder');
-  wd.innerHTML='';
   if(selectedIndices.length===0){
-    ph.style.display='block'; wd.appendChild(ph);
+    if(ph) ph.style.display='block';
     return;
   }
-  ph.style.display='none';
-  selectedIndices.forEach((idx,pos)=>{
+  if(ph) ph.style.display='none';
+  // Build a fresh snapshot of indices so click handlers capture correct pos
+  const snapshot = [...selectedIndices];
+  snapshot.forEach((idx,pos)=>{
     const t=document.createElement('div'); t.className='word-tile';
     t.textContent=rackLetters[idx];
     t.addEventListener('click',()=>removeLetter(pos));
