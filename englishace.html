@@ -172,13 +172,16 @@ body {
 <nav id="topNav">
   <a href="index.html">← GAMES</a>
   <span class="nav-title">✈ ENGLISH ACE</span>
-  <button id="pauseBtn" title="Pause (Space)">⏸ PAUSE</button>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+    <button id="pauseBtn" title="Pause — Space on keyboard · Double-tap on mobile">⏸ PAUSE</button>
+    <span id="pauseSubHint" style="display:none;font-family:'Orbitron',monospace;font-size:.45rem;color:rgba(255,255,255,.3);letter-spacing:.08em;white-space:nowrap"></span>
+  </div>
   <button id="muteBtn" title="Music volume">🔊 100%</button>
 </nav>
 
 <div id="pauseOverlay">
   <div class="pause-title">PAUSED</div>
-  <div class="pause-hint">Press SPACE or click to resume</div>
+  <div class="pause-hint" id="resumeHint">Tap ▶ RESUME or double-tap the screen</div>
   <button class="btn" onclick="togglePause()">▶ RESUME</button>
 </div>
 
@@ -193,7 +196,8 @@ body {
     <strong>COLLECT</strong> — fly into the correct answer<br>
     <strong>DODGE</strong> — avoid all other words<br>
     <strong>STREAK</strong> — 3 correct → ×2 &nbsp;·&nbsp; 5 → ×3<br>
-    <strong>LIVES</strong> — 5 planes · wrong word = lose one
+    <strong>LIVES</strong> — 5 planes · wrong word = lose one<br>
+    <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span>
   </div>
 </div>
 
@@ -673,6 +677,7 @@ function startGame(){
   state='playing';lastTime=performance.now();
   document.getElementById('trackSelector').style.display='flex';
   document.getElementById('pauseBtn').classList.add('visible');
+  const psh=document.getElementById('pauseSubHint');if(psh)psh.style.display='block';
   startAudio().then(switchToGameMusic);
 }
 
@@ -680,6 +685,7 @@ function endGame(){
   state='idle';
   document.getElementById('trackSelector').style.display='none';
   document.getElementById('pauseBtn').classList.remove('visible');
+  const psh2=document.getElementById('pauseSubHint');if(psh2)psh2.style.display='none';
   document.getElementById('pauseBtn').textContent='⏸ PAUSE';
   document.getElementById('pauseOverlay').classList.remove('visible');
   sfxGameOver();switchToMenuMusic();
@@ -705,11 +711,11 @@ document.getElementById('submitBtn').addEventListener('click',async()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// AUDIO ENGINE
+// AUDIO ENGINE — ambient/downtempo, mobile-safe
 // ═══════════════════════════════════════════════════════════════════
 let audioReady=false;
-let musicGain=null,kick=null;
-let lead,bass,padSynth,fxSynth,noiseFX;
+let musicGain=null;
+let padA,padB,melo,subBass,fxSynth,fxBell,noiseFX;
 let musicEventId=null,musicStep=0,musicMode='none',currentTrack=0;
 let lastWaveBpm=0;
 
@@ -721,109 +727,268 @@ const VOL_STATES=[
 let volState=0;
 function isMuted(){ return VOL_STATES[volState].muted; }
 
+// ── Music data — ambient/downtempo ───────────────────────────────
+// All tracks: slow, sparse, pad-heavy, melodic but non-intrusive
+// BPM 60-75, lots of space between notes, lush reverb
+
 const MENU_TRACK={
-  name:'Menu',bpm:65,
-  bass:['E2','E2','E2','E2','F2','F2','F2','F2','G2','G2','G2','G2','G2','G2','G2','G2',
-        'G2','G2','G2','G2','F2','F2','F2','F2','E2','E2','E2','E2','D2','D2','D2','D2',
-        'C2','C2','C2','C2','C2','C2','C2','C2','D2','D2','D2','D2','E2','E2','E2','E2',
-        'E2','E2','E2','E2','D2','D2','D2','D2','D2','D2','D2','D2','E2','E2','E2','E2'],
-  melody:['E4',null,'E4',null,'F4',null,'G4',null,'G4',null,'F4',null,'E4',null,'D4',null,
-          'C4',null,'C4',null,'D4',null,'E4',null,'E4',null,'D4',null,'D4',null,null,null,
-          'E4',null,'E4',null,'F4',null,'G4',null,'G4',null,'F4',null,'E4',null,'D4',null,
-          'C4',null,'C4',null,'D4',null,'E4',null,'D4',null,'C4',null,'C4',null,null,null],
-  pad:[['C3','E3','G3'],['F2','A2','C3'],['G2','B2','D3'],['C3','E3','G3'],
-       ['C3','E3','G3'],['F2','A2','C3'],['G2','B2','D3'],['C3','E3','G3']],
+  // Floating ambient — C major pentatonic, sparse bell melody
+  // Brian Eno "Music for Airports" feel
+  name:'Menu', bpm:60,
+  // Held bass notes every 8 steps (very slow, half-note feel)
+  bass:[
+    'C2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+    'F2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+    'C2',null,null,null,null,null,null,null,
+    'A2',null,null,null,null,null,null,null,
+    'F2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+  ],
+  // Sparse bell-like melody — notes land unpredictably, lots of rests
+  melody:[
+    'G4',null,null,null,null,null,'E4',null,
+    null,null,'C5',null,null,null,null,null,
+    'D4',null,null,null,'G4',null,null,null,
+    null,null,'E4',null,null,null,null,null,
+    'C5',null,null,null,null,null,'G4',null,
+    null,null,'A4',null,null,null,null,null,
+    'F4',null,null,null,null,null,'C5',null,
+    null,null,'G4',null,null,null,null,null,
+  ],
+  // Long held chords
+  pad:[
+    ['C3','E3','G3','C4'],
+    ['G2','B2','D3','G3'],
+    ['F2','A2','C3','F3'],
+    ['G2','B2','D3','G3'],
+    ['C3','E3','G3','C4'],
+    ['A2','C3','E3','A3'],
+    ['F2','A2','C3','F3'],
+    ['G2','B2','D3','G3'],
+  ],
 };
 
 const TRACKS=[
-  {name:'Dash —',bpmGame:70,
-   bass:['D1','D1','A1','D1','D1','D1','A1','D1','G1','G1','D2','G1','A1','A1','E2','A1',
-         'D1','D1','F1','D1','Bb1','Bb1','F2','Bb1','C2','C2','G2','C2','A1','A1','E2','A1'],
-   arp:['D5','A4','Bb4','A4','F4','E4','D4','E4','F4','G4','A4','Bb4','A4','G4','F4','E4',
-        'D4','E4','F4','G4','A4','Bb4','A4','G4','F4','E4','D4','E4','F4','A4','D5',null,
-        'D5','A4','Bb4','A4','F4','E4','D4','E4','F4','G4','A4','Bb4','A4','G4','F4','E4',
-        'D5','C5','Bb4','A4','G4','F4','E4','D4','A4','F4','D4',null,null,null,null,null],
-   pad:[['D2','F2','A2'],['G1','Bb1','D2'],['D2','F2','A2'],['A1','C#2','E2'],
-        ['D2','F2','A2'],['G1','Bb1','D2'],['C2','Eb2','G2'],['A1','C#2','E2']],
-   kick:true},
-  {name:'Hyphen -',bpmGame:60,
-   bass:['A1','A1','E2','A1','A1','G1','A1','E1','D2','D2','A1','D2','E2','E2','B1','E2',
-         'A1','A1','E2','A1','C2','C2','G1','C2','D2','D2','A1','D2','E2','E2','B1','E2'],
-   arp:['A4','C5','E5','A5','E5','C5','A4','C5','G4','B4','D5','G5','D5','B4','G4','B4',
-        'F4','A4','C5','F5','C5','A4','F4','A4','E4','G4','B4','E5','B4','G4','E4','G4',
-        'A4','C5','E5','C5','A4','E4','A4','C5','D5','A4','F4','D4','F4','A4','D5','A4',
-        'C5','E5','A5','E5','C5','A4','E4','A4','G4','B4','D5','B4','G4','D4','G4','B4'],
-   pad:[['A2','C3','E3'],['D3','F3','A3'],['F2','A2','C3'],['E2','G#2','B2'],
-        ['A2','C3','E3'],['C3','E3','G3'],['D3','F3','A3'],['E2','G#2','B2']],
-   kick:false},
-  {name:'Ellipsis …',bpmGame:80,
-   bass:['C2','C2','G1','C2','C2','C2','G1','Bb1','Ab1','Ab1','Eb2','Ab1','Ab1','Ab1','Eb1','G1',
-         'Eb2','Eb2','Bb1','Eb2','Eb2','Eb2','Bb1','Db2','G1','G1','D2','G1','G1','G1','D2','F1',
-         'C2','C2','G1','C2','C2','C2','G1','Bb1','Ab1','Ab1','Eb2','Ab1','Eb2','Eb2','Bb1','Eb2',
-         'G1','G1','D2','G1','C2','C2','G1','C2','Ab1','Ab1','Eb2','Ab1','G1','G1','D2','G1'],
-   arp:['C5','Eb5','G5','C6','G5','Eb5','C5','Eb5','Ab4','C5','Eb5','Ab5','Eb5','C5','Ab4','C5',
-        'Eb5','G5','Bb5','Eb6','Bb5','G5','Eb5','G5','G4','Bb4','D5','G5','D5','Bb4','G4','Bb4',
-        'C6','G5','Eb5','C5','G5','Eb5','C5','G5','Ab5','Eb5','C5','Ab4','C5','Eb5','Ab5','C6',
-        'G5','D5','Bb4','G4','Bb4','D5','G5','Bb5','C6','G5','Eb5','C5','G5','Eb5','C5',null],
-   pad:[['C3','Eb3','G3'],['Ab2','C3','Eb3'],['Eb3','G3','Bb3'],['G2','B2','D3'],
-        ['C3','Eb3','G3'],['Ab2','C3','Eb3'],['Eb3','G3','Bb3'],['G2','B2','D3']],
-   kick:true},
+  {
+    // ── DASH: Deep ambient Dm — slow, hypnotic, minimal ─────────
+    // Dm pentatonic, very sparse melody, sub-bass pulse every 4 steps
+    name:'Dash —', bpm:65,
+    bass:[
+      'D2',null,null,null,'D2',null,null,null,
+      'Bb1',null,null,null,'Bb1',null,null,null,
+      'F2',null,null,null,'F2',null,null,null,
+      'C2',null,null,null,'C2',null,null,null,
+    ],
+    // Sparse high melody — pentatonic D minor
+    melody:[
+      'D5',null,null,null,null,null,null,null,
+      null,null,'A4',null,null,null,null,null,
+      'F4',null,null,null,null,null,'D4',null,
+      null,null,null,null,'C4',null,null,null,
+      null,null,'D5',null,null,null,null,null,
+      'A4',null,null,null,'F4',null,null,null,
+      null,null,null,null,'D5',null,'A4',null,
+      'F4',null,null,null,null,null,null,null,
+    ],
+    pad:[
+      ['D3','F3','A3','D4'],
+      ['Bb2','D3','F3','Bb3'],
+      ['F2','A2','C3','F3'],
+      ['C3','E3','G3','C4'],
+      ['D3','F3','A3','D4'],
+      ['Bb2','D3','F3','Bb3'],
+      ['F2','A2','C3','F3'],
+      ['A2','C3','E3','A3'],
+    ],
+  },
+  {
+    // ── HYPHEN: Am downtempo — warm, floating, slightly jazzy ────
+    // Am7 → Fmaj7 → C → G, smooth voice leading, very relaxed
+    name:'Hyphen -', bpm:60,
+    bass:[
+      'A1',null,null,null,'A1',null,null,null,
+      'F2',null,null,null,'F2',null,null,null,
+      'C2',null,null,null,'C2',null,null,null,
+      'G2',null,null,null,'G2',null,null,null,
+    ],
+    melody:[
+      null,null,'C5',null,null,null,null,null,
+      'A4',null,null,null,null,null,'E4',null,
+      null,null,null,null,'G4',null,null,null,
+      null,null,'F4',null,null,null,null,null,
+      'E4',null,null,null,null,null,'A4',null,
+      null,null,'C5',null,null,null,null,null,
+      'B4',null,null,null,'G4',null,null,null,
+      null,null,null,null,'E4',null,null,null,
+    ],
+    pad:[
+      ['A2','C3','E3','G3'],
+      ['F2','A2','C3','E3'],
+      ['C3','E3','G3','B3'],
+      ['G2','B2','D3','F3'],
+      ['A2','C3','E3','G3'],
+      ['F2','A2','C3','E3'],
+      ['C3','E3','G3','B3'],
+      ['G2','B2','D3','F3'],
+    ],
+  },
+  {
+    // ── ELLIPSIS: Em ambient — ethereal, Bonobo/Zero7 feel ───────
+    // Em → C → G → D, slow pulse, delicate high melody
+    name:'Ellipsis …', bpm:70,
+    bass:[
+      'E2',null,null,null,'E2',null,null,null,
+      'C2',null,null,null,'C2',null,null,null,
+      'G1',null,null,null,'G1',null,null,null,
+      'D2',null,null,null,'D2',null,null,null,
+    ],
+    melody:[
+      'B4',null,null,null,null,null,'G4',null,
+      null,null,'E5',null,null,null,null,null,
+      null,null,'G4',null,'E4',null,null,null,
+      null,null,null,null,'D5',null,null,null,
+      'E4',null,null,null,'G4',null,null,null,
+      'B4',null,null,null,null,null,'G4',null,
+      null,null,'E5',null,null,null,'D5',null,
+      'B4',null,null,null,null,null,null,null,
+    ],
+    pad:[
+      ['E3','G3','B3','E4'],
+      ['C3','E3','G3','C4'],
+      ['G2','B2','D3','G3'],
+      ['D3','F#3','A3','D4'],
+      ['E3','G3','B3','E4'],
+      ['C3','E3','G3','C4'],
+      ['G2','B2','D3','G3'],
+      ['D3','F#3','A3','D4'],
+    ],
+  },
 ];
 
 async function startAudio(){
   if(audioReady) return;
   try {
+    // Mobile-safe: must call Tone.start() inside a user gesture handler
     await Tone.start();
-    fxSynth=new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.12,sustain:0,release:.08},volume:-8}).toDestination();
-    noiseFX=new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.005,decay:.07,sustain:0,release:.02},volume:-16}).toDestination();
-    musicGain=new Tone.Gain(1).toDestination();
-    lead=new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.005,decay:.1,sustain:.5,release:.15},volume:-8}).connect(musicGain);
-    bass=new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.005,decay:.12,sustain:.6,release:.05},volume:-10}).connect(musicGain);
-    const chorus=new Tone.Chorus(3,2.5,0.7).connect(musicGain).start();
-    const rev=new Tone.Reverb({decay:3,wet:.45}).connect(musicGain);
-    padSynth=new Tone.PolySynth(Tone.Synth,{oscillator:{type:'sine'},envelope:{attack:.5,decay:.4,sustain:.8,release:2},volume:-18});
-    padSynth.connect(chorus); padSynth.connect(rev);
-    kick=new Tone.MembraneSynth({pitchDecay:.06,octaves:8,envelope:{attack:.001,decay:.25,sustain:0,release:.1},volume:-8}).connect(musicGain);
-    audioReady=true;
-    Tone.getTransport().bpm.value=MENU_TRACK.bpm;
+
+    // Extra safety for iOS — ensure context is running
+    const ctx = Tone.getContext().rawContext;
+    if(ctx.state === 'suspended'){
+      await ctx.resume();
+    }
+
+    // ── SFX — direct to destination (unaffected by music volume) ──
+    fxSynth = new Tone.Synth({
+      oscillator:{type:'sine'},
+      envelope:{attack:.001,decay:.15,sustain:.1,release:.2},
+      volume:-10
+    }).toDestination();
+
+    fxBell = new Tone.Synth({
+      oscillator:{type:'triangle'},
+      envelope:{attack:.001,decay:.4,sustain:0,release:.3},
+      volume:-14
+    }).toDestination();
+
+    noiseFX = new Tone.NoiseSynth({
+      noise:{type:'white'},
+      envelope:{attack:.001,decay:.05,sustain:0,release:.01},
+      volume:-20
+    }).toDestination();
+
+    // ── Music chain — padA + padB + melo + subBass → reverb → musicGain ──
+    musicGain = new Tone.Gain(1).toDestination();
+
+    // Long reverb tail — the heart of the ambient sound
+    const rev = new Tone.Reverb({decay:6, wet:0.7}).connect(musicGain);
+    await rev.generate(); // pre-generate IR (important on mobile)
+
+    // Subtle delay on melody
+    const delay = new Tone.FeedbackDelay('8n.',0.25).connect(rev);
+    delay.wet.value = 0.3;
+
+    // Pad A — lush sine pads, very slow attack
+    padA = new Tone.PolySynth(Tone.Synth,{
+      oscillator:{type:'sine'},
+      envelope:{attack:1.5,decay:1,sustain:0.9,release:3},
+      volume:-14
+    }).connect(rev);
+
+    // Pad B — slightly detuned triangle for warmth
+    padB = new Tone.PolySynth(Tone.Synth,{
+      oscillator:{type:'triangle'},
+      envelope:{attack:2,decay:1,sustain:0.8,release:4},
+      volume:-18
+    }).connect(rev);
+
+    // Melody — clean sine, goes through delay then reverb
+    melo = new Tone.Synth({
+      oscillator:{type:'sine'},
+      envelope:{attack:.01,decay:.5,sustain:.2,release:1.5},
+      volume:-12
+    }).connect(delay);
+
+    // Sub bass — very slow, very quiet, felt not heard
+    subBass = new Tone.Synth({
+      oscillator:{type:'sine'},
+      envelope:{attack:.3,decay:.5,sustain:.7,release:1},
+      volume:-16
+    }).connect(musicGain); // bypass reverb for clarity
+
+    audioReady = true;
+    Tone.getTransport().bpm.value = MENU_TRACK.bpm;
     Tone.getTransport().start();
     scheduleMusic('menu');
-  } catch(e){ console.warn('Audio init failed:',e); }
+    console.log('Audio ready, context state:', ctx.state);
+  } catch(e){
+    console.warn('Audio init failed:',e);
+  }
 }
 
 function scheduleMusic(mode){
   if(musicEventId!==null){ Tone.getTransport().cancel(musicEventId); musicEventId=null; }
   musicMode=mode; musicStep=0;
   if(mode==='none') return;
+
+  const T = mode==='menu' ? MENU_TRACK : TRACKS[currentTrack];
+
+  // Use '8n' interval — ambient music doesn't need 16th-note resolution
+  // This halves CPU usage and is more mobile-friendly
   musicEventId=Tone.getTransport().scheduleRepeat(time=>{
     if(isMuted()||!audioReady) return;
-    if(musicMode==='menu'){
-      const M=MENU_TRACK;
-      const step=musicStep%M.melody.length;
-      const chord=Math.floor((musicStep%32)/8);
-      if(step%4===0) bass.triggerAttackRelease(M.bass[step%M.bass.length],'4n',time);
-      const note=M.melody[step];
-      if(note) lead.triggerAttackRelease(note,'8n',time);
-      if(step%8===0) padSynth.triggerAttackRelease(M.pad[chord%M.pad.length],'2n',time);
-    } else {
-      const T=TRACKS[currentTrack];
-      const step=musicStep%T.arp.length;
-      const chord=Math.floor((musicStep%32)/8);
-      bass.triggerAttackRelease(T.bass[step%T.bass.length],'16n',time);
-      const note=T.arp[step];
-      if(note) lead.triggerAttackRelease(note,'16n',time);
-      if(step%8===0) padSynth.triggerAttackRelease(T.pad[chord%T.pad.length],'4n',time);
-      if(step%8===0&&kick&&T.kick) kick.triggerAttackRelease('C1','8n',time);
+
+    const step  = musicStep % T.melody.length;
+    // Chord changes every 8 steps (at 8n intervals = every 4 beats = very slow)
+    const chord = Math.floor(step / 8) % T.pad.length;
+
+    // Sub-bass — slow notes, every 8 steps
+    const bNote = T.bass[step];
+    if(bNote && subBass) subBass.triggerAttackRelease(bNote,'2n',time);
+
+    // Pad chords — held very long, change every 8 steps
+    if(step % 8 === 0 && padA && padB){
+      const ch = T.pad[chord];
+      padA.triggerAttackRelease(ch,'2n',time);
+      // padB plays a slight variation (drop lowest note, add high)
+      const ch2 = ch.slice(1); // drop lowest
+      padB.triggerAttackRelease(ch2,'2n',time);
     }
+
+    // Sparse melody
+    const mNote = T.melody[step];
+    if(mNote && melo) melo.triggerAttackRelease(mNote,'4n',time);
+
     musicStep++;
-  },'16n',0);
+  },'8n',0);
 }
 
-function getGameBpm(){ return Math.min(TRACKS[currentTrack].bpmGame+35,TRACKS[currentTrack].bpmGame+(wave-1)*4); }
+function getGameBpm(){ return Math.min(TRACKS[currentTrack].bpm+20, TRACKS[currentTrack].bpm+(wave-1)*2); }
 
 function switchToMenuMusic(){
   if(!audioReady) return;
-  Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,1);
+  Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,2);
   scheduleMusic('menu');
 }
 function switchToGameMusic(){
@@ -850,38 +1015,44 @@ function applyVolume(){
   if(musicGain) musicGain.gain.rampTo(v.musicVol===-Infinity?0:Math.pow(10,v.musicVol/20),.1);
 }
 function sfxCorrect(){
+  // Gentle ascending bell chime — soft and pleasing
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  fxSynth.triggerAttackRelease('C5','16n',now);
-  fxSynth.triggerAttackRelease('G5','16n',now+0.12);
+  fxBell.triggerAttackRelease('G5','8n',now);
+  fxBell.triggerAttackRelease('C6','8n',now+0.18);
 }
 function sfxWrong(){
+  // Soft low thud + tiny noise — subtle, not harsh
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  fxSynth.triggerAttackRelease('C3','16n',now);
-  noiseFX.triggerAttackRelease('16n',now);
+  fxSynth.triggerAttackRelease('D3','8n',now);
+  noiseFX.triggerAttackRelease('32n',now+.05);
 }
 function sfxShield(){
+  // Soft shimmer
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  fxSynth.triggerAttackRelease('E5','8n',now);
-  fxSynth.triggerAttackRelease('G5','8n',now+.1);
-  fxSynth.triggerAttackRelease('C6','8n',now+.2);
+  fxBell.triggerAttackRelease('C5','8n',now);
+  fxBell.triggerAttackRelease('E5','8n',now+.12);
+  fxBell.triggerAttackRelease('G5','8n',now+.24);
 }
 function sfxPowerup(){
+  // Soft rising bells
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  ['C5','E5','G5','C6'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'16n',now+i*.08));
+  ['C5','E5','G5','C6'].forEach((n,i)=>fxBell.triggerAttackRelease(n,'8n',now+i*.12));
 }
 function sfxGameOver(){
+  // Slow descending sine — mournful but gentle
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  ['G3','F3','E3','C3'].forEach((n,i)=>bass.triggerAttackRelease(n,'8n',now+i*.18));
+  ['G4','E4','C4','G3'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'4n',now+i*.35));
 }
 function sfxWaveUp(){
+  // Very subtle — single soft chime
   if(!audioReady||isMuted()) return;
   const now=Tone.now();
-  ['C4','E4','G4','C5'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'16n',now+i*.07));
+  fxBell.triggerAttackRelease('C5','4n',now);
 }
 
 document.getElementById('muteBtn').addEventListener('click',async()=>{
@@ -917,9 +1088,37 @@ document.getElementById('startHi').textContent='BEST: '+bestScore;
 lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 
-['click','keydown','touchstart','pointerdown'].forEach(evt=>{
-  document.addEventListener(evt,async()=>{ await startAudio(); },{once:true,passive:true});
+// Detect touch device and update pause hints accordingly
+(function(){
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const pauseTip = document.getElementById('pauseTip');
+  const resumeHint = document.getElementById('resumeHint');
+  const pauseSubHint = document.getElementById('pauseSubHint');
+
+  if(isTouch){
+    if(pauseTip)     pauseTip.textContent     = 'double-tap screen or tap ⏸';
+    if(resumeHint)   resumeHint.textContent   = 'Double-tap screen or tap ▶ RESUME';
+    if(pauseSubHint) pauseSubHint.textContent = 'double-tap to pause';
+  } else {
+    if(pauseTip)     pauseTip.textContent     = 'tap ⏸ or press Space';
+    if(resumeHint)   resumeHint.textContent   = 'Press Space or click ▶ RESUME';
+    if(pauseSubHint) pauseSubHint.textContent = 'Space to pause';
+  }
+})();
+
+// Mobile audio fix: use a non-passive touchstart so we can call
+// Tone.start() synchronously inside the gesture handler (required by iOS)
+['click','pointerdown'].forEach(evt=>{
+  document.addEventListener(evt, function handler(){
+    startAudio();
+    document.removeEventListener(evt, handler);
+  });
 });
+// iOS Safari specifically requires touchstart
+document.addEventListener('touchstart', function iosHandler(){
+  startAudio();
+  document.removeEventListener('touchstart', iosHandler);
+}, {passive:false});
 </script>
 </body>
 </html>
