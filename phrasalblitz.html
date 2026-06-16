@@ -130,7 +130,7 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <!-- INTRO -->
 <div id="phase-intro">
   <!-- Mode tabs always visible -->
-  <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:100%">
+  <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:auto;align-self:center">
     <button class="diff-tab active" id="mTab1" onclick="selectMode(1)">Pick particle</button>
     <button class="diff-tab"        id="mTab2" onclick="selectMode(2)">Pick verb</button>
     <button class="diff-tab"        id="mTab3" onclick="selectMode(3)">Type it</button>
@@ -238,6 +238,11 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <div class="lb-section">
   <div class="lb-wrap">
     <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbPb1" onclick="switchPbLb(1)">Pick particle</button>
+      <button class="diff-tab"        id="lbPb2" onclick="switchPbLb(2)">Pick verb</button>
+      <button class="diff-tab"        id="lbPb3" onclick="switchPbLb(3)">Type it</button>
+    </div>
     <table class="lb-table">
       <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
       <tbody id="lbBody"></tbody>
@@ -758,7 +763,7 @@ function clickVerb(v, btn, correctSet) {
     // Find the actual pair data for the definition
     const verbObj = VERBS.find(vb => vb.verb === v);
     const pairObj = verbObj?.pairs.find(p => p.p === currentParticle);
-    addFoundChipVerb(v + ' ' + currentParticle, v, pairObj);
+    addFoundChipVerb(v + ' ' + currentParticle, v + ' ' + currentParticle, pairObj || {});
     finalScore++;
     document.getElementById('scoreVal').textContent = finalScore;
     if (found.size === correctSet.size) { clearInterval(timer); setTimeout(endGame, 500); }
@@ -820,7 +825,7 @@ function submitTyped() {
       inp.className = 'type-input ok';
       const verbObj = VERBS.find(v=>v.verb===val);
       const pairObj = verbObj?.pairs.find(p=>p.p===currentParticle);
-      addFoundChipVerb(val + ' ' + currentParticle, val, pairObj);
+      addFoundChipVerb(val + ' ' + currentParticle, val + ' ' + currentParticle, pairObj);
       finalScore++;
       document.getElementById('scoreVal').textContent = finalScore;
       if (found.size === correctVerbs.size) { clearInterval(timer); setTimeout(endGame, 500); }
@@ -848,12 +853,25 @@ function addFoundChip(label, key) {
   document.getElementById('foundChips').appendChild(chip);
 }
 
-function addFoundChipVerb(label, verbKey, pairObj) {
+function addFoundChipVerb(label, phrasal, pairObj) {
+  // label = display text on chip (e.g. "carry away")
+  // phrasal = full phrasal verb for modal title
+  // pairObj = {def, ex} from VERBS data
   const chip = document.createElement('span');
   chip.className = 'found-chip';
   chip.textContent = label;
   chip.addEventListener('click', () => {
-    if (pairObj) showPhrasalModal(label, pairObj.def, pairObj.ex);
+    if (pairObj && (pairObj.def || pairObj.ex)) {
+      showPhrasalModal(phrasal, pairObj.def || '', pairObj.ex || '');
+    } else {
+      // Try to look up def from VERBS data
+      const parts  = label.split(' ');
+      const verb   = parts[0];
+      const particle = parts.slice(1).join(' ');
+      const verbObj  = VERBS.find(v => v.verb === verb);
+      const pair     = verbObj && verbObj.pairs.find(p => p.p === particle);
+      if (pair) showPhrasalModal(label, pair.def, pair.ex);
+    }
   });
   document.getElementById('foundChips').appendChild(chip);
 }
@@ -925,7 +943,7 @@ function endGame() {
     const correctVerbs = VERBS.filter(v => v.pairs.some(p => p.p === currentParticle));
     missedItems = correctVerbs.filter(v => !found.has(v.verb)).map(v => {
       const pObj = v.pairs.find(p => p.p === currentParticle);
-      return { label: v.verb+' '+currentParticle, def:pObj?.def||'', ex:pObj?.ex||'' };
+      return { label: v.verb + ' ' + currentParticle, def: pObj?.def||'—', ex: pObj?.ex||'—' };
     });
   }
 
@@ -964,6 +982,12 @@ async function doSubmit() {
 }
 
 init();
+
+function switchPbLb(n) {
+  [1,2,3].forEach(i => document.getElementById('lbPb'+i).classList.toggle('active', i===n));
+  const keys = { 1:'phrasalblitz_particle', 2:'phrasalblitz_verb', 3:'phrasalblitz_type' };
+  renderLeaderboard(keys[n], 'lbBody');
+}
 </script>
 </body>
 </html>

@@ -185,6 +185,10 @@ main { max-width:540px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <div class="lb-section">
   <div class="lb-wrap">
     <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbAnE" onclick="switchAnLb('easy')">Easy</button>
+      <button class="diff-tab"        id="lbAnH" onclick="switchAnLb('hard')">Hard</button>
+    </div>
     <table class="lb-table">
       <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
       <tbody id="lbBody"></tbody>
@@ -551,6 +555,11 @@ async function doSubmit(){
 // Init
 document.getElementById('switchBtn').textContent = 'Switch to Hard';
 initRound();
+
+function switchAnLb(d){
+  ['easy','hard'].forEach(x=>document.getElementById('lbAn'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===d));
+  renderLeaderboard('anagram_'+d,'lbBody');
+}
 </script>
 </body>
 </html>

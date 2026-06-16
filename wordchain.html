@@ -355,19 +355,16 @@ function switchWcMode(m) {
   if(rulesText) rulesText.innerHTML = m==='easy'
     ? '<strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, no repeats. <strong>5 lives ❤️</strong>. Lose a life for wrong letter, unknown word or repeat. 1 pt per letter; words of 4+ earn +1s bonus.'
     : '<strong>Part of Speech:</strong> Same as Classic, but each turn you are also given a required part of speech. Wrong type = lose a life. <strong>5 lives ❤️</strong>.';
-  // If game is running, restart with new mode
-  if(document.getElementById('gameUI').style.display === 'flex') {
-    clearInterval(timerInterval);
-    document.getElementById('gameUI').style.display = 'none';
-    document.getElementById('endCard').style.display = 'none';
-  }
+  // Always restart when mode is switched
+  clearInterval(timerInterval);
+  document.getElementById('endCard').style.display = 'none';
+  document.getElementById('gameUI').style.display  = 'flex';
+  document.getElementById('feedback').textContent  = '';
+  startChain();
 }
 
 function beginGame(m) {
-  mode = m;
   switchWcMode(m);
-  document.getElementById('gameUI').style.display = 'flex';
-  startChain();
 }
 
 function startChain() {
