@@ -284,25 +284,27 @@ const VERBS = [
     {p:'through',    def:'To survive a difficult experience.',    ex:'She came through the operation well.'},
   ]},
   { verb:'look', pairs:[
-    {p:'up',    def:'To search for information.',    ex:'Look up the word in a dictionary.'},
-    {p:'out',    def:'To be careful; to watch for danger.',    ex:'Look out — there\'s ice on the road!'},
-    {p:'after',    def:'To take care of someone or something.',    ex:'Can you look after my cat this weekend?'},
-    {p:'into',    def:'To investigate.',    ex:'The police are looking into the matter.'},
-    {p:'back',    def:'To reflect on past events.',    ex:'Looking back, I made the right decision.'},
-    {p:'down',    def:'To regard with contempt.',    ex:'Don\'t look down on people less fortunate.'},
-    {p:'over',    def:'To review or check something.',    ex:'Please look over my essay.'},
-    {p:'forward',    def:'To anticipate something with pleasure.',    ex:'I\'m looking forward to the weekend.'},
+    {p:'up',      def:'To search for information in a reference.',          ex:'Look up the word in a dictionary.'},
+    {p:'out',     def:'To be careful or watch for danger.',                 ex:"Look out - there's ice on the road!"},
+    {p:'after',   def:'To take care of someone or something.',              ex:'Can you look after my cat this weekend?'},
+    {p:'into',    def:'To investigate something.',                          ex:'The police are looking into the matter.'},
+    {p:'back',    def:'To reflect on past events.',                         ex:'Looking back, I made the right decision.'},
+    {p:'over',    def:'To review or check something.',                      ex:'Please look over my essay before submitting.'},
+    {p:'forward', def:'To anticipate something with pleasure.',             ex:"I'm looking forward to the weekend."},
+    {p:'up to',   def:'To admire or respect someone greatly.',              ex:'She always looked up to her older sister.'},
   ]},
   { verb:'turn', pairs:[
-    {p:'up',    def:'To arrive, or to increase volume or heat.',    ex:'He turned up an hour late.'},
-    {p:'down',    def:'To refuse or reduce.',    ex:'She turned down the job offer.'},
-    {p:'off',    def:'To switch something off.',    ex:'Turn off the lights when you leave.'},
-    {p:'on',    def:'To switch something on.',    ex:'Turn on the TV, please.'},
-    {p:'out',    def:'To result or to produce.',    ex:'It turned out to be a great day.'},
-    {p:'over',    def:'To flip something, or hand control to someone.',    ex:'Turn over the page.'},
-    {p:'back',    def:'To return to a starting point.',    ex:'We had to turn back due to bad weather.'},
-    {p:'in',    def:'To submit or go to bed.',    ex:'I turned in my assignment early.'},
-    {p:'into',    def:'To transform or become.',    ex:'The caterpillar turned into a butterfly.'},
+    {p:'up',     def:'To arrive, or to increase volume or heat.',           ex:'He turned up an hour late.'},
+    {p:'down',   def:'To refuse an offer, or to reduce volume or heat.',    ex:'She turned down the job offer.'},
+    {p:'off',    def:'To switch something off.',                            ex:'Turn off the lights when you leave.'},
+    {p:'on',     def:'To switch something on.',                            ex:'Turn on the TV, please.'},
+    {p:'out',    def:'To result in a particular way, or to produce.',       ex:'It turned out to be a great day.'},
+    {p:'over',   def:'To flip something, or hand control to someone.',      ex:'Turn over the page.'},
+    {p:'back',   def:'To return to a starting point.',                      ex:'We had to turn back due to bad weather.'},
+    {p:'in',     def:'To submit something, or to go to bed.',              ex:'I turned in my assignment early.'},
+    {p:'into',   def:'To transform or become something.',                   ex:'The caterpillar turned into a butterfly.'},
+    {p:'away',   def:'To refuse entry, or to look in a different direction.',ex:'They turned away hundreds of people at the door.'},
+    {p:'around', def:'To reverse a bad situation, or to rotate to face the other way.',ex:'The new manager turned the company around.'},
   ]},
   { verb:'break', pairs:[
     {p:'up',    def:'To end a relationship, or to split apart.',    ex:'They broke up after two years.'},
@@ -643,13 +645,61 @@ function getEasyParticle() {
 
 function selectMode(n) {
   selectedMode = n;
-  [1,2,3].forEach(i => document.getElementById('mTab'+i).classList.toggle('active', i===n));
+  [1,2,3].forEach(i => {
+    const t = document.getElementById('mTab'+i); if(t) t.classList.toggle('active', i===n);
+    const g = document.getElementById('gTab'+i); if(g) g.classList.toggle('active', i===n);
+  });
   document.getElementById('modeDesc').textContent = MODE_DESC[n];
+  const tsm = document.getElementById('typeSubMode');
+  if(tsm) tsm.style.display = n===3 ? 'flex' : 'none';
+  updateIntroDisplay(); // ← always refresh the shown verb/particle
+}
+
+function updateIntroDisplay() {
+  const el    = document.getElementById('introVerb');
+  const label = document.getElementById('introLabel');
+  if(!el || !label) return;
+  if (selectedMode === 1) {
+    const v = getEasyVerb();
+    el.textContent    = v.verb;
+    label.textContent = "Today's verb";
+  } else if (selectedMode === 2) {
+    const p = getEasyParticle();
+    el.textContent    = p;
+    label.textContent = "Today's particle";
+  } else {
+    // Type it — same word as easy modes, harder because you type not click
+    if (typeSubMode === 1) {
+      const v = getEasyVerb();
+      el.textContent    = v.verb;
+      label.textContent = "Today's verb — type all its particles";
+    } else {
+      const p = getEasyParticle();
+      el.textContent    = p;
+      label.textContent = "Today's particle — type all matching verbs";
+    }
+  }
+}
+
+function selectTypeSub(n) {
+  typeSubMode = n;
+  [1,2].forEach(i => { const t=document.getElementById('typeSub'+i); if(t) t.classList.toggle('active', i===n); });
+  updateIntroDisplay(); // refresh when sub-mode changes
+}
+
+function switchMode(n) {
+  clearInterval(timer);
+  document.getElementById('phase-game').style.display  = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-intro').style.display  = 'flex';
+  document.getElementById('m3input')?.removeEventListener('keydown', m3keydown);
+  selectMode(n);
 }
 
 function init() {
   selectMode(1);
-  renderLeaderboard('phrasalblitz', 'lbBody');
+  setTimeout(updateIntroDisplay, 80); // safety: ensure DOM is ready
+  renderLeaderboard('phrasalblitz_particle', 'lbBody');
 }
 
 function startGame() {
@@ -684,11 +734,13 @@ function startGame() {
   } else {
     // Mode 3: type it — harder verb/particle from different daily pick
     if (typeSubMode === 1) {
-      currentVerb = getHardVerb();
+      // Use SAME verb as Pick Particle — harder because you type, not click
+      currentVerb = getEasyVerb();
       document.getElementById('gameVerb').textContent       = currentVerb.verb;
-      document.getElementById('gameInstruction').textContent = 'Type particles for this verb';
+      document.getElementById('gameInstruction').textContent = 'Type the particles — no options shown!';
       document.getElementById('m3input').placeholder        = 'e.g. up, away, into…';
     } else {
+      // Use SAME particle as Pick Verb — harder because you type, not click
       currentParticle = getEasyParticle();
       document.getElementById('gameVerb').textContent       = currentParticle;
       document.getElementById('gameInstruction').textContent = 'Type verbs that go with this particle';
@@ -906,27 +958,44 @@ function endGame() {
   document.getElementById('phase-game').style.display = 'none';
   document.getElementById('phase-result').style.display = 'flex';
 
-  const total = selectedMode === 3 ? m3pairs.length : currentVerb.pairs.length;
+  // Calculate total possible answers based on mode
+  let total;
+  if (selectedMode === 1 || (selectedMode === 3 && typeSubMode === 1)) {
+    total = currentVerb ? currentVerb.pairs.length : 1;
+  } else {
+    total = currentParticle
+      ? VERBS.filter(v => v.pairs.some(p => p.p === currentParticle)).length
+      : 1;
+  }
   document.getElementById('resultHeadline').textContent = `${finalScore} of ${total} found!`;
   document.getElementById('resultMsg').textContent = finalScore === total ? '🎉 Perfect — you got them all!' : finalScore >= total/2 ? '👏 Great effort!' : 'Keep practising — phrasal verbs take time!';
 
-  // Found chips in result
+  // Found chips in result — copy from foundChips (which already have click handlers)
   const rf = document.getElementById('resultFound');
   rf.innerHTML = '';
-  document.querySelectorAll('#foundChips .found-chip').forEach(c => rf.appendChild(c.cloneNode(true)));
-  // Re-attach click events
-  rf.querySelectorAll('.found-chip').forEach((chip, i) => {
-    const pairKeys = [...found];
-    chip.addEventListener('click', () => {
-      const key = pairKeys[i];
-      const pair = selectedMode === 3
-        ? m3pairs[parseInt(key)]
-        : currentVerb.pairs.find(p => p.p === key);
-      if (pair) showPhrasalModal(
-        selectedMode === 3 ? (pair.verb + ' ' + pair.particle) : (currentVerb.verb + ' ' + pair.p),
-        pair.def, pair.ex
-      );
+  // foundChips already have correct click handlers attached when chips were added
+  // Clone them and re-attach from stored data on dataset
+  document.querySelectorAll('#foundChips .found-chip').forEach(chip => {
+    const clone = document.createElement('span');
+    clone.className = 'found-chip';
+    clone.textContent = chip.textContent;
+    // Store the phrasal verb data on the original chip via dataset, copy across
+    const label = chip.textContent;
+    clone.addEventListener('click', () => {
+      // Parse "verb particle" from label
+      const parts    = label.split(' ');
+      const verb     = parts[0];
+      const particle = parts.slice(1).join(' ');
+      const verbObj  = VERBS.find(v => v.verb === verb);
+      const pairObj  = verbObj && verbObj.pairs.find(p => p.p === particle);
+      if (pairObj) {
+        showPhrasalModal(label, pairObj.def, pairObj.ex);
+      } else {
+        // Fallback: show label with a note
+        showPhrasalModal(label, 'See a dictionary for the full definition.', '');
+      }
     });
+    rf.appendChild(clone);
   });
 
   // Missed — handle all three modes
