@@ -121,6 +121,10 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <div class="lb-section">
   <div class="lb-wrap">
     <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbTab_collocationcrash_easy" onclick="switchLb_collocationcrash('easy')">Easy</button>
+      <button class="diff-tab"        id="lbTab_collocationcrash_hard" onclick="switchLb_collocationcrash('hard')">Hard</button>
+    </div>
     <table class="lb-table">
       <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
       <tbody id="lbBody"></tbody>
@@ -983,9 +987,27 @@ function shuffle(arr) {
 }
 
 function initRound() {
-  const ccIndices = freshIndices('collocationcrash_'+diff, qBank, Math.min(ROUND_SIZE, qBank.length));
-  ccIndices.forEach(i => markSeen('collocationcrash_'+diff, i));
-  roundQs = ccIndices.map(i => qBank[i]);
+  // Pick questions ensuring each correct answer is UNIQUE in the round
+  const baseIndices = freshIndices('collocationcrash_'+diff, qBank, qBank.length);
+  const usedCorrect = new Set();
+  const picked = [];
+  for (const idx of baseIndices) {
+    if (picked.length >= ROUND_SIZE) break;
+    const q = qBank[idx];
+    if (!usedCorrect.has(q.correct)) {
+      usedCorrect.add(q.correct);
+      picked.push(idx);
+    }
+  }
+  // If we still need more (unlikely), fill without uniqueness constraint
+  if (picked.length < ROUND_SIZE) {
+    for (const idx of baseIndices) {
+      if (picked.length >= ROUND_SIZE) break;
+      if (!picked.includes(idx)) picked.push(idx);
+    }
+  }
+  picked.forEach(i => markSeen('collocationcrash_'+diff, i));
+  roundQs = picked.map(i => qBank[i]);
   current = 0; score = 0; roundResults = [];
   document.getElementById('scoreVal').textContent = 0;
   document.getElementById('qCard').style.display  = 'flex';
@@ -1075,6 +1097,13 @@ async function doSubmit() {
 }
 
 initRound();
+
+function switchLb_collocationcrash(d) {
+  ['easy','hard'].forEach(x => {
+    document.getElementById('lbTab_collocationcrash_'+x).classList.toggle('active', x===d);
+  });
+  renderLeaderboard('collocationcrash_'+d, 'lbBody');
+}
 </script>
 </body>
 </html>

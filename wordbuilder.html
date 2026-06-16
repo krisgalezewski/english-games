@@ -114,8 +114,8 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   <!-- Difficulty + round info -->
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
     <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">6 letters</button>
-      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">8 letters</button>
+      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy (reuse letters)</button>
+      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard (each letter once)</button>
     </div>
     <div class="eyebrow" id="roundLabel">Round 1 of 5</div>
   </div>
@@ -210,25 +210,27 @@ const LETTER_PTS = {
 // Easy: 6-letter racks; Hard: 8-letter racks
 // Each rack has a list of valid words that can be made from it
 const RACKS_EASY = [
-  { letters:'AELRST', words:['ARE','ATE','EAR','EAT','ERA','ALE','ART','LAT','LAR','LEST','LATE','LATS','RATE','REAL','REST','SALE','SEAL','SEAT','STAR','STALE','STARE','STEAL','TALES','TALES','TARE','TALE','TEAR','TEAL','EARL','REALS','RATES','LATER','RATEL','LEAST','ALERT','ALTER','LASER','RALES','LARES','ARLES','STALER','ALERTS','ALTERS','RATELS','STELAR'] },
-  { letters:'AEINST', words:['ANT','ANE','ATE','EAT','SET','SIN','SIT','NET','TEN','TIE','SEA','SEA','ANTE','ANTI','NEAT','SANE','SINE','SITE','TEEN','TEEN','NITE','ANTI','ANISE','INSET','SATIN','ANTIS','TAINS','SAINT','NASTY','STAIN','TSINE','SENAT','TINEA','NATES','STEIN','ENTAIL'] },
-  { letters:'EGLNOS', words:['LOG','LON','ONE','NOG','SON','SOL','EON','LEG','GEL','GONE','LOGE','LONE','LONG','NOSE','ONES','SONG','SOLE','LONG','LOGE','OGLE','SLOE','ENOL','GOEL','LENO','LONE','NODE','NOEL','OGLE','SNOG','SNOB','SONG','SOLE','SLOE','GLEN','GELS','LOGE','GLOZE','LONGES','SNOGLE'] },
-  { letters:'ACDORS', words:['CAR','COD','COR','OAR','OCA','ORC','ROD','SAC','SOD','ARCO','CARD','CORD','DORS','OARS','RODS','SCAR','SCAD','SOAR','SORD','DRAC','ADOS','DOCS','DOCS','DRACO','CORDS','CARDS','ROADS','SOAR','ACORN','ACORNS','CORADS'] },
-  { letters:'EGILNT', words:['GEL','GET','GIN','LEG','LET','LIE','LIT','NET','NIL','NIT','TIE','TIN','GELT','GILT','GLEN','GLIB','GLINT','LENT','LIEN','LITE','TING','TILE','TINE','TELL','INLET','LITER','TINGLE','TILING','TINGLE','LITER','LINTER','LETING','TINGLE','LINGET','ENGILT'] },
-  { letters:'AENRST', words:['ANT','ARE','ART','EAR','EAT','ERA','NET','RAN','RAT','TAN','TAR','TEN','ANTE','ANTE','EARN','NEAR','NEARS','RANT','RATE','RANT','RENT','RENTS','STAR','RANT','TERNS','TRANS','RANTS','EARNS','STERN','RENAL','NEARS','STARE','RENTS','STERN','SNARE','NATTER','SANER','RATTEN','RANT','NERDS','RANTED'] },
-  { letters:'CDEILNO', words:['COD','CON','DIN','DOC','ION','NIL','NOD','ODE','OIL','OLD','ONE','CLOD','COIL','COIN','COLD','COLE','CONE','DECO','DELI','DENI','DICE','DION','DOLE','DONE','ICON','IDLE','LICE','LIDO','LINE','LOIN','LODE','LONE','LORE','NODE','NOEL','COILED','COINED','CLONED','DENIED','LINCED','COINED','DOCILE','DECLINE','INCODEL'] },
-  { letters:'AGHINT', words:['ANT','GIN','HAG','HAN','HAT','HIT','NAG','NAH','NIT','TAH','TAN','TIN','GAIN','GAIT','GIANT','GNAT','HANG','HINT','NIGH','NIGHT','TANG','THAN','THUG','NAIGH','NIGHTA','HANTIG','NAIGHT'] },
+  // 7 letters, player CAN reuse any letter
+  { letters:'AELRST', words:['ARE','ATE','EAR','EAT','ERA','ALE','ART','LEST','LATE','RATE','REAL','REST','SALE','SEAL','SEAT','STAR','TALE','TEAR','TEAL','EARL','LATER','LEAST','ALERT','ALTER','LASER','STALE','STARE','STEAL','RATEL','ALERTS','ALTERS','STELAR'] },
+  { letters:'AEINST', words:['ANT','ANE','ATE','EAT','SET','SIN','SIT','NET','TEN','TIE','SEA','ANTE','ANTI','NEAT','SANE','SINE','SITE','ANISE','INSET','SATIN','SAINT','STAIN','TINEA','NATES','STEIN'] },
+  { letters:'EGLNOS', words:['LOG','ONE','NOG','SON','SOL','EON','LEG','GEL','GONE','LOGE','LONE','LONG','NOSE','ONES','SONG','SOLE','OGLE','SLOE','ENOL','NOEL','SNOG','GLEN','GELS','LONGES'] },
+  { letters:'ACDORS', words:['CAR','COD','COR','OAR','OCA','ORC','ROD','SAC','SOD','ARCO','CARD','CORD','OARS','RODS','SCAR','SCAD','SOAR','SORD','DOCS','DRACO','CORDS','CARDS','ROADS','ACORN'] },
+  { letters:'EGILNT', words:['GEL','GET','GIN','LEG','LET','LIE','LIT','NET','NIL','NIT','TIE','TIN','GELT','GILT','GLEN','LENT','LIEN','LITE','TING','TILE','TINE','INLET','TINGLE','LINTER'] },
+  { letters:'AENRST', words:['ANT','ARE','ART','EAR','EAT','ERA','NET','RAN','RAT','TAN','TAR','TEN','ANTE','EARN','NEAR','RANT','RATE','RENT','STAR','TERN','RANTS','EARNS','STERN','STARE','SNARE'] },
+  { letters:'AILRST', words:['AIR','AIT','ART','LAT','LIT','RAT','SAT','SIT','SLY','TAR','LAIR','LIRA','LIST','RAIL','RAIT','SALT','SILT','SLIT','SLAT','STAR','TAIL','TSAR','TRAIL','TRIALS','STRAIT'] },
+  { letters:'AEMNOR', words:['ARE','ARM','EAR','ERA','MAN','MAP','MAR','MORE','MANE','MARE','MEAN','MOAN','MOAR','NORM','OMEN','ONER','REAM','ROAM','ROAN','ROMAN','MANOR','MOANER','ROMANE'] },
 ];
 
 const RACKS_HARD = [
-  { letters:'AEINORST', words:['ARE','ANT','EAR','EAT','ERA','NET','NOT','OAR','ONE','ORE','ROT','RAN','RON','TEN','TON','TAR','ANTE','EARN','IRON','NEAR','NOTE','NOSE','ONTO','RANT','RATE','RENT','ROAN','ROSE','ROTE','SORE','SNOT','STAR','STERN','STONER','ATONER','SENATOR','TREASON','RATIONS','NOTARIES','SENORITA'] },
-  { letters:'ACDEHIRT', words:['ACE','ACH','AID','AIR','ARC','ATE','CAD','CAR','CAT','DAH','DIE','DIT','EAR','ETA','HAD','HAT','HIT','ICE','IRE','RAH','RAT','TAD','TAR','ACID','ACHE','ARCH','AIDE','ARID','CARE','CART','CHAD','CHAR','CHAT','CHID','CITE','DEAR','DIRE','DIRT','DRAT','EACH','ETCH','HAIR','HARD','HATE','HEAR','HEAT','HEIR','HIRE','IDEA','ITCH','RACE','RAID','RATA','RICH','RICE','RIDE','TIDE','TIED','TIER','TIRE','TRADE','TRACE','TIRADE','DITHER','HATRED','THRICE','THRICED','DITCHER'] },
-  { letters:'BCEILNOS', words:['BIO','BON','CON','ION','NIL','NOB','SON','SOB','BIOS','BILE','BONE','BOLE','BONS','COIN','COLE','CONE','CORE','ICON','ISLE','LOBE','LOCI','LOIN','LONE','NOEL','SLOB','SNOB','SOIL','SOLE','SONIC','COILS','COINS','BONES','BONCE','BOLES','ONICE','OLDIE','BONCE','LIONS','COBIA','BISCON','CONICS','LOINS','BLOCS','SONIC','BINOCS','BLONCE','BICONE'] },
-  { letters:'ADEHIRST', words:['AID','AIR','AIT','ARE','ART','ASH','DAH','EAR','ETA','HAD','HAT','HID','HIS','HIT','RAH','RAT','RED','RID','SAD','TAD','TAR','AIDE','AIRD','ARID','DASH','DEAR','DAIS','DIRE','DIRT','DISH','DRAT','EDIT','HAIR','HARD','HATE','HEAR','HEIR','HIDE','HIRE','IDEA','IDES','IRATE','RAID','RATS','RASH','READ','RIDE','RISE','SIDE','SIRE','SITE','STAR','STAID','STIR','TADS','TIDE','TIED','TIER','TIRE','TREAD','TRIAD','TRIED','SHARE','SHADE','DIREST','TIRADE','HATRED','SHARED','THREADS','HARDIEST'] },
-  { letters:'CEILNORS', words:['CON','COR','ELM','EON','ION','NIL','NOR','ONE','ORE','ROC','SON','CEIL','COIL','COIN','COLE','CONE','CORE','CORN','CRONE','ENOL','ICON','IRON','LICE','LORE','LOIN','LONE','LORE','NICE','REIN','RICE','ROLE','ROSE','RILE','REIN','SINE','SNORE','SONIC','SLICE','SCONE','RECOIL','ROSINE','NORICE','CLONER','CORNEAL','CLONIER','RELICONS','CORNILES'] },
-  { letters:'ADGILNOR', words:['ADO','AID','AIR','DIG','DIN','DOG','DON','GAD','GAL','GEL','GOD','GOL','GON','LAD','LAG','LID','LOG','LON','NAD','NAG','NOD','OAR','OAD','RAD','RAG','RAN','RID','RIG','ROD','LAIR','LAND','LARD','LARI','LION','LOAD','LOAN','LOIN','LORD','NAIL','NARD','NAROD','NIGH','NODE','NOIR','NORA','ORAL','ROAD','ROAN','ROIL','SOLID','GROIN','LAOID','DRAIL','GROAN','GONALI','ORDINAL','LOADING','GLORIAD','DRAGONIL'] },
-  { letters:'EGHILNST', words:['GEL','GET','GIN','HEN','HIT','LEG','LET','LIE','LIT','NET','NIL','NIT','SET','SHE','SIN','SIT','THE','TIE','TIN','GELT','GILT','GLEN','GENT','GIST','GELS','HILT','HINT','LENT','LEST','LIES','LIEN','LITE','NEST','NILS','NITE','SELL','SHIN','SIGH','SING','SITE','SLIT','SNIT','THEN','TILE','TING','TINE','TINS','GLINT','NIGHT','LENTILS','LIGHTS','SLIGHT','TINGLE','SLEIGHT','NIGHTLY','SLIGHTED','NIGHTELS'] },
-  { letters:'ABEGINRS', words:['AGE','AIM','AIN','AIR','ARE','BAG','BAN','BAR','BEG','BIN','BRE','EAR','ERA','GAN','GAS','GIN','NAB','NAG','RAN','RIB','SAG','SIN','ABLE','BANE','BARE','BARGE','BARN','BEAN','BEAR','BIER','BILE','BINGE','BING','BRAN','BRIG','GAIN','GARB','GABS','GEAR','GRAB','GRIN','BARGE','REIN','RING','SANER','BRAIN','REIGN','GRAINS','BANGER','SNARE','GIBERS','GIANTS','BEGINS','BRAISED','BEARING','BEARINGS'] },
+  // 7 letters, each letter can only be used ONCE
+  { letters:'AEINRST', words:['ANT','ARE','ATE','EAR','EAT','ERA','IRE','NET','RAN','RAT','SIN','SIT','TAN','TAR','TEN','TIE','TIN','ANTE','ANTI','EARN','NEAR','RANT','RATE','RENT','SIRE','SITE','STAR','STEIN','STERN','TRAIN','STAINER','NASTIER','RETAINS','ENTAILS','ANESTRI'] },
+  { letters:'AELORST', words:['ALE','ALT','ARE','ATE','EAR','EAT','ERA','LAT','LOT','OAR','OAT','ORE','ROT','SOL','TAR','ALOE','ALSO','ALTO','EARL','LATE','LORE','OAST','ORAL','RATE','REAL','ROTE','SALE','SEAL','SLOE','SOAR','SOLE','TALE','TARO','TEAL','TORC','STORE','STOLE','TALON','LASTER','LOAFERS','OATMEAL'] },
+  { letters:'CDEHIRT', words:['DIE','DIT','HID','HIT','ICE','IRE','RED','RID','THE','ACHE','ACID','ARCH','ARID','CARE','CART','CHAD','CHAR','CHAT','CHID','CITE','DEAR','DIRE','DIRT','EACH','HAIR','HARD','HATE','HEAR','HEAT','HEIR','HIRE','IDEA','ITCH','RACE','RAID','RICH','RICE','RIDE','TIDE','TIRED','TRADE','TIRADE','THRICED'] },
+  { letters:'ABEILNS', words:['AIN','AIL','AIS','ALE','ANI','BAN','BIN','NAB','NIL','NIB','SAB','SIN','ABLE','BALE','BANE','BILE','CLAN','ISLE','LAIN','LANE','LEAN','LIEN','LINE','NAIL','NABS','AILS','BEANS','LINES','SNAIL','ALIEN','BLAINS','INALS'] },
+  { letters:'CEILNOT', words:['CON','COT','EON','ION','LIT','LOT','NIL','NOT','ONE','TIN','TON','CEIL','CITE','CLOT','COIL','COIN','COLE','CONE','COTE','ICON','LICE','LOIN','LONE','LORE','NICE','NOTE','ONCE','TILE','TINE','TOIL','TONE','ONICE','TONIC','NOETIC','NOTICE','ELOTION'] },
+  { letters:'ADEGILR', words:['AID','AIR','AGE','DAL','DIG','GAD','GAL','GEL','LAD','LAG','LID','RAD','RAG','RAN','RID','RIG','LAIR','LAID','LAND','LARD','DIAL','DIRE','GILD','GIRL','IDEA','IDLE','LIED','RAIL','RAID','RILE','RIDE','AGED','LAIRD','GRAIL','GILDAR','LIGARD'] },
+  { letters:'EGHILNS', words:['GEL','GIN','HEN','HIS','LEG','LIE','NIL','SHE','SIN','GELS','GENT','GLEN','GLIB','GIST','HENS','LIEN','LIEN','LIES','LINE','LEGS','NIGH','SHIN','SING','SLOE','SNIG','LENIS','SHINGLE','ENGLISH','LINGHES'] },
+  { letters:'ABEGNRS', words:['AGE','AIN','AIR','ARE','BAN','BAR','BEG','BIN','EAR','ERA','GAN','GIN','NAB','NAG','RAN','RIB','SAG','SIN','BANE','BARE','BARN','BEAN','BEAR','BIER','BILE','BRAN','GAIN','GARB','GEAR','GRAB','GRIN','REIN','RING','BRAIN','REIGN','GRAINS','BANGER','SNARE','BEGINS','BEARING'] },
 ];
 
 // ── Simple dictionary for validation (common 3-8 letter words) ────
@@ -310,8 +312,9 @@ function buildRack() {
 
 function selectLetter(i) {
   const tile = document.getElementById('rt'+i);
-  if(tile.classList.contains('used')) return;
-  tile.classList.add('used');
+  if(diff === 'hard' && tile.classList.contains('used')) return; // hard: each letter once
+  // easy: can reuse letters — push same index multiple times but track count
+  if(diff === 'hard') tile.classList.add('used');
   selectedIndices.push(i);
   updateWordDisplay();
 }
@@ -335,20 +338,27 @@ function updateWordDisplay() {
 
 function removeLetter(pos) {
   const rackIdx = selectedIndices[pos];
-  document.getElementById('rt'+rackIdx).classList.remove('used');
   selectedIndices.splice(pos,1);
+  if(diff === 'hard') {
+    document.getElementById('rt'+rackIdx).classList.remove('used');
+  } else {
+    // Easy: only un-highlight if no more copies of this index in selectedIndices
+    // (visual only — tile was never marked used in easy mode)
+  }
   updateWordDisplay();
 }
 
 function clearWord() {
-  selectedIndices.forEach(i=>document.getElementById('rt'+i)?.classList.remove('used'));
+  if(diff === 'hard') {
+    selectedIndices.forEach(i=>document.getElementById('rt'+i)?.classList.remove('used'));
+  }
   selectedIndices=[];
   updateWordDisplay();
 }
 
 function shuffleRack() {
-  rackLetters = shuffle(rackLetters);
   clearWord();
+  rackLetters = shuffle(rackLetters);
   buildRack();
 }
 
@@ -400,13 +410,20 @@ function submitWord() {
 }
 
 function canMakeFrom(word, rack) {
-  const available = rack.toLowerCase().split('');
-  for(const l of word.toLowerCase()){
-    const i=available.indexOf(l);
-    if(i===-1) return false;
-    available.splice(i,1);
+  if(diff === 'easy') {
+    // Easy: any letter in the rack can be reused
+    const rackSet = new Set(rack.toLowerCase().split(''));
+    return word.toLowerCase().split('').every(l => rackSet.has(l));
+  } else {
+    // Hard: each letter can only be used once
+    const available = rack.toLowerCase().split('');
+    for(const l of word.toLowerCase()){
+      const i=available.indexOf(l);
+      if(i===-1) return false;
+      available.splice(i,1);
+    }
+    return true;
   }
-  return true;
 }
 
 function addTime(secs) {
@@ -444,7 +461,7 @@ function endRound() {
   document.getElementById('endMsg').textContent =
     found.size>=8?'🎉 Incredible word builder!':found.size>=5?'👏 Great vocabulary!':found.size>=3?'Good start — keep building!':'Try to find more words!';
   document.getElementById('endCard').dataset.score = totalScore;
-  document.getElementById('switchBtn').textContent = diff==='easy'?'Switch to 8 letters':'Switch to 6 letters';
+  document.getElementById('switchBtn').textContent = diff==='easy'?'Switch to Hard':'Switch to Easy';
 
   // Show missed words (from rack's word list that weren't found)
   const missed = currentRack.words.filter(w=>!found.has(w.toLowerCase()) && w.length>=3);
@@ -472,7 +489,7 @@ async function doSubmit(){
 }
 
 // Init
-document.getElementById('switchBtn').textContent = 'Switch to 8 letters';
+document.getElementById('switchBtn').textContent = 'Switch to Hard';
 loadDict().then(()=>restartGame());
 </script>
 </body>

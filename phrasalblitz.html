@@ -129,14 +129,23 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <main>
 <!-- INTRO -->
 <div id="phase-intro">
-  <div style="text-align:center; padding:1rem 0;">
-    <div class="eyebrow" style="margin-bottom:.6rem">Today's verb</div>
+  <!-- Mode tabs always visible -->
+  <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:100%">
+    <button class="diff-tab active" id="mTab1" onclick="selectMode(1)">Pick particle</button>
+    <button class="diff-tab"        id="mTab2" onclick="selectMode(2)">Pick verb</button>
+    <button class="diff-tab"        id="mTab3" onclick="selectMode(3)">Type it</button>
+  </div>
+  <div style="text-align:center; padding:.75rem 0;">
+    <div class="eyebrow" style="margin-bottom:.4rem" id="introLabel">Today's verb</div>
     <div class="verb-hero" id="introVerb">…</div>
   </div>
-  <div class="mode-tabs">
-    <button class="mode-tab active" id="mTab1" onclick="selectMode(1)">Pick particle</button>
-    <button class="mode-tab"        id="mTab2" onclick="selectMode(2)">Type it</button>
-    <button class="mode-tab"        id="mTab3" onclick="selectMode(3)">Match pairs</button>
+  <!-- Type it sub-mode (only shown for mode 3) -->
+  <div id="typeSubMode" style="display:none;flex-direction:column;align-items:center;gap:.5rem;width:100%">
+    <div class="eyebrow">Type…</div>
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="typeSub1" onclick="selectTypeSub(1)">particles</button>
+      <button class="diff-tab"        id="typeSub2" onclick="selectTypeSub(2)">verbs</button>
+    </div>
   </div>
   <p style="color:var(--muted);font-size:.88rem;text-align:center;max-width:360px;line-height:1.65" id="modeDesc"></p>
   <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start →</button>
@@ -155,6 +164,7 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <div style="text-align:center;flex:1">
       <div class="instruction" id="gameInstruction"></div>
       <div class="verb-hero" id="gameVerb" style="font-size:2.2rem"></div>
+      <div style="font-family:'Space Mono',monospace;font-size:.65rem;color:var(--muted);margin-top:.2rem" id="gameSubLabel"></div>
     </div>
     <div class="score-box">
       <div class="val" id="scoreVal">0</div>
@@ -162,28 +172,36 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     </div>
   </div>
 
-  <!-- Mode 1: pick particle -->
+  <!-- Mode tabs visible during game too -->
+  <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:100%">
+    <button class="diff-tab" id="gTab1" onclick="switchMode(1)">Pick particle</button>
+    <button class="diff-tab" id="gTab2" onclick="switchMode(2)">Pick verb</button>
+    <button class="diff-tab" id="gTab3" onclick="switchMode(3)">Type it</button>
+  </div>
+
+  <!-- Mode 1: pick particle — given verb, find particles -->
   <div id="m1area" style="display:none;flex-direction:column;align-items:center;gap:.75rem;width:100%">
     <div class="instruction">Wrong answer = −5 seconds · Find all to finish early</div>
     <div class="options-grid" id="m1grid"></div>
   </div>
 
-  <!-- Mode 2: type particle -->
+  <!-- Mode 2: pick verb — given particle, find verbs -->
   <div id="m2area" style="display:none;flex-direction:column;align-items:center;gap:.75rem;width:100%">
-    <div class="instruction">Type a particle and press Enter · Wrong = −5 seconds</div>
-    <div class="type-input-wrap">
-      <input class="type-input" id="m2input" placeholder="e.g. up, away, into…" autocomplete="off" autocorrect="off" spellcheck="false"/>
-      <button class="btn-primary" onclick="submitTyped()">→</button>
-    </div>
+    <div class="instruction">Wrong answer = −5 seconds · Find all verbs that go with this particle</div>
+    <div class="options-grid" id="m2grid"></div>
   </div>
 
-  <!-- Mode 3: fun card matching -->
-  <div id="m3area" style="display:none;width:100%;flex-direction:column;align-items:center;gap:.75rem">
-    <div class="instruction">Match each verb with its particle · Wrong pair = −5 seconds</div>
-    <div class="m3-progress" id="m3progress"></div>
-    <div class="cards-area">
-      <div class="cards-label">Tap a verb, then its matching particle</div>
-      <div class="cards-grid" id="m3grid"></div>
+  <!-- Mode 3: type it — type either particles or verbs -->
+  <div id="m3area" style="display:none;flex-direction:column;align-items:center;gap:.75rem;width:100%">
+    <div class="instruction" id="m3instruction">Type and press Enter · Wrong = −5 seconds</div>
+    <div class="type-input-wrap">
+      <input class="type-input" id="m3input" autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="btn-primary" onclick="submitTyped()">→</button>
+    </div>
+    <!-- Hint: first letter -->
+    <div id="hintArea" style="display:flex;align-items:center;gap:.75rem">
+      <button class="btn-ghost" id="hintBtn" onclick="showTypeHint()">💡 Hint (first letter)</button>
+      <span id="hintDisplay" style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold);min-width:2rem"></span>
     </div>
   </div>
 
@@ -587,13 +605,36 @@ const ALL_PARTICLES = ['up','down','off','on','out','in','back','away','over','t
 const ALL_VERBS_FOR_MODE3 = VERBS.map(v => v.verb);
 
 let selectedMode = 1;
-let currentVerb, found, timer, timeLeft, finalScore;
+let typeSubMode  = 1; // 1=type particles, 2=type verbs
+let currentVerb, currentParticle, found, timer, timeLeft, finalScore;
+let hintUsed = false;
+let _easyVerbIdx = null, _easyParticleIdx = null, _hardVerbIdx = null;
 
-const MODE_DESC = {
-  1: 'Tap the correct particles to form phrasal verbs with today\'s verb. Wrong answer = −5 seconds. Find all of them before time runs out!',
-  2: 'Type particles one by one. No hints shown — you have to know them! Wrong = −5 seconds. Find as many as you can in 60 seconds.',
-  3: 'Match each verb on the left with its correct particle on the right. Wrong pair = −5 seconds. Fastest time wins!'
-};
+function getEasyVerb() {
+  if (_easyVerbIdx === null) {
+    _easyVerbIdx = freshDailyIndex('phrasalblitz_easy', VERBS.length);
+    markSeen('phrasalblitz_easy', _easyVerbIdx);
+  }
+  return VERBS[_easyVerbIdx];
+}
+function getHardVerb() {
+  if (_hardVerbIdx === null) {
+    const easyIdx = _easyVerbIdx !== null ? _easyVerbIdx : dailyIndex(VERBS.length);
+    _hardVerbIdx  = (easyIdx + Math.ceil(VERBS.length/2)) % VERBS.length;
+    markSeen('phrasalblitz_hard', _hardVerbIdx);
+  }
+  return VERBS[_hardVerbIdx];
+}
+function getEasyParticle() {
+  const particleCounts = {};
+  VERBS.forEach(v => v.pairs.forEach(p => { particleCounts[p.p] = (particleCounts[p.p]||0)+1; }));
+  const common = Object.keys(particleCounts).filter(p => particleCounts[p] >= 3);
+  if (_easyParticleIdx === null) {
+    _easyParticleIdx = freshDailyIndex('phrasalblitz_particle', common.length);
+    markSeen('phrasalblitz_particle', _easyParticleIdx);
+  }
+  return common[_easyParticleIdx % common.length];
+}
 
 function selectMode(n) {
   selectedMode = n;
@@ -602,49 +643,66 @@ function selectMode(n) {
 }
 
 function init() {
-  const vi = freshDailyIndex('phrasalblitz', VERBS.length);
-  markSeen('phrasalblitz', vi);
-  currentVerb = VERBS[vi];
-  document.getElementById('introVerb').textContent = currentVerb.verb;
   selectMode(1);
   renderLeaderboard('phrasalblitz', 'lbBody');
 }
 
 function startGame() {
-  found = new Set(); timeLeft = 60; finalScore = 0;
+  found = new Set(); timeLeft = 60; finalScore = 0; hintUsed = false;
   document.getElementById('phase-intro').style.display = 'none';
-  document.getElementById('phase-game').style.display = 'flex';
-  document.getElementById('scoreVal').textContent = '0';
-  document.getElementById('foundChips').innerHTML = '';
-  document.getElementById('gameVerb').textContent = currentVerb.verb;
+  document.getElementById('phase-game').style.display  = 'flex';
+  document.getElementById('scoreVal').textContent      = '0';
+  document.getElementById('foundChips').innerHTML      = '';
+  document.getElementById('gameSubLabel').textContent  = '';
+  [1,2,3].forEach(i => { const a=document.getElementById('m'+i+'area'); if(a) a.style.display='none'; });
 
-  // Setup mode-specific UI
-  document.getElementById('m1area').style.display = 'none';
-  document.getElementById('m2area').style.display = 'none';
-  document.getElementById('m3area').style.display = 'none';
+  // Update in-game tabs
+  [1,2,3].forEach(i => { const gt=document.getElementById('gTab'+i); if(gt) gt.classList.toggle('active', i===selectedMode); });
 
   if (selectedMode === 1) {
-    document.getElementById('m1area').style.display = 'flex';
+    // Mode 1: given today's verb → pick correct particles
+    currentVerb = getEasyVerb();
+    document.getElementById('gameVerb').textContent       = currentVerb.verb;
     document.getElementById('gameInstruction').textContent = 'Pick all correct particles';
+    document.getElementById('m1area').style.display        = 'flex';
     buildMode1();
+
   } else if (selectedMode === 2) {
-    document.getElementById('m2area').style.display = 'flex';
-    document.getElementById('gameInstruction').textContent = 'Type particles & press Enter';
-    document.getElementById('m2input').value = '';
-    document.getElementById('m2input').addEventListener('keydown', m2keydown);
-    document.getElementById('m2input').focus();
+    // Mode 2: given today's particle → pick verbs that use it
+    currentParticle = getEasyParticle();
+    document.getElementById('gameVerb').textContent       = currentParticle;
+    document.getElementById('gameInstruction').textContent = 'Pick all verbs that go with this particle';
+    document.getElementById('gameSubLabel').textContent    = 'verb + ' + currentParticle;
+    document.getElementById('m2area').style.display        = 'flex';
+    buildMode2();
+
   } else {
-    document.getElementById('m3area').style.display = 'block';
-    document.getElementById('gameInstruction').textContent = 'Match verb → particle';
-    buildMode3();
+    // Mode 3: type it — harder verb/particle from different daily pick
+    if (typeSubMode === 1) {
+      currentVerb = getHardVerb();
+      document.getElementById('gameVerb').textContent       = currentVerb.verb;
+      document.getElementById('gameInstruction').textContent = 'Type particles for this verb';
+      document.getElementById('m3input').placeholder        = 'e.g. up, away, into…';
+    } else {
+      currentParticle = getEasyParticle();
+      document.getElementById('gameVerb').textContent       = currentParticle;
+      document.getElementById('gameInstruction').textContent = 'Type verbs that go with this particle';
+      document.getElementById('gameSubLabel').textContent    = 'verb + ' + currentParticle;
+      document.getElementById('m3input').placeholder        = 'e.g. give, take, put…';
+    }
+    document.getElementById('m3area').style.display = 'flex';
+    document.getElementById('hintBtn').style.display = 'inline-block';
+    document.getElementById('hintDisplay').textContent = '';
+    document.getElementById('m3input').value = '';
+    document.getElementById('m3input').addEventListener('keydown', m3keydown);
+    document.getElementById('m3input').focus();
   }
   runTimer();
 }
 
-// ── Mode 1 ────────────────────────────────────────────────────────
+// ── Mode 1: Pick particle ─────────────────────────────────────────
 function buildMode1() {
   const correctParticles = new Set(currentVerb.pairs.map(p => p.p));
-  // Show correct + distractor particles (shuffled)
   const distractors = ALL_PARTICLES.filter(p => !correctParticles.has(p));
   const shown = dailyShuffle([...correctParticles, ...distractors.slice(0, Math.min(12, distractors.length))]);
   const grid = document.getElementById('m1grid'); grid.innerHTML = '';
@@ -672,143 +730,111 @@ function clickParticle(p, btn, correctSet) {
   }
 }
 
-// ── Mode 2 ────────────────────────────────────────────────────────
-function m2keydown(e) { if (e.key === 'Enter') submitTyped(); }
-function submitTyped() {
-  const inp = document.getElementById('m2input');
-  const val = inp.value.trim().toLowerCase();
-  if (!val) return;
-  const correctParticles = currentVerb.pairs.map(p => p.p);
-  if (correctParticles.includes(val) && !found.has(val)) {
-    found.add(val);
-    inp.className = 'type-input ok';
-    addFoundChip(currentVerb.verb + ' ' + val, val);
+// ── Mode 2: Pick verb ──────────────────────────────────────────────
+function buildMode2() {
+  // Find all verbs that have currentParticle as a pair
+  const correctVerbs = new Set(
+    VERBS.filter(v => v.pairs.some(p => p.p === currentParticle)).map(v => v.verb)
+  );
+  // Distractor verbs (those that DON'T use this particle)
+  const distractorVerbs = VERBS.filter(v => !correctVerbs.has(v.verb)).map(v => v.verb);
+  const shown = dailyShuffle([...correctVerbs, ...distractorVerbs.slice(0, Math.min(10, distractorVerbs.length))]);
+  const grid = document.getElementById('m2grid'); grid.innerHTML = '';
+  shown.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'opt'; btn.textContent = v;
+    btn.addEventListener('click', () => clickVerb(v, btn, correctVerbs));
+    grid.appendChild(btn);
+  });
+  // Store target count
+  currentVerb = { verb: currentParticle, pairs: [...correctVerbs].map(v => ({p:v,def:'',ex:''})), _correctVerbs: correctVerbs };
+}
+
+function clickVerb(v, btn, correctSet) {
+  if (found.has(v)) return;
+  if (correctSet.has(v)) {
+    found.add(v);
+    btn.classList.add('correct');
+    // Find the actual pair data for the definition
+    const verbObj = VERBS.find(vb => vb.verb === v);
+    const pairObj = verbObj?.pairs.find(p => p.p === currentParticle);
+    addFoundChipVerb(v + ' ' + currentParticle, v, pairObj);
     finalScore++;
     document.getElementById('scoreVal').textContent = finalScore;
-    if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
-  } else if (found.has(val)) {
-    inp.className = 'type-input bad'; // already found
+    if (found.size === correctSet.size) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
-    inp.className = 'type-input bad';
+    btn.classList.add('wrong');
     penalise();
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+
+// ── Mode 3: Type it ───────────────────────────────────────────────
+function m3keydown(e) { if (e.key === 'Enter') submitTyped(); }
+
+function showTypeHint() {
+  if (hintUsed) return;
+  hintUsed = true;
+  document.getElementById('hintBtn').style.display = 'none';
+  // Find next unfound correct answer and reveal first letter
+  if (typeSubMode === 1) {
+    const unfound = currentVerb.pairs.map(p=>p.p).filter(p=>!found.has(p));
+    if (unfound.length > 0) {
+      document.getElementById('hintDisplay').textContent = unfound[0][0].toUpperCase() + '…';
+    }
+  } else {
+    const correctVerbs = VERBS.filter(v=>v.pairs.some(p=>p.p===currentParticle)).map(v=>v.verb);
+    const unfound = correctVerbs.filter(v=>!found.has(v));
+    if (unfound.length > 0) {
+      document.getElementById('hintDisplay').textContent = unfound[0][0].toUpperCase() + '…';
+    }
+  }
+}
+
+function submitTyped() {
+  const inp = document.getElementById('m3input');
+  const val = inp.value.trim().toLowerCase();
+  if (!val) return;
+
+  if (typeSubMode === 1) {
+    // Typing particles for currentVerb
+    const correctParticles = currentVerb.pairs.map(p => p.p);
+    if (correctParticles.includes(val) && !found.has(val)) {
+      found.add(val);
+      inp.className = 'type-input ok';
+      addFoundChip(currentVerb.verb + ' ' + val, val);
+      finalScore++;
+      document.getElementById('scoreVal').textContent = finalScore;
+      if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
+    } else if (found.has(val)) {
+      inp.className = 'type-input bad';
+    } else {
+      inp.className = 'type-input bad';
+      penalise();
+    }
+  } else {
+    // Typing verbs for currentParticle
+    const correctVerbs = new Set(VERBS.filter(v=>v.pairs.some(p=>p.p===currentParticle)).map(v=>v.verb));
+    if (correctVerbs.has(val) && !found.has(val)) {
+      found.add(val);
+      inp.className = 'type-input ok';
+      const verbObj = VERBS.find(v=>v.verb===val);
+      const pairObj = verbObj?.pairs.find(p=>p.p===currentParticle);
+      addFoundChipVerb(val + ' ' + currentParticle, val, pairObj);
+      finalScore++;
+      document.getElementById('scoreVal').textContent = finalScore;
+      if (found.size === correctVerbs.size) { clearInterval(timer); setTimeout(endGame, 500); }
+    } else if (found.has(val)) {
+      inp.className = 'type-input bad';
+    } else {
+      inp.className = 'type-input bad';
+      penalise();
+    }
   }
   inp.value = '';
   setTimeout(() => { inp.className = 'type-input'; inp.focus(); }, 400);
 }
 
-// ── Mode 3: Fun card matching ───────────────────────────────────────
-// Key rules:
-// 1. Verbs are unique — no verb appears twice
-// 2. Particles are unique on screen — pick pairs where particles don't clash
-// 3. All cards mixed in one shuffled grid
-let m3pairs = [];
-let m3selectedCard = null; // {el, idx, type: 'verb'|'particle'}
-
-function buildMode3() {
-  // Build a set of unambiguous pairs from available verbs
-  m3pairs = [];
-  const usedParticles = new Set();
-  const usedVerbs     = new Set();
-
-  // Shuffle all available verbs
-  const allVerbs = [...VERBS].sort(() => Math.random() - .5);
-
-  for (const verb of allVerbs) {
-    if (m3pairs.length >= 6) break;
-    if (usedVerbs.has(verb.verb)) continue;
-    // Find a particle for this verb that isn't already used
-    const availPairs = verb.pairs.filter(p => !usedParticles.has(p.p));
-    if (availPairs.length === 0) continue;
-    // Pick a random available pair
-    const chosen = availPairs[Math.floor(Math.random() * availPairs.length)];
-    m3pairs.push({ verb: verb.verb, particle: chosen.p, def: chosen.def, ex: chosen.ex });
-    usedVerbs.add(verb.verb);
-    usedParticles.add(chosen.p);
-  }
-
-  // Build cards: each pair contributes a verb card + particle card
-  // All cards are mixed together in one grid
-  const cards = [];
-  m3pairs.forEach((pair, idx) => {
-    cards.push({ text: pair.verb,     type: 'verb',     idx });
-    cards.push({ text: pair.particle, type: 'particle', idx });
-  });
-  // True random shuffle
-  cards.sort(() => Math.random() - .5);
-
-  const grid = document.getElementById('m3grid'); grid.innerHTML = '';
-  cards.forEach(card => {
-    const el = document.createElement('div');
-    el.className = `match-card ${card.type}-card`;
-    el.textContent = card.type === 'verb'
-      ? card.text                         // verb shown as-is
-      : card.text;                        // particle shown as-is
-    el.dataset.idx  = card.idx;
-    el.dataset.type = card.type;
-    el.addEventListener('click', () => m3click(el, card.idx, card.type));
-    grid.appendChild(el);
-  });
-
-  m3selectedCard = null;
-  document.getElementById('gameVerb').textContent = '';
-  document.getElementById('gameInstruction').textContent = `Match ${m3pairs.length} verb–particle pairs`;
-  updateM3Progress();
-}
-
-function updateM3Progress() {
-  const matched = found.size;
-  const total   = m3pairs.length;
-  const el = document.getElementById('m3progress');
-  if (el) el.textContent = `${matched} / ${total} matched`;
-}
-
-function m3click(el, idx, type) {
-  if (el.classList.contains('matched')) return;
-
-  if (!m3selectedCard) {
-    // First selection — just highlight it
-    el.classList.add('selected');
-    m3selectedCard = { el, idx, type };
-    return;
-  }
-
-  // Second selection
-  const prev = m3selectedCard;
-
-  if (prev.el === el) {
-    // Clicked same card — deselect
-    el.classList.remove('selected');
-    m3selectedCard = null;
-    return;
-  }
-
-  // Must select one verb and one particle, matching the same pair index
-  const sameIdx  = prev.idx === idx;
-  const diffType = prev.type !== type;
-
-  if (sameIdx && diffType) {
-    // ✅ Correct match!
-    prev.el.classList.replace('selected', 'matched');
-    el.classList.add('matched');
-    found.add(idx);
-    addFoundChip(m3pairs[idx].verb + ' ' + m3pairs[idx].particle, String(idx));
-    finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
-    updateM3Progress();
-    if (found.size === m3pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
-  } else {
-    // ❌ Wrong — flash both red, penalise
-    prev.el.classList.add('wrong-flash');
-    el.classList.add('wrong-flash');
-    penalise();
-    setTimeout(() => {
-      prev.el.classList.remove('wrong-flash', 'selected');
-      el.classList.remove('wrong-flash', 'selected');
-    }, 600);
-  }
-
-  m3selectedCard = null;
-}
 
 // ── Shared helpers ────────────────────────────────────────────────
 function addFoundChip(label, key) {
@@ -816,14 +842,18 @@ function addFoundChip(label, key) {
   chip.className = 'found-chip';
   chip.textContent = label;
   chip.addEventListener('click', () => {
-    // Look up definition
-    const pair = selectedMode === 3
-      ? m3pairs[parseInt(key)]
-      : currentVerb.pairs.find(p => p.p === key);
-    if (pair) showPhrasalModal(
-      selectedMode === 3 ? (pair.verb + ' ' + pair.particle) : (currentVerb.verb + ' ' + pair.p),
-      pair.def, pair.ex
-    );
+    const pair = currentVerb.pairs.find(p => p.p === key);
+    if (pair) showPhrasalModal(currentVerb.verb + ' ' + pair.p, pair.def, pair.ex);
+  });
+  document.getElementById('foundChips').appendChild(chip);
+}
+
+function addFoundChipVerb(label, verbKey, pairObj) {
+  const chip = document.createElement('span');
+  chip.className = 'found-chip';
+  chip.textContent = label;
+  chip.addEventListener('click', () => {
+    if (pairObj) showPhrasalModal(label, pairObj.def, pairObj.ex);
   });
   document.getElementById('foundChips').appendChild(chip);
 }
@@ -881,23 +911,30 @@ function endGame() {
     });
   });
 
-  // Missed
-  const allPairs = selectedMode === 3 ? m3pairs : currentVerb.pairs;
-  const missedEl = document.getElementById('missedChips'); missedEl.innerHTML = '';
+  // Missed — handle all three modes
+  const missedEl    = document.getElementById('missedChips'); missedEl.innerHTML = '';
   const missedTitle = document.getElementById('missedTitle');
-  const missed = selectedMode === 3
-    ? allPairs.filter((_,i) => !found.has(i))
-    : allPairs.filter(p => !found.has(p.p));
 
-  if (missed.length > 0) {
+  let missedItems = [];
+  if (selectedMode === 1 || selectedMode === 3 && typeSubMode === 1) {
+    // Missed particles for currentVerb
+    missedItems = currentVerb.pairs.filter(p => !found.has(p.p))
+      .map(p => ({ label: currentVerb.verb+' '+p.p, def:p.def, ex:p.ex }));
+  } else {
+    // Missed verbs for currentParticle
+    const correctVerbs = VERBS.filter(v => v.pairs.some(p => p.p === currentParticle));
+    missedItems = correctVerbs.filter(v => !found.has(v.verb)).map(v => {
+      const pObj = v.pairs.find(p => p.p === currentParticle);
+      return { label: v.verb+' '+currentParticle, def:pObj?.def||'', ex:pObj?.ex||'' };
+    });
+  }
+
+  if (missedItems.length > 0) {
     missedTitle.textContent = 'You missed:';
-    missed.forEach(p => {
+    missedItems.forEach(m => {
       const chip = document.createElement('span');
-      chip.className = 'missed-chip';
-      const verb = selectedMode === 3 ? p.verb : currentVerb.verb;
-      const particle = selectedMode === 3 ? p.particle : p.p;
-      chip.textContent = verb + ' ' + particle;
-      chip.addEventListener('click', () => showPhrasalModal(verb + ' ' + particle, p.def, p.ex));
+      chip.className = 'missed-chip'; chip.textContent = m.label;
+      chip.addEventListener('click', () => showPhrasalModal(m.label, m.def, m.ex));
       missedEl.appendChild(chip);
     });
   } else { missedTitle.textContent = ''; }
@@ -910,12 +947,15 @@ function resetGame() {
   document.getElementById('phase-result').style.display = 'none';
   document.getElementById('phase-intro').style.display = 'flex';
   document.getElementById('m2input')?.removeEventListener('keydown', m2keydown);
+  document.getElementById('m3input')?.removeEventListener('keydown', m3keydown);
 }
 function goToIntro() {
   document.getElementById('phase-result').style.display = 'none';
   document.getElementById('phase-game').style.display   = 'none';
   document.getElementById('phase-intro').style.display  = 'flex';
   document.getElementById('m2input')?.removeEventListener('keydown', m2keydown);
+  document.getElementById('m3input')?.removeEventListener('keydown', m3keydown);
+  clearInterval(timer);
 }
 
 async function doSubmit() {

@@ -109,23 +109,17 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <div class="loading-progress"><div class="loading-progress-fill"></div></div>
   </div>
 
-  <!-- Mode selector (shown after load, before game) -->
-  <div id="modeSelect" style="display:none;flex-direction:column;align-items:center;gap:1.25rem;width:100%;padding:1rem 0">
-    <div class="eyebrow">Choose your challenge</div>
-    <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;width:100%">
-      <button class="btn-primary diff-tab active" style="flex:1;min-width:160px;padding:.85rem 1rem;font-size:.95rem" id="wcBtnEasy" onclick="beginGame('easy');document.getElementById('wcBtnEasy').classList.add('active');document.getElementById('wcBtnHard').classList.remove('active')">
-        🔗 Classic<br><span style="font-size:.75rem;font-weight:400;opacity:.8">Chain words by last letter</span>
-      </button>
-      <button class="btn-secondary diff-tab" style="flex:1;min-width:160px;padding:.85rem 1rem;font-size:.95rem" id="wcBtnHard" onclick="beginGame('hard');document.getElementById('wcBtnHard').classList.add('active');document.getElementById('wcBtnEasy').classList.remove('active')">
-        🧠 Part of Speech<br><span style="font-size:.75rem;font-weight:400;opacity:.8">Match letter + word type</span>
-      </button>
+  <!-- Mode tabs — always visible -->
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="wcTabEasy" onclick="switchWcMode('easy')">🔗 Classic</button>
+      <button class="diff-tab"        id="wcTabHard" onclick="switchWcMode('hard')">🧠 Part of Speech</button>
     </div>
-    <div class="rules-box" id="rulesBox" style="font-size:.8rem">
-      <strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, real English only, no repeats.<br>
-      <strong>Part of Speech:</strong> Same rules, but you're also given a part of speech (noun, verb, adjective, adverb). Your word must match it or you lose a life.<br><br>
-      <strong>Both modes:</strong> Start with <strong>5 lives ❤️</strong>. Lose a life for wrong letter, unknown word, repeat, or wrong part of speech. Game ends when time runs out or you lose all lives.<br>
-      Scoring: <strong>1 pt per letter</strong>. Words of 4+ letters also earn <strong>+1s per letter</strong> time bonus.
-    </div>
+    <div class="eyebrow" id="wcModeLabel">Classic mode</div>
+  </div>
+  <!-- Rules always visible -->
+  <div class="rules-box" style="font-size:.8rem">
+    <span id="rulesText"><strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, no repeats. <strong>5 lives ❤️</strong>. Lose a life for wrong letter, unknown word or repeat. 1 pt per letter; words of 4+ letters earn +1s bonus.</span>
   </div>
 
   <!-- Game UI -->
@@ -352,9 +346,26 @@ function renderPrompt() {
 }
 
 // ── Game flow ──────────────────────────────────────────────────────
+function switchWcMode(m) {
+  mode = m;
+  document.getElementById('wcTabEasy').classList.toggle('active', m==='easy');
+  document.getElementById('wcTabHard').classList.toggle('active', m==='hard');
+  document.getElementById('wcModeLabel').textContent = m==='easy' ? 'Classic mode' : 'Part of Speech mode';
+  const rulesText = document.getElementById('rulesText');
+  if(rulesText) rulesText.innerHTML = m==='easy'
+    ? '<strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, no repeats. <strong>5 lives ❤️</strong>. Lose a life for wrong letter, unknown word or repeat. 1 pt per letter; words of 4+ earn +1s bonus.'
+    : '<strong>Part of Speech:</strong> Same as Classic, but each turn you are also given a required part of speech. Wrong type = lose a life. <strong>5 lives ❤️</strong>.';
+  // If game is running, restart with new mode
+  if(document.getElementById('gameUI').style.display === 'flex') {
+    clearInterval(timerInterval);
+    document.getElementById('gameUI').style.display = 'none';
+    document.getElementById('endCard').style.display = 'none';
+  }
+}
+
 function beginGame(m) {
   mode = m;
-  document.getElementById('modeSelect').style.display = 'none';
+  switchWcMode(m);
   document.getElementById('gameUI').style.display = 'flex';
   startChain();
 }
@@ -513,7 +524,8 @@ function replayMode() {
 
 function backToMenu() {
   document.getElementById('endCard').style.display  = 'none';
-  document.getElementById('modeSelect').style.display = 'flex';
+  document.getElementById('gameUI').style.display   = 'flex';
+  startChain();
 }
 
 async function doSubmit() {
@@ -536,7 +548,8 @@ function switchLb(m) {
 async function init() {
   await loadWords();
   document.getElementById('loadingBar').style.display  = 'none';
-  document.getElementById('modeSelect').style.display  = 'flex';
+  document.getElementById('gameUI').style.display = 'flex';
+  startChain();
   renderLeaderboard('wordchain', 'lbBody');
   document.getElementById('wordInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitWord();

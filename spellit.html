@@ -128,6 +128,10 @@ main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <div class="lb-section">
   <div class="lb-wrap">
     <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbTab_spellit_easy" onclick="switchLb_spellit('easy')">Easy</button>
+      <button class="diff-tab"        id="lbTab_spellit_hard" onclick="switchLb_spellit('hard')">Hard</button>
+    </div>
     <table class="lb-table">
       <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
       <tbody id="lbBody"></tbody>
@@ -771,6 +775,13 @@ async function doSubmit() {
 }
 
 initRound();
+
+function switchLb_spellit(d) {
+  ['easy','hard'].forEach(x => {
+    document.getElementById('lbTab_spellit_'+x).classList.toggle('active', x===d);
+  });
+  renderLeaderboard('spellit_'+d, 'lbBody');
+}
 </script>
 </body>
 </html>
