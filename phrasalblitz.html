@@ -137,7 +137,7 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   </div>
   <div style="text-align:center; padding:.75rem 0;">
     <div class="eyebrow" style="margin-bottom:.4rem" id="introLabel">Today's verb</div>
-    <div class="verb-hero" id="introVerb">…</div>
+    <div class="verb-hero" id="introVerb" style="min-height:2.5rem"></div>
   </div>
   <!-- Type it sub-mode (only shown for mode 3) -->
   <div id="typeSubMode" style="display:none;flex-direction:column;align-items:center;gap:.5rem;width:100%">
@@ -643,13 +643,20 @@ function getEasyParticle() {
   return common[_easyParticleIdx % common.length];
 }
 
+const MODE_DESC = {
+  1: "Given today's verb, tap all the particles that make valid phrasal verbs. Wrong answer = −5 seconds.",
+  2: "Given today's particle, tap all the verbs that go with it. Wrong answer = −5 seconds.",
+  3: "Type the missing words from memory — no options shown! One hint available per game.",
+};
+
 function selectMode(n) {
   selectedMode = n;
   [1,2,3].forEach(i => {
     const t = document.getElementById('mTab'+i); if(t) t.classList.toggle('active', i===n);
     const g = document.getElementById('gTab'+i); if(g) g.classList.toggle('active', i===n);
   });
-  document.getElementById('modeDesc').textContent = MODE_DESC[n];
+  const descEl = document.getElementById('modeDesc');
+  if(descEl) descEl.textContent = MODE_DESC[n];
   const tsm = document.getElementById('typeSubMode');
   if(tsm) tsm.style.display = n===3 ? 'flex' : 'none';
   updateIntroDisplay(); // ← always refresh the shown verb/particle
@@ -697,8 +704,8 @@ function switchMode(n) {
 }
 
 function init() {
-  selectMode(1);
-  setTimeout(updateIntroDisplay, 80); // safety: ensure DOM is ready
+  selectMode(1);       // sets mode tabs + calls updateIntroDisplay
+  updateIntroDisplay(); // call again immediately to be safe
   renderLeaderboard('phrasalblitz_particle', 'lbBody');
 }
 
