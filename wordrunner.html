@@ -3,196 +3,140 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Word Runner — English Games</title>
+<title>Affix Runner — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <style>
-/* ── Layout ─────────────────────────────────────────────── */
-body { overflow:hidden; }
-main { padding:0; max-width:100%; }
+body { overflow:hidden; background:#0a0a14; }
+#gameCanvas { display:block; touch-action:none; position:fixed; top:48px; left:0; }
 
-#gameCanvas {
-  display:block;
-  touch-action:none;
-  position:fixed;
-  top:48px; left:0;
-  cursor:none;
+/* ── Rotate prompt ── */
+#rotatePlease {
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:#0a0a14;
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:1.25rem; padding:2rem; text-align:center;
 }
+.rotate-icon { font-size:3.5rem; animation:rotHint 1.8s ease-in-out infinite; }
+@keyframes rotHint { 0%,100%{transform:rotate(0deg)} 45%,65%{transform:rotate(90deg)} }
+#rotatePlease p { font-family:'Space Mono',monospace; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); line-height:1.8; }
+#rotatePlease strong { color:var(--gold); }
 
-/* ── Overlay screens ─────────────────────────────────────── */
+/* ── Top nav ── */
+#topNav {
+  position:fixed; top:0; left:0; right:0; height:48px; z-index:300;
+  display:flex; align-items:center; justify-content:space-between; padding:0 1rem;
+  background:rgba(10,10,20,.9); border-bottom:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(8px);
+}
+#topNav a { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; color:rgba(255,255,255,.45); text-decoration:none; text-transform:uppercase; transition:color .2s; }
+#topNav a:hover { color:#fff; }
+#topNav .nav-title { font-family:'Playfair Display',serif; font-size:.9rem; font-weight:700; color:var(--gold); }
+#muteBtn { height:32px; padding:0 .65rem; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; cursor:pointer; display:flex; align-items:center; gap:.3rem; font-family:'Space Mono',monospace; letter-spacing:.06em; transition:background .2s; white-space:nowrap; }
+#muteBtn:hover { background:rgba(255,255,255,.15); }
+#pauseBtn { height:32px; padding:0 .65rem; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; cursor:pointer; font-family:'Space Mono',monospace; letter-spacing:.06em; transition:background .2s; display:none; }
+#pauseBtn.visible { display:flex; align-items:center; }
+#pauseBtn:hover { background:rgba(255,255,255,.15); }
+
+/* ── Overlay screens ── */
 .screen {
   position:fixed; inset:0; top:48px;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  gap:1.1rem; padding:2rem 1.5rem;
-  z-index:100;
-  background:rgba(10,10,18,.95);
-  backdrop-filter:blur(6px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1rem; padding:2rem 1.5rem; z-index:100;
+  background:rgba(10,10,20,.96); backdrop-filter:blur(6px); overflow-y:auto;
 }
 .screen.hidden { display:none; }
 
-.game-logo {
-  font-family:'Playfair Display',serif;
-  font-size:clamp(2.2rem,8vw,3.5rem);
-  font-weight:900;
-  letter-spacing:.02em;
-  line-height:1.1;
-  text-align:center;
-  color:var(--text);
-}
+.game-logo { font-family:'Playfair Display',serif; font-size:clamp(2rem,7vw,3rem); font-weight:900; text-align:center; color:var(--text); }
 .game-logo em { color:var(--gold); font-style:normal; }
+.tagline { font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); text-align:center; }
 
-.tagline {
-  font-family:'Space Mono',monospace;
-  font-size:.75rem; letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--muted); text-align:center;
-}
+.round-info { font-family:'Space Mono',monospace; font-size:.75rem; color:var(--gold); letter-spacing:.1em; text-align:center; }
+.high-score { font-family:'Space Mono',monospace; font-size:.7rem; color:var(--muted); letter-spacing:.1em; }
 
-/* Level select */
-.level-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:.65rem; width:100%; max-width:520px;
-}
-.level-card {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; padding:.9rem 1rem;
-  cursor:pointer; transition:all .18s;
-  text-align:center; position:relative;
-}
-.level-card:hover { border-color:var(--gold); background:var(--gold-dim); }
-.level-card.locked { opacity:.4; cursor:not-allowed; pointer-events:none; }
-.level-card .lv-num {
-  font-family:'Space Mono',monospace; font-size:.6rem;
-  letter-spacing:.14em; color:var(--gold); text-transform:uppercase;
-}
-.level-card .lv-name {
-  font-family:'Playfair Display',serif; font-size:1.05rem;
-  font-weight:700; color:var(--text); margin:.2rem 0;
-}
-.level-card .lv-desc {
-  font-size:.72rem; color:var(--muted); line-height:1.5;
-}
-.level-card .lv-lock {
-  position:absolute; top:.5rem; right:.6rem;
-  font-size:.8rem; opacity:.5;
-}
-.level-card.best::after {
-  content:attr(data-best);
-  display:block; margin-top:.4rem;
-  font-family:'Space Mono',monospace; font-size:.58rem;
-  color:var(--gold); letter-spacing:.08em;
-}
+/* Track selector */
+.track-bar { display:flex; gap:.35rem; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:99px; padding:.3rem .4rem; }
+.track-btn { font-family:'Space Mono',monospace; font-size:.6rem; font-weight:700; letter-spacing:.06em; padding:.28rem .75rem; border-radius:99px; border:1px solid rgba(255,255,255,.12); background:transparent; color:rgba(255,255,255,.45); cursor:pointer; transition:all .18s; text-transform:uppercase; }
+.track-btn:hover { border-color:rgba(212,175,55,.6); color:var(--gold); }
+.track-btn.active { background:linear-gradient(135deg,var(--gold),#b8860b); border-color:var(--gold); color:#0a0a14; }
 
-/* Instructions */
-.instr-box {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; padding:.9rem 1.1rem;
-  font-size:.8rem; color:var(--muted); line-height:1.8;
-  max-width:340px; width:100%;
-}
+.instr-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.9rem 1.1rem; font-size:.8rem; color:var(--muted); line-height:1.8; max-width:360px; width:100%; }
 .instr-box strong { color:var(--text); }
-.instr-box .key {
-  display:inline-block;
-  background:var(--surface2); border:1px solid var(--border2);
-  border-radius:4px; padding:.1rem .4rem;
-  font-family:'Space Mono',monospace; font-size:.7rem;
-  color:var(--gold);
-}
+.key { display:inline-block; background:var(--surface2); border:1px solid var(--border2); border-radius:4px; padding:.1rem .4rem; font-family:'Space Mono',monospace; font-size:.68rem; color:var(--gold); }
+.tip-mobile { display:none; }
+@media (pointer:coarse) { .tip-mobile{display:inline} .tip-kb{display:none} }
 
 /* End screen */
-.end-score-big {
-  font-family:'Playfair Display',serif;
-  font-size:clamp(2.5rem,10vw,4rem); font-weight:900;
-  color:var(--gold);
-}
+.end-score-big { font-family:'Playfair Display',serif; font-size:clamp(2.5rem,10vw,4rem); font-weight:900; color:var(--gold); }
 .end-stats { display:flex; gap:1.2rem; flex-wrap:wrap; justify-content:center; }
-.end-stat  { text-align:center; }
 .end-stat .v { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--gold); }
 .end-stat .l { font-family:'Space Mono',monospace; font-size:.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
 
-.lb-section { display:none; } /* leaderboard below canvas — shown after game */
-
-/* Gentle blink on inactive tabs */
-@keyframes modePulse{0%,100%{opacity:1}50%{opacity:.55}}
-
-/* ── Rotate prompt ───────────────────────────────────────── */
-#rotatePlease {
-  display:none;
-  position:fixed; inset:0; z-index:9999;
-  background:#0a0a12;
-  flex-direction:column; align-items:center; justify-content:center;
-  gap:1.25rem; padding:2rem;
-  text-align:center;
-}
-#rotatePlease .rotate-icon {
-  font-size:4rem;
-  animation:rotateHint 1.8s ease-in-out infinite;
-}
-@keyframes rotateHint {
-  0%,100% { transform:rotate(0deg); }
-  40%     { transform:rotate(90deg); }
-  60%     { transform:rotate(90deg); }
-}
-#rotatePlease p {
-  font-family:'Space Mono',monospace;
-  font-size:.8rem; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--muted);
-  line-height:1.8;
-}
-#rotatePlease strong { color:var(--gold); }
-
-/* Mute button */
-#wrMuteBtn {
-  position:fixed; bottom:1rem; right:1rem; z-index:200;
-  height:32px; padding:0 .65rem; border-radius:16px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
-  color:var(--text); font-size:.68rem; cursor:pointer;
-  display:flex; align-items:center; gap:.3rem;
-  font-family:'Space Mono',monospace; letter-spacing:.06em;
-  transition:background .2s; white-space:nowrap;
-}
-#wrMuteBtn:hover { background:rgba(255,255,255,.15); }
+/* Pause overlay */
+#pauseOverlay { position:fixed; inset:0; top:48px; z-index:150; background:rgba(10,10,20,.85); backdrop-filter:blur(6px); display:none; flex-direction:column; align-items:center; justify-content:center; gap:1.25rem; }
+#pauseOverlay.visible { display:flex; }
+#pauseOverlay .pause-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:#fff; }
+#pauseOverlay .pause-hint { font-family:'Space Mono',monospace; font-size:.72rem; color:rgba(255,255,255,.4); letter-spacing:.1em; }
 </style>
 </head>
 <body>
+
 <div id="rotatePlease">
   <div class="rotate-icon">📱</div>
-  <p><strong>Rotate your phone</strong><br>Word Runner plays in<br>landscape mode</p>
+  <p><strong>Rotate your phone</strong><br>Affix Runner plays<br>in landscape mode</p>
 </div>
 
-<button id="wrMuteBtn">🔊 100%</button>
-
-<nav class="site-nav">
-  <a href="index.html" class="back">← Games</a>
-  <span class="game-title">🏃 Word Runner</span>
-  <span></span>
+<nav id="topNav">
+  <a href="index.html">← GAMES</a>
+  <span class="nav-title">🏃 Affix Runner</span>
+  <div style="display:flex;gap:.5rem;align-items:center">
+    <button id="pauseBtn" onclick="togglePause()">⏸ PAUSE</button>
+    <button id="muteBtn">🔊 100%</button>
+  </div>
 </nav>
 
-<!-- START / LEVEL SELECT -->
+<div id="pauseOverlay">
+  <div class="pause-title">PAUSED</div>
+  <div class="pause-hint" id="pauseHint">Press Space or tap ▶ Resume</div>
+  <button class="btn-primary" onclick="togglePause()">▶ Resume</button>
+</div>
+
+<!-- START SCREEN -->
 <div class="screen" id="startScreen">
-  <div class="game-logo">Word<br><em>Runner</em></div>
-  <div class="tagline">Jump to collect · duck to dodge · learn affixes</div>
-  <div class="level-grid" id="levelGrid"></div>
+  <div class="game-logo">Affix<br><em>Runner</em></div>
+  <div class="tagline">Jump to collect · duck to dodge · master affixes</div>
+  <div class="high-score" id="hiScore">Best: 0</div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
+    <div class="eyebrow">Music track</div>
+    <div class="track-bar">
+      <button class="track-btn active" id="track0" onclick="selectTrack(0)">Upbeat</button>
+      <button class="track-btn"        id="track1" onclick="selectTrack(1)">Chill</button>
+      <button class="track-btn"        id="track2" onclick="selectTrack(2)">Heroic</button>
+    </div>
+  </div>
+
+  <button class="btn-primary" style="font-size:1rem;padding:.8rem 2.5rem" onclick="startGame()">RUN →</button>
+
   <div class="instr-box">
-    <strong>JUMP</strong> — <span class="key">Space</span> / <span class="key">↑</span> / tap right side &nbsp;·&nbsp; collect the correct word<br>
-    <strong>DUCK</strong> — <span class="key">↓</span> / tap left side &nbsp;·&nbsp; dodge the wrong words<br>
-    <strong>LIVES</strong> — 3 hearts · miss correct = −1 · hit wrong = −1<br>
-    <strong>PROGRESS</strong> — complete levels to unlock suffixes
+    <strong>JUMP</strong> — <span class="key tip-kb">Space / ↑</span><span class="tip-mobile">tap right side</span> &nbsp;·&nbsp; collect ✅ words in the air<br>
+    <strong>DUCK</strong> — <span class="key tip-kb">↓</span><span class="tip-mobile">tap left side</span> &nbsp;·&nbsp; slide under ❌ words<br>
+    <strong>NATURAL</strong> — some words are at running height: collect ✅, avoid ❌<br>
+    <strong>ROUNDS 1–5</strong> — Prefixes &nbsp;·&nbsp; <strong>6–8</strong> — Suffixes &nbsp;·&nbsp; <strong>9–10</strong> — Mixed<br>
+    <strong>LIVES</strong> — 3 hearts &nbsp;·&nbsp; <strong>PAUSE</strong> — <span class="key tip-kb">Space</span><span class="tip-mobile">double-tap</span>
   </div>
 </div>
 
 <!-- END SCREEN -->
 <div class="screen hidden" id="endScreen">
-  <div class="eyebrow" id="endReason">Level complete!</div>
+  <div class="eyebrow" id="endReason">Round complete!</div>
   <div class="end-score-big" id="endScore">0</div>
   <div class="end-stats">
     <div class="end-stat"><div class="v" id="endCorrect">0</div><div class="l">Correct</div></div>
     <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
-    <div class="end-stat"><div class="v" id="endLevel">1</div><div class="l">Level</div></div>
+    <div class="end-stat"><div class="v" id="endRound">1</div><div class="l">Round</div></div>
   </div>
   <p style="color:var(--muted);font-size:.9rem;text-align:center;max-width:300px" id="endMsg"></p>
   <div class="submit-row" style="width:100%;max-width:320px">
@@ -200,17 +144,13 @@ main { padding:0; max-width:100%; }
     <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-    <button class="btn-primary" onclick="replayLevel()">Play again</button>
-    <button class="btn-ghost"   onclick="showStart()">All levels</button>
+    <button class="btn-primary" onclick="startGame()">Play again</button>
     <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
   </div>
-  <div id="endLbWrap" style="width:100%;max-width:340px;margin-top:.5rem">
-    <div class="lb-wrap">
-      <h2 style="font-size:1rem;margin-bottom:.5rem">🏆 Leaderboard</h2>
-      <table class="lb-table">
-        <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-        <tbody id="lbBody"></tbody>
-      </table>
+  <div style="width:100%;max-width:340px;margin-top:.5rem">
+    <div class="lb-wrap"><h2 style="font-size:1rem;margin-bottom:.5rem">🏆 Leaderboard</h2>
+      <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody></table>
     </div>
   </div>
 </div>
@@ -218,9 +158,9 @@ main { padding:0; max-width:100%; }
 <canvas id="gameCanvas"></canvas>
 <script src="shared.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// WORD RUNNER
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// AFFIX RUNNER
+// ════════════════════════════════════════════════════════════════════
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 
@@ -231,523 +171,456 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-// ── Level data ─────────────────────────────────────────────────────
-// Each level: affix, type (prefix/suffix), questions[]
-// question: {root, correct (full word with affix), wrong (3 distractors)}
-const LEVELS = [
-  {
-    id:1, name:'UN–', type:'prefix',
-    tag:'Prefix — meaning "not" or "reverse"',
-    desc:'un– · not / reverse',
-    lbKey:'wordrunner_1',
-    color:'#4fc3f7',
-    questions:[
-      {prompt:'un– + HAPPY = ?',  correct:'UNHAPPY',   wrong:['DISHAPPY','INHAPPY','NONHAPPY']},
-      {prompt:'un– + KIND =?',    correct:'UNKIND',    wrong:['INKIND','DISKIND','NOTKIND']},
-      {prompt:'un– + LOCK =?',    correct:'UNLOCK',    wrong:['DISLOCK','RELOCK','DELOCK']},
-      {prompt:'un– + FAIR =?',    correct:'UNFAIR',    wrong:['INFAIR','DISFAIR','NONFAIR']},
-      {prompt:'un– + PACK =?',    correct:'UNPACK',    wrong:['DISPACK','REPACK','DEPACK']},
-      {prompt:'un– + COVER =?',   correct:'UNCOVER',   wrong:['DISCOVER','RECOVER','DECOVER']},
-      {prompt:'un– + USUAL =?',   correct:'UNUSUAL',   wrong:['INUSUAL','NONUSUAL','DISUSUAL']},
-      {prompt:'un– + ABLE =?',    correct:'UNABLE',    wrong:['INABLE','NOTABLE','NONTABLE']},
-      {prompt:'un– + WRAP =?',    correct:'UNWRAP',    wrong:['DISWRAP','REWRAP','DEWRAP']},
-      {prompt:'un– + CLEAR =?',   correct:'UNCLEAR',   wrong:['INCLEAR','NONCLEAR','DISCLEAR']},
-      {prompt:'un– + TIDY =?',    correct:'UNTIDY',    wrong:['INTIDY','DISTIDY','NONTIDY']},
-      {prompt:'un– + LOAD =?',    correct:'UNLOAD',    wrong:['RELOAD','DISLOAD','DELOAD']},
-    ],
-  },
-  {
-    id:2, name:'RE–', type:'prefix',
-    tag:'Prefix — meaning "again" or "back"',
-    desc:'re– · again / back',
-    lbKey:'wordrunner_2',
-    color:'#69f0ae',
-    questions:[
-      {prompt:'re– + WRITE =?',   correct:'REWRITE',   wrong:['UNWRITE','DISWRITE','MISWRITE']},
-      {prompt:'re– + BUILD =?',   correct:'REBUILD',   wrong:['UNBUILD','DISBUILD','PREBUILD']},
-      {prompt:'re– + PLAY =?',    correct:'REPLAY',    wrong:['UNPLAY','DISPLAY','PREPLAY']},
-      {prompt:'re– + TURN =?',    correct:'RETURN',    wrong:['UNTURN','DISTURN','PRETURN']},
-      {prompt:'re– + FILL =?',    correct:'REFILL',    wrong:['UNFILL','PREFILL','MISFILL']},
-      {prompt:'re– + USE =?',     correct:'REUSE',     wrong:['MISUSE','DISUSE','PREUSE']},
-      {prompt:'re– + CYCLE =?',   correct:'RECYCLE',   wrong:['UNCYCLE','DISCYCLE','PRECYCLE']},
-      {prompt:'re– + OPEN =?',    correct:'REOPEN',    wrong:['UNOPEN','PREOPEN','MISOPEN']},
-      {prompt:'re– + MIND =?',    correct:'REMIND',    wrong:['UNMIND','DISMIND','PREMIND']},
-      {prompt:'re– + PLACE =?',   correct:'REPLACE',   wrong:['UNPLACE','DISPLACE','MISPLACE']},
-      {prompt:'re– + ARRANGE =?', correct:'REARRANGE', wrong:['UNARRANGE','DISARRANGE','PREARRANGE']},
-      {prompt:'re– + CHARGE =?',  correct:'RECHARGE',  wrong:['UNCHARGE','DISCHARGE','PRECHARGE']},
-    ],
-  },
-  {
-    id:3, name:'DIS–', type:'prefix',
-    tag:'Prefix — meaning "not" or "opposite"',
-    desc:'dis– · not / opposite',
-    lbKey:'wordrunner_3',
-    color:'#ff8a65',
-    questions:[
-      {prompt:'dis– + AGREE =?',  correct:'DISAGREE',  wrong:['UNAGREE','INAGREE','MISAGREE']},
-      {prompt:'dis– + APPEAR =?', correct:'DISAPPEAR', wrong:['UNAPPEAR','MISAPPEAR','REAPPEAR']},
-      {prompt:'dis– + HONEST =?', correct:'DISHONEST', wrong:['UNHONEST','MISHONEST','INHONEST']},
-      {prompt:'dis– + LIKE =?',   correct:'DISLIKE',   wrong:['UNLIKE','MISLIKE','INLIKE']},
-      {prompt:'dis– + CONNECT =?',correct:'DISCONNECT',wrong:['UNCONNECT','RECONNECT','MISCONNECT']},
-      {prompt:'dis– + RESPECT =?',correct:'DISRESPECT',wrong:['UNRESPECT','MISRESPECT','INRESPECT']},
-      {prompt:'dis– + ORDER =?',  correct:'DISORDER',  wrong:['UNORDER','REORDER','MISORDER']},
-      {prompt:'dis– + COVER =?',  correct:'DISCOVER',  wrong:['UNCOVER','RECOVER','MISCOVER']},
-      {prompt:'dis– + TRUST =?',  correct:'DISTRUST',  wrong:['UNTRUST','MISTRUST','INTRUST']},
-      {prompt:'dis– + QUALIFY =?',correct:'DISQUALIFY',wrong:['UNQUALIFY','MISQUALIFY','REQUALIFY']},
-      {prompt:'dis– + OBEY =?',   correct:'DISOBEY',   wrong:['UNOBEY','MISOBEY','INOBEY']},
-      {prompt:'dis– + COMFORT =?',correct:'DISCOMFORT',wrong:['UNCOMFORT','MISCOMFORT','RECOMFORT']},
-    ],
-  },
-  {
-    id:4, name:'MIS–', type:'prefix',
-    tag:'Prefix — meaning "wrongly"',
-    desc:'mis– · wrongly',
-    lbKey:'wordrunner_4',
-    color:'#ce93d8',
-    questions:[
-      {prompt:'mis– + UNDERSTAND =?',correct:'MISUNDERSTAND',wrong:['DISUNDERSTAND','UNUNDERSTAND','REUNDERSTAND']},
-      {prompt:'mis– + SPELL =?',  correct:'MISSPELL',  wrong:['UNSPELL','DISSPELL','RESPELL']},
-      {prompt:'mis– + LEAD =?',   correct:'MISLEAD',   wrong:['UNLEAD','DISPLEAD','RELEAD']},
-      {prompt:'mis– + TAKE =?',   correct:'MISTAKE',   wrong:['UNTAKE','DISTAKE','RETAKE']},
-      {prompt:'mis– + USE =?',    correct:'MISUSE',    wrong:['DISUSE','REUSE','UNUSE']},
-      {prompt:'mis– + PLACE =?',  correct:'MISPLACE',  wrong:['DISPLACE','REPLACE','UNPLACE']},
-      {prompt:'mis– + BEHAVE =?', correct:'MISBEHAVE', wrong:['DISBEHAVE','UNBEHAVE','PREBEHAVE']},
-      {prompt:'mis– + JUDGE =?',  correct:'MISJUDGE',  wrong:['DISJUDGE','UNJUDGE','REJUDGE']},
-      {prompt:'mis– + PRINT =?',  correct:'MISPRINT',  wrong:['DISPRINT','UNPRINT','REPRINT']},
-      {prompt:'mis– + TREAT =?',  correct:'MISTREAT',  wrong:['DISTREAT','UNTREAT','RETREAT']},
-      {prompt:'mis– + QUOTE =?',  correct:'MISQUOTE',  wrong:['DISQUOTE','UNQUOTE','REQUOTE']},
-      {prompt:'mis– + MANAGE =?', correct:'MISMANAGE', wrong:['DISMANAGE','REMANAGE','UNMANAGE']},
-    ],
-  },
-  {
-    id:5, name:'PRE–', type:'prefix',
-    tag:'Prefix — meaning "before"',
-    desc:'pre– · before',
-    lbKey:'wordrunner_5',
-    color:'#80deea',
-    questions:[
-      {prompt:'pre– + VIEW =?',   correct:'PREVIEW',   wrong:['REVIEW','OVERVIEW','REPREVIEW']},
-      {prompt:'pre– + SCHOOL =?', correct:'PRESCHOOL',  wrong:['UNSCHOOL','RESCHOOL','EXSCHOOL']},
-      {prompt:'pre– + HEAT =?',   correct:'PREHEAT',   wrong:['REHEAT','OVERHEAT','EXHEAT']},
-      {prompt:'pre– + PAID =?',   correct:'PREPAID',   wrong:['REPAID','UNPAID','OVERPAID']},
-      {prompt:'pre– + CAUTION =?',correct:'PRECAUTION',wrong:['RECAUTION','EXCAUTION','DISCAUTION']},
-      {prompt:'pre– + DICT =?',   correct:'PREDICT',   wrong:['REDICT','UNDICT','EXDICT']},
-      {prompt:'pre– + HISTORIC =?',correct:'PREHISTORIC',wrong:['REHISTORIC','UNHISTORIC','EXHISTORIC']},
-      {prompt:'pre– + COOKED =?', correct:'PRECOOKED', wrong:['RECOOKED','UNCOOKED','OVERCOOKED']},
-      {prompt:'pre– + EXISTING =?',correct:'PREEXISTING',wrong:['REEXISTING','NONEXISTING','UNEXISTING']},
-      {prompt:'pre– + RECORDED =?',correct:'PRERECORDED',wrong:['RERECORDED','UNRECORDED','MISRECORDED']},
-      {prompt:'pre– + DETERMINE =?',correct:'PREDETERMINE',wrong:['REDETERMINE','UNDETERMINE','MISDETERMINE']},
-      {prompt:'pre– + ARRANGED =?',correct:'PREARRANGED',wrong:['REARRANGED','UNARRANGED','DISARRANGED']},
-    ],
-  },
-  {
-    id:6, name:'–FUL / –LESS', type:'suffix',
-    tag:'Suffix — full of · without',
-    desc:'–ful · –less',
-    lbKey:'wordrunner_6',
-    color:'#ffd54f',
-    questions:[
-      {prompt:'CARE + ___ = full of care',correct:'CAREFUL',   wrong:['CARELESS','CARENESS','CARELY']},
-      {prompt:'CARE + ___ = without care',correct:'CARELESS',  wrong:['CAREFUL','CARENESS','CARELY']},
-      {prompt:'HOPE + ___ = full of hope',correct:'HOPEFUL',   wrong:['HOPELESS','HOPENESS','HOPELY']},
-      {prompt:'HOPE + ___ = without hope',correct:'HOPELESS',  wrong:['HOPEFUL','HOPENESS','HOPEMENT']},
-      {prompt:'HELP + ___ = full of help',correct:'HELPFUL',   wrong:['HELPLESS','HELPNESS','HELPLY']},
-      {prompt:'HELP + ___ = without help',correct:'HELPLESS',  wrong:['HELPFUL','HELPNESS','HELPMENT']},
-      {prompt:'POWER + ___ = full of power',correct:'POWERFUL',wrong:['POWERLESS','POWERNESS','POWERLY']},
-      {prompt:'POWER + ___ = without power',correct:'POWERLESS',wrong:['POWERFUL','POWERNESS','POWERMENT']},
-      {prompt:'HARM + ___ = causing harm',correct:'HARMFUL',   wrong:['HARMLESS','HARMNESS','HARMLY']},
-      {prompt:'HARM + ___ = no harm',correct:'HARMLESS',       wrong:['HARMFUL','HARMNESS','HARMLY']},
-      {prompt:'JOY + ___ = full of joy',correct:'JOYFUL',      wrong:['JOYLESS','JOYNESS','JOYMENT']},
-      {prompt:'USE + ___ = no use',correct:'USELESS',          wrong:['USEFUL','USENESS','USEMENT']},
-    ],
-  },
-  {
-    id:7, name:'–NESS / –LY', type:'suffix',
-    tag:'Suffix — noun · adverb',
-    desc:'–ness · –ly',
-    lbKey:'wordrunner_7',
-    color:'#a5d6a7',
-    questions:[
-      {prompt:'HAPPY + ___ = the state of being happy',correct:'HAPPINESS',wrong:['HAPPILY','HAPPIFUL','HAPPIMENT']},
-      {prompt:'HAPPY + ___ = in a happy way',correct:'HAPPILY',            wrong:['HAPPINESS','HAPPIFUL','HAPPIMENT']},
-      {prompt:'DARK + ___ = the quality of dark',correct:'DARKNESS',       wrong:['DARKLY','DARKFUL','DARKMENT']},
-      {prompt:'DARK + ___ = in a dark way',correct:'DARKLY',               wrong:['DARKNESS','DARKFUL','DARKMENT']},
-      {prompt:'SLOW + ___ = in a slow way',correct:'SLOWLY',               wrong:['SLOWNESS','SLOWFUL','SLOWMENT']},
-      {prompt:'SLOW + ___ = the quality of being slow',correct:'SLOWNESS', wrong:['SLOWLY','SLOWFUL','SLOWMENT']},
-      {prompt:'QUICK + ___ = in a quick way',correct:'QUICKLY',            wrong:['QUICKNESS','QUICKFUL','QUICKMENT']},
-      {prompt:'KIND + ___ = the quality of being kind',correct:'KINDNESS', wrong:['KINDLY','KINDFUL','KINDMENT']},
-      {prompt:'KIND + ___ = in a kind way',correct:'KINDLY',               wrong:['KINDNESS','KINDFUL','KINDMENT']},
-      {prompt:'LOUD + ___ = in a loud way',correct:'LOUDLY',               wrong:['LOUDNESS','LOUDFUL','LOUDMENT']},
-      {prompt:'SOFT + ___ = in a soft way',correct:'SOFTLY',               wrong:['SOFTNESS','SOFTFUL','SOFTMENT']},
-      {prompt:'WEAK + ___ = the quality of being weak',correct:'WEAKNESS', wrong:['WEAKLY','WEAKFUL','WEAKMENT']},
-    ],
-  },
-  {
-    id:8, name:'–ABLE / –TION', type:'suffix',
-    tag:'Suffix — can be · noun form',
-    desc:'–able · –tion',
-    lbKey:'wordrunner_8',
-    color:'#ef9a9a',
-    questions:[
-      {prompt:'ACCEPT + ___ = can be accepted',correct:'ACCEPTABLE',       wrong:['ACCEPTANCE','ACCEPTATION','ACCEPTFUL']},
-      {prompt:'ACCEPT + ___ = act of accepting',correct:'ACCEPTANCE',      wrong:['ACCEPTABLE','ACCEPTATION','ACCEPTFUL']},
-      {prompt:'CREATE + ___ = can be created',correct:'CREATABLE',         wrong:['CREATION','CREATIVENESS','CREATEFUL']},
-      {prompt:'CREATE + ___ = the act of creating',correct:'CREATION',     wrong:['CREATABLE','CREATIVENESS','CREATEFUL']},
-      {prompt:'MOVE + ___ = able to be moved',correct:'MOVABLE',           wrong:['MOVEMENT','MOVATION','MOVEFUL']},
-      {prompt:'ACT + ___ = the act / process',correct:'ACTION',            wrong:['ACTABLE','ACTNESS','ACTFUL']},
-      {prompt:'PREDICT + ___ = can be predicted',correct:'PREDICTABLE',    wrong:['PREDICTION','PREDICTNESS','PREDICTFUL']},
-      {prompt:'PREDICT + ___ = a forecast',correct:'PREDICTION',           wrong:['PREDICTABLE','PREDICTNESS','PREDICTFUL']},
-      {prompt:'DRINK + ___ = safe to drink',correct:'DRINKABLE',           wrong:['DRINKTION','DRINKNESS','DRINKMENT']},
-      {prompt:'EDUCATE + ___ = able to be educated',correct:'EDUCATABLE',  wrong:['EDUCATION','EDUCATENESS','EDUCATEMENT']},
-      {prompt:'EDUCATE + ___ = the process of educating',correct:'EDUCATION',wrong:['EDUCATABLE','EDUCATENESS','EDUCATEMENT']},
-      {prompt:'COLLECT + ___ = the act of collecting',correct:'COLLECTION', wrong:['COLLECTABLE','COLLECTNESS','COLLECTMENT']},
-    ],
-  },
+// ── Affix word bank ──────────────────────────────────────────────
+// Each word: { word, correct }
+// correct=true  → valid English word with appropriate affix → COLLECT (jump or natural)
+// correct=false → invalid combination → DODGE (duck or avoid)
+
+const PREFIX_WORDS = [
+  // UN- valid
+  {word:'UNHAPPY',     correct:true},  {word:'UNKIND',      correct:true},
+  {word:'UNLOCK',      correct:true},  {word:'UNFAIR',      correct:true},
+  {word:'UNPACK',      correct:true},  {word:'UNUSUAL',     correct:true},
+  {word:'UNABLE',      correct:true},  {word:'UNCLEAR',     correct:true},
+  {word:'UNCOVER',     correct:true},  {word:'UNTIDY',      correct:true},
+  {word:'UNLOAD',      correct:true},  {word:'UNFIT',       correct:true},
+  // RE- valid
+  {word:'REWRITE',     correct:true},  {word:'REBUILD',     correct:true},
+  {word:'REPLAY',      correct:true},  {word:'REFILL',      correct:true},
+  {word:'REUSE',       correct:true},  {word:'RECYCLE',     correct:true},
+  {word:'REOPEN',      correct:true},  {word:'REMIND',      correct:true},
+  {word:'REPLACE',     correct:true},  {word:'RECHARGE',    correct:true},
+  {word:'REFORM',      correct:true},  {word:'REVIEW',      correct:true},
+  // DIS- valid
+  {word:'DISAGREE',    correct:true},  {word:'DISAPPEAR',   correct:true},
+  {word:'DISHONEST',   correct:true},  {word:'DISLIKE',     correct:true},
+  {word:'DISCOVER',    correct:true},  {word:'DISTRUST',    correct:true},
+  {word:'DISORDER',    correct:true},  {word:'DISOBEY',     correct:true},
+  {word:'DISCONNECT',  correct:true},  {word:'DISQUALIFY',  correct:true},
+  // MIS- valid
+  {word:'MISSPELL',    correct:true},  {word:'MISLEAD',     correct:true},
+  {word:'MISTAKE',     correct:true},  {word:'MISUSE',      correct:true},
+  {word:'MISPLACE',    correct:true},  {word:'MISBEHAVE',   correct:true},
+  {word:'MISJUDGE',    correct:true},  {word:'MISPRINT',    correct:true},
+  {word:'MISQUOTE',    correct:true},  {word:'MISMANAGE',   correct:true},
+  // PRE- valid
+  {word:'PREVIEW',     correct:true},  {word:'PREHEAT',     correct:true},
+  {word:'PREPAID',     correct:true},  {word:'PREDICT',     correct:true},
+  {word:'PRECOOKED',   correct:true},  {word:'PREARRANGED', correct:true},
+  {word:'PRERECORDED', correct:true},  {word:'PRESCHOOL',   correct:true},
+  // OVER- valid
+  {word:'OVERWORK',    correct:true},  {word:'OVEREAT',     correct:true},
+  {word:'OVERDUE',     correct:true},  {word:'OVERLOAD',    correct:true},
+  // UNDER- valid
+  {word:'UNDERLINE',   correct:true},  {word:'UNDERMINE',   correct:true},
+  {word:'UNDERRATE',   correct:true},  {word:'UNDERPAID',   correct:true},
+  // IR-/IL-/IM-/IN- valid
+  {word:'IRREGULAR',   correct:true},  {word:'IRRESPONSIBLE',correct:true},
+  {word:'ILLEGAL',     correct:true},  {word:'ILLITERATE',  correct:true},
+  {word:'IMPOSSIBLE',  correct:true},  {word:'IMPOLITE',    correct:true},
+  {word:'INCOMPLETE',  correct:true},  {word:'INDIRECT',    correct:true},
+
+  // WRONG combinations — plausible but incorrect
+  {word:'DISUNHAPPY',  correct:false}, {word:'REHAPPY',     correct:false},
+  {word:'MISUNLOCK',   correct:false}, {word:'PREUNPACK',   correct:false},
+  {word:'UNDISCOVER',  correct:false}, {word:'OVERREWRITE', correct:false},
+  {word:'UNREPLACE',   correct:false}, {word:'MISREVIEW',   correct:false},
+  {word:'DISRELIABLE', correct:false}, {word:'UNREUSE',     correct:false},
+  {word:'PREOBEY',     correct:false}, {word:'MISPRESCHOOL',correct:false},
+  {word:'DISMISSPELL', correct:false}, {word:'REOVERWORK',  correct:false},
+  {word:'UNDISLIKE',   correct:false}, {word:'PREUNFIT',    correct:false},
+  {word:'MISSREMIND',  correct:false}, {word:'REILLEGAL',   correct:false},
+  {word:'DIRREASON',   correct:false}, {word:'PREIMPOLITE', correct:false},
+  {word:'OVERREOPEN',  correct:false}, {word:'UNDISQUALIFY',correct:false},
+  {word:'MISIRREGULAR',correct:false}, {word:'REMISSPELL',  correct:false},
 ];
 
-// ── Unlock system ──────────────────────────────────────────────────
-function getUnlocked() {
-  return parseInt(localStorage.getItem('wr_unlocked') || '1');
-}
-function setUnlocked(n) {
-  if (n > getUnlocked()) localStorage.setItem('wr_unlocked', n);
-}
-function getBest(lbKey) {
-  return parseInt(localStorage.getItem('wr_best_' + lbKey) || '0');
-}
-function setBest(lbKey, score) {
-  if (score > getBest(lbKey)) localStorage.setItem('wr_best_' + lbKey, score);
+const SUFFIX_WORDS = [
+  // -FUL valid
+  {word:'CAREFUL',   correct:true},  {word:'HOPEFUL',   correct:true},
+  {word:'HELPFUL',   correct:true},  {word:'POWERFUL',  correct:true},
+  {word:'HARMFUL',   correct:true},  {word:'JOYFUL',    correct:true},
+  {word:'FEARFUL',   correct:true},  {word:'GRATEFUL',  correct:true},
+  // -LESS valid
+  {word:'CARELESS',  correct:true},  {word:'HOPELESS',  correct:true},
+  {word:'HELPLESS',  correct:true},  {word:'POWERLESS', correct:true},
+  {word:'HARMLESS',  correct:true},  {word:'USELESS',   correct:true},
+  {word:'FEARLESS',  correct:true},  {word:'RESTLESS',  correct:true},
+  // -NESS valid
+  {word:'KINDNESS',  correct:true},  {word:'DARKNESS',  correct:true},
+  {word:'SADNESS',   correct:true},  {word:'WEAKNESS',  correct:true},
+  {word:'HAPPINESS', correct:true},  {word:'FITNESS',   correct:true},
+  // -LY valid
+  {word:'QUICKLY',   correct:true},  {word:'SLOWLY',    correct:true},
+  {word:'KINDLY',    correct:true},  {word:'DARKLY',    correct:true},
+  {word:'SOFTLY',    correct:true},  {word:'LOUDLY',    correct:true},
+  // -ABLE valid
+  {word:'ACCEPTABLE',correct:true},  {word:'MOVABLE',   correct:true},
+  {word:'DRINKABLE', correct:true},  {word:'READABLE',  correct:true},
+  {word:'WASHABLE',  correct:true},  {word:'RELIABLE',  correct:true},
+  // -TION/-ION valid
+  {word:'CREATION',  correct:true},  {word:'ACTION',    correct:true},
+  {word:'COLLECTION',correct:true},  {word:'EDUCATION', correct:true},
+  {word:'PREDICTION',correct:true},  {word:'SOLUTION',  correct:true},
+
+  // WRONG suffix combinations
+  {word:'CAREFUL NESS', correct:false}, // spacing trick — actually use run-on wrong forms:
+  {word:'CAREFULL',  correct:false}, {word:'HOPEFULLESS',correct:false},
+  {word:'HELPFULER', correct:false}, {word:'POWERFULL',  correct:false},
+  {word:'CARELESSFUL',correct:false},{word:'HOPELESSER', correct:false},
+  {word:'KINDNESSER', correct:false},{word:'DARKNESSY',  correct:false},
+  {word:'QUICKLIER',  correct:false},{word:'SLOWLYING',  correct:false},
+  {word:'ACCEPTABLER',correct:false},{word:'MOVABLENESS',correct:false},
+  {word:'CREATIONER', correct:false},{word:'ACTIONFUL',  correct:false},
+  {word:'USELESSNESS',correct:false},{word:'FEARFULLESS',correct:false},
+  {word:'READABLEER', correct:false},{word:'RELIABLELY', correct:false},
+  {word:'SOLUTIONFUL',correct:false},{word:'EDUCATIONING',correct:false},
+];
+
+// Remove the accidentally spaced entry
+const SUFFIX_BANK = SUFFIX_WORDS.filter(w => !w.word.includes(' '));
+
+const MIXED_WORDS = [...PREFIX_WORDS, ...SUFFIX_BANK];
+
+// ── Round config ──────────────────────────────────────────────────
+// 10 rounds: 1-5 prefix, 6-8 suffix, 9-10 mixed
+// Speed and chaos increase each round
+function getRoundConfig(round) {
+  const isPrefixes = round <= 5;
+  const isSuffix   = round >= 6 && round <= 8;
+  const isMixed    = round >= 9;
+  const bank       = isMixed ? MIXED_WORDS : isPrefixes ? PREFIX_WORDS : SUFFIX_BANK;
+  return {
+    bank,
+    label: isPrefixes ? 'Prefixes' : isSuffix ? 'Suffixes' : 'Mix',
+    wordsPerRound: 14 + round * 2,
+    baseSpeed: 2.8 + round * 0.35,
+    spawnInterval: Math.max(55, 100 - round * 5), // frames between spawns
+    speedVariance: 0.3 + round * 0.08,            // random speed variation
+    heightJitter: round > 3,                       // height chaos after round 3
+  };
 }
 
-// ── Build level select ─────────────────────────────────────────────
-function buildLevelGrid() {
-  const unlocked = getUnlocked();
-  const grid = document.getElementById('levelGrid');
-  grid.innerHTML = '';
-  LEVELS.forEach(lv => {
-    const card = document.createElement('div');
-    const isLocked = lv.id > unlocked;
-    const best = getBest(lv.lbKey);
-    card.className = 'level-card' + (isLocked ? ' locked' : '') + (best > 0 ? ' best' : '');
-    if (best > 0) card.dataset.best = 'Best: ' + best;
-    card.innerHTML = `
-      <div class="lv-num">Level ${lv.id}</div>
-      <div class="lv-name" style="color:${lv.color}">${lv.name}</div>
-      <div class="lv-desc">${lv.desc}</div>
-      ${isLocked ? '<div class="lv-lock">🔒</div>' : ''}
-    `;
-    if (!isLocked) card.addEventListener('click', () => startLevel(lv));
-    grid.appendChild(card);
+// ── Stars ─────────────────────────────────────────────────────────
+const STARS = Array.from({length:100}, ()=>({
+  x:Math.random()*2000, y:Math.random()*400,
+  r:Math.random()*1.2+0.2, speed:Math.random()*0.2+0.05,
+  alpha:Math.random()*0.4+0.2,
+}));
+
+// ── State ─────────────────────────────────────────────────────────
+let state = 'idle'; // idle | playing | paused | dead
+let round = 1, score = 0, lives = 3, streak = 0, bestStreak = 0, correctCount = 0;
+let bestScore = parseInt(localStorage.getItem('ar_best') || '0');
+let frameCount = 0, lastTime = 0;
+let words = [], particles = [];
+let spawnTimer = 0, wordsSpawned = 0;
+let roundCfg = null, roundWordPool = [];
+let bgOffset = 0;
+
+// ── Runner physics ────────────────────────────────────────────────
+const runner = {
+  x:0, y:0, w:28, h:56,
+  vy:0, isJumping:false,
+  isDucking:false, duckTimer:0,
+  invincible:0,
+  // Animation
+  legFrame:0, armFrame:0,
+};
+const GROUND_OFFSET = 80;
+const JUMP_VY = -15;
+const GRAVITY  = 0.6;
+const DUCK_DUR = 32;
+
+// Heights for word spawning:
+// HIGH   = requires jump to collect (correct) or duck to avoid (wrong)
+// MID    = natural running height — hits runner if not jumped/ducked
+// LOW    = ground level — collect naturally (correct) or jump over (wrong)
+const H_HIGH = 0;   // y set relative to groundY at spawn time
+const H_MID  = 1;
+const H_LOW  = 2;
+
+// ── Input ─────────────────────────────────────────────────────────
+const keys = {};
+let lastTap = 0;
+
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (state === 'playing') {
+    if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); if(!runner.isJumping) doJump(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); doDuck(); }
+  }
+  if (e.code === 'Space' && (state==='playing'||state==='paused')) { e.preventDefault(); togglePause(); }
+});
+window.addEventListener('keyup', e => { keys[e.key]=false; });
+
+canvas.addEventListener('pointerdown', e => {
+  if (state === 'paused') { togglePause(); return; }
+  if (state !== 'playing') return;
+  // Double-tap = pause
+  const now = Date.now();
+  if (now - lastTap < 280) { togglePause(); lastTap=0; return; }
+  lastTap = now;
+  // Left = duck, right = jump
+  if (e.clientX < canvas.width / 2) doDuck();
+  else { if (!runner.isJumping) doJump(); }
+});
+
+function doJump() {
+  runner.vy = JUMP_VY; runner.isJumping=true;
+  runner.isDucking=false; runner.duckTimer=0;
+  sfxJump();
+}
+function doDuck() {
+  if (runner.isJumping) return;
+  runner.isDucking=true; runner.duckTimer=DUCK_DUR;
+}
+
+// ── Word spawning ─────────────────────────────────────────────────
+function buildRoundPool() {
+  roundCfg = getRoundConfig(round);
+  // Shuffle bank, ensure mix of correct/wrong
+  const correct = roundCfg.bank.filter(w=>w.correct).sort(()=>Math.random()-.5);
+  const wrong   = roundCfg.bank.filter(w=>!w.correct).sort(()=>Math.random()-.5);
+  // Interleave ~60% correct, 40% wrong
+  roundWordPool = [];
+  const total = roundCfg.wordsPerRound;
+  const cCount = Math.ceil(total * 0.6);
+  const wCount = total - cCount;
+  for (let i=0;i<Math.max(cCount,wCount);i++){
+    if (i<cCount && correct[i%correct.length]) roundWordPool.push(correct[i%correct.length]);
+    if (i<wCount && wrong[i%wrong.length])     roundWordPool.push(wrong[i%wrong.length]);
+  }
+  roundWordPool.sort(()=>Math.random()-.5);
+  wordsSpawned = 0;
+}
+
+function spawnWord() {
+  if (wordsSpawned >= roundWordPool.length) return;
+  const w     = roundWordPool[wordsSpawned++];
+  const H     = canvas.height;
+  const groundY = H - GROUND_OFFSET;
+
+  // Assign a height tier
+  const heightTiers = [H_HIGH, H_MID, H_LOW];
+  const tier = heightTiers[Math.floor(Math.random() * 3)];
+
+  let wordY;
+  if (tier === H_HIGH) {
+    // High — runner must jump to reach (correct) or duck to avoid (wrong)
+    wordY = groundY - runner.h * 2.1;
+  } else if (tier === H_MID) {
+    // Mid — naturally at runner chest/head height
+    wordY = groundY - runner.h * 0.9;
+  } else {
+    // Low — at runner feet, collect by running (correct) or jump over (wrong)
+    wordY = groundY - 22;
+  }
+
+  // Add jitter in later rounds
+  if (roundCfg.heightJitter) {
+    wordY += (Math.random() - 0.5) * 30;
+    wordY = Math.max(60, Math.min(groundY - 10, wordY));
+  }
+
+  const speed = roundCfg.baseSpeed + (Math.random() - 0.5) * roundCfg.speedVariance * 2;
+
+  words.push({
+    text: w.word,
+    correct: w.correct,
+    x: canvas.width + 60,
+    y: wordY,
+    speed,
+    tier,
+    w: 0, h: 36,
+    hit: false, alpha: 1,
+    glow: Math.random() * Math.PI * 2, // phase offset for glow pulse
   });
 }
 
-// ── Game state ──────────────────────────────────────────────────────
-let state = 'idle'; // idle | playing | dead
-let currentLevel = null;
-let levelQuestions = [];
-let qIdx = 0;
-let score = 0, lives = 3, streak = 0, bestStreak = 0, correctCount = 0;
-let frameCount = 0, lastTime = 0;
-
-// Runner
-const runner = {
-  x: 0, y: 0,          // set on start
-  w: 36, h: 52,
-  vy: 0,
-  isJumping: false,
-  isDucking: false,
-  duckTimer: 0,
-  invincible: 0,
-};
-
-const GROUND_OFFSET = 90; // px from bottom
-const JUMP_VY = -14;
-const GRAVITY  = 0.55;
-const DUCK_DURATION = 38; // frames
-
-// Obstacles
-let obstacles = [];
-let obstacleTimer = 0;
-const OBS_INTERVAL_START = 120; // frames between spawns
-let obsInterval = OBS_INTERVAL_START;
-
-// Particles
-let particles = [];
-
-// Background
-const BG_LAYERS = [
-  { speed:0.2, cols:['#1a1a2e','#16213e'], y:0 },
-];
-let bgOffset = 0;
-
-// Stars
-const STARS = Array.from({length:120}, () => ({
-  x: Math.random() * 2000, y: Math.random() * 400,
-  r: Math.random() * 1.2 + 0.3, speed: Math.random() * 0.3 + 0.05,
-  alpha: Math.random() * 0.5 + 0.3,
-}));
-
-// ── Input ──────────────────────────────────────────────────────────
-const keys = {};
-window.addEventListener('keydown', e => {
-  keys[e.key] = true;
-  if (state !== 'playing') return;
-  if ((e.code === 'Space' || e.key === 'ArrowUp') && !runner.isJumping) jump();
-  if (e.key === 'ArrowDown') duck();
-  e.preventDefault();
-});
-window.addEventListener('keyup', e => { keys[e.key] = false; });
-
-// Touch: right half = jump, left half = duck
-let touchStartX = 0;
-canvas.addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-  if (state !== 'playing') return;
-  e.preventDefault();
-  if (e.touches[0].clientX > canvas.width / 2) {
-    if (!runner.isJumping) jump();
-  } else {
-    duck();
-  }
-}, { passive: false });
-
-canvas.addEventListener('pointerdown', e => {
-  if (state !== 'playing') return;
-  if (e.clientX > canvas.width / 2) {
-    if (!runner.isJumping) jump();
-  } else {
-    duck();
-  }
-});
-
-function jump() {
-  runner.vy = JUMP_VY;
-  runner.isJumping = true;
-  runner.isDucking = false;
-  runner.duckTimer = 0;
-  sfxJumpSfx();
-}
-function duck() {
-  if (runner.isJumping) return;
-  runner.isDucking = true;
-  runner.duckTimer = DUCK_DURATION;
-}
-
-// ── Spawn obstacle ─────────────────────────────────────────────────
-function spawnObstacle() {
-  if (!currentLevel || qIdx >= levelQuestions.length) return;
-  const q = levelQuestions[qIdx];
-  qIdx++;
-
-  const W = canvas.width;
-  const groundY = canvas.height - GROUND_OFFSET;
-
-  // Decide layout: correct word as JUMP target (high) or DUCK safe (low)?
-  // Always: correct = jump (floating high), wrong = duck (ground level)
-  // Randomly choose which wrong word to show alongside correct
-  const wrongWord = q.wrong[Math.floor(Math.random() * q.wrong.length)];
-
-  // Two obstacles per question:
-  // 1. correct word — floats at jump height, collect by jumping
-  // 2. wrong word   — sits at ground level, dodge by ducking
-  // Randomly order them (correct first or wrong first)
-  const correctFirst = Math.random() > 0.5;
-
-  const baseSpeed = 3.5 + (qIdx / levelQuestions.length) * 2.5; // speeds up through level
-
-  const obs1 = {
-    text: correctFirst ? q.correct : wrongWord,
-    isCorrect: correctFirst,
-    x: W + 40,
-    // Correct word floats — jump to get it. Wrong word is at runner head height.
-    y: correctFirst
-      ? groundY - runner.h * 1.6  // floating — need to jump
-      : groundY - runner.h * 0.5, // low — duck or run under
-    w: 0, h: 40,
-    speed: baseSpeed,
-    hit: false, alpha: 1,
-    prompt: q.prompt,
-    color: currentLevel.color,
-  };
-  const obs2 = {
-    text: correctFirst ? wrongWord : q.correct,
-    isCorrect: !correctFirst,
-    x: W + 200, // second one comes 200px behind
-    y: correctFirst
-      ? groundY - runner.h * 0.5
-      : groundY - runner.h * 1.6,
-    w: 0, h: 40,
-    speed: baseSpeed,
-    hit: false, alpha: 1,
-    prompt: q.prompt,
-    color: currentLevel.color,
-  };
-  obstacles.push(obs1, obs2);
-  currentPrompt = q.prompt;
-}
-
-let currentPrompt = '';
-
-// ── roundRect polyfill ─────────────────────────────────────────────
-function roundRect(ctx, x, y, w, h, r) {
-  r = Math.min(r, w/2, h/2);
+// ── roundRect polyfill ────────────────────────────────────────────
+function roundRect(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
   ctx.beginPath();
-  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.arcTo(x+w,y, x+w,y+r, r);
-  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w,y+h, x+w-r,y+h, r);
-  ctx.lineTo(x+r, y+h); ctx.arcTo(x,y+h, x,y+h-r, r);
-  ctx.lineTo(x, y+r); ctx.arcTo(x,y, x+r,y, r);
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
   ctx.closePath();
 }
 
-// ── Draw helpers ───────────────────────────────────────────────────
-function drawBackground() {
-  ctx.save();
-  const W = canvas.width, H = canvas.height;
-  // Sky gradient
+// ── Draw: background ──────────────────────────────────────────────
+function drawBg() {
+  const W=canvas.width, H=canvas.height;
+  const groundY = H - GROUND_OFFSET;
+
+  // Sky
   const sky = ctx.createLinearGradient(0,0,0,H);
-  sky.addColorStop(0, '#0d0d1a');
-  sky.addColorStop(1, '#1a1a2e');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0,0,W,H);
+  sky.addColorStop(0,'#080812'); sky.addColorStop(1,'#141428');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
 
   // Stars
-  for (const s of STARS) {
-    s.x -= s.speed;
-    if (s.x < 0) { s.x = W; s.y = Math.random()*(H*0.7); }
-    ctx.globalAlpha = s.alpha;
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+  ctx.save();
+  for (const s of STARS){
+    s.x -= s.speed; if(s.x<0){s.x=W;s.y=Math.random()*(groundY*.8);}
+    ctx.globalAlpha=s.alpha; ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
   }
-  ctx.globalAlpha = 1;
+  ctx.restore();
 
   // Ground
-  const groundY = H - GROUND_OFFSET;
-  ctx.fillStyle = '#1e1e3a';
-  ctx.fillRect(0, groundY, W, H - groundY);
+  ctx.fillStyle='#1a1a30'; ctx.fillRect(0,groundY,W,H-groundY);
 
-  // Ground line glow
-  const glow = ctx.createLinearGradient(0, groundY-2, 0, groundY+4);
-  glow.addColorStop(0, currentLevel ? currentLevel.color + 'aa' : '#4fc3f7aa');
-  glow.addColorStop(1, 'transparent');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, groundY-1, W, 5);
+  // Glow line
+  const gl=ctx.createLinearGradient(0,groundY-2,0,groundY+6);
+  gl.addColorStop(0,'rgba(212,175,55,.6)'); gl.addColorStop(1,'transparent');
+  ctx.fillStyle=gl; ctx.fillRect(0,groundY-1,W,7);
 
-  // Scrolling ground grid
-  bgOffset = (bgOffset + 3) % 60;
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for (let x = -bgOffset; x < W; x += 60) {
-    ctx.beginPath(); ctx.moveTo(x, groundY); ctx.lineTo(x, H); ctx.stroke();
+  // Scrolling ground tiles
+  bgOffset=(bgOffset+2)%48;
+  ctx.save();
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let x=-bgOffset;x<W;x+=48){
+    ctx.beginPath();ctx.moveTo(x,groundY);ctx.lineTo(x,H);ctx.stroke();
   }
   ctx.restore();
 }
 
+// ── Draw: runner (more human-like) ────────────────────────────────
 function drawRunner() {
   ctx.save();
   const groundY = canvas.height - GROUND_OFFSET;
-  const alpha = runner.invincible > 0 ? (Math.floor(runner.invincible/5)%2===0 ? 0.3 : 1) : 1;
+  const alpha = runner.invincible > 0 ? (Math.floor(runner.invincible/5)%2===0 ? 0.3:1) : 1;
   ctx.globalAlpha = alpha;
 
   const rx = runner.x;
-  const ry = runner.isDucking ? groundY - runner.h * 0.55 : runner.y;
-  const rh = runner.isDucking ? runner.h * 0.55 : runner.h;
-  const rw = runner.isDucking ? runner.w * 1.3 : runner.w;
+  const isDuck = runner.isDucking;
+  const rh = isDuck ? runner.h * 0.5 : runner.h;
+  const ry = isDuck ? groundY - rh : runner.y - runner.h; // top of body
 
-  // Body glow
-  ctx.shadowColor = currentLevel ? currentLevel.color : '#4fc3f7';
-  ctx.shadowBlur = 12;
+  // Animation frame
+  const phase = frameCount * 0.2;
+  const legSwing = isDuck ? 0 : Math.sin(phase) * 14;
+  const armSwing = isDuck ? 0 : Math.sin(phase) * 10;
 
-  // Body
-  ctx.fillStyle = currentLevel ? currentLevel.color : '#4fc3f7';
-  roundRect(ctx, rx - rw/2, ry - rh, rw, rh, 6);
-  ctx.fill();
+  const col = '#4fc3f7'; // runner colour
 
-  // Head
-  ctx.fillStyle = '#e8eaf6';
-  const headR = 10;
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.arc(rx, ry - rh - headR + 2, headR, 0, Math.PI*2);
-  ctx.fill();
+  ctx.shadowColor = col; ctx.shadowBlur = 10;
 
-  // Running legs (animated)
-  const legAnim = Math.sin(frameCount * 0.25) * 8;
-  ctx.fillStyle = currentLevel ? currentLevel.color : '#4fc3f7';
-  if (!runner.isDucking) {
+  if (isDuck) {
+    // Ducking — crouched blob
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.ellipse(rx, groundY - 14, 18, 14, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Head forward
+    ctx.fillStyle = '#e8eaf6';
+    ctx.beginPath();
+    ctx.arc(rx+14, groundY-22, 9, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    // Torso
+    ctx.fillStyle = col;
+    roundRect(ctx, rx-9, ry+12, 18, rh*0.45, 4);
+    ctx.fill();
+
+    // Head
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#e8eaf6';
+    ctx.beginPath();
+    ctx.arc(rx, ry+8, 11, 0, Math.PI*2);
+    ctx.fill();
+    // Face dot (eye)
+    ctx.fillStyle = '#0a1628';
+    ctx.beginPath();
+    ctx.arc(rx+5, ry+7, 2.5, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowColor = col; ctx.shadowBlur = 8;
+
+    // Arms
+    ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    // Left arm
+    ctx.beginPath();
+    ctx.moveTo(rx-9, ry+20);
+    ctx.lineTo(rx-18, ry+28-armSwing);
+    ctx.stroke();
+    // Right arm
+    ctx.beginPath();
+    ctx.moveTo(rx+9, ry+20);
+    ctx.lineTo(rx+18, ry+28+armSwing);
+    ctx.stroke();
+
+    // Legs
+    ctx.lineWidth = 5;
+    const footY = groundY;
     // Left leg
-    ctx.fillRect(rx - 8, ry - 14, 6, 14 + legAnim);
+    ctx.beginPath();
+    ctx.moveTo(rx-4, ry+rh*0.55);
+    ctx.lineTo(rx-10, footY-legSwing*0.5);
+    ctx.lineTo(rx-14, footY);
+    ctx.stroke();
     // Right leg
-    ctx.fillRect(rx + 2, ry - 14, 6, 14 - legAnim);
+    ctx.beginPath();
+    ctx.moveTo(rx+4, ry+rh*0.55);
+    ctx.lineTo(rx+10, footY+legSwing*0.5);
+    ctx.lineTo(rx+16, footY);
+    ctx.stroke();
   }
 
   ctx.restore();
 }
 
-function drawObstacle(obs) {
+// ── Draw: word block (transparent bg, clear text) ─────────────────
+function drawWord(w) {
   ctx.save();
-  ctx.globalAlpha = obs.alpha;
+  ctx.globalAlpha = w.alpha;
 
-  ctx.font = 'bold 13px Orbitron, monospace';
-  if (!obs.w) obs.w = ctx.measureText(obs.text).width + 28;
+  ctx.font = 'bold 16px Orbitron, monospace';
+  if (!w.w) w.w = Math.max(80, ctx.measureText(w.text).width + 20);
 
-  const rx = obs.x - obs.w/2;
-  const ry = obs.y - obs.h/2;
+  const rx = w.x - w.w/2;
+  const ry = w.y - w.h/2;
 
-  // Glow
-  ctx.shadowColor = obs.isCorrect ? obs.color : '#ef5350';
-  ctx.shadowBlur = obs.isCorrect ? 14 : 8;
-
-  // Background
-  const bg = ctx.createLinearGradient(rx, ry, rx, ry+obs.h);
-  if (obs.isCorrect) {
-    bg.addColorStop(0, 'rgba(255,255,255,0.95)');
-    bg.addColorStop(1, 'rgba(220,240,255,0.92)');
-  } else {
-    bg.addColorStop(0, 'rgba(40,10,10,0.92)');
-    bg.addColorStop(1, 'rgba(60,15,15,0.95)');
-  }
-  ctx.fillStyle = bg;
-  roundRect(ctx, rx, ry, obs.w, obs.h, 8);
+  // Very subtle background — nearly transparent
+  const pulse = 0.12 + Math.sin(frameCount*0.08 + w.glow)*0.06;
+  ctx.fillStyle = w.correct
+    ? `rgba(79,195,247,${pulse})`
+    : `rgba(239,83,80,${pulse})`;
+  roundRect(ctx, rx, ry, w.w, w.h, 6);
   ctx.fill();
 
-  // Border
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = obs.isCorrect ? obs.color : '#ef5350';
-  ctx.lineWidth = obs.isCorrect ? 2.5 : 1.5;
-  roundRect(ctx, rx, ry, obs.w, obs.h, 8);
+  // No border on wrong words — uniform look
+  // Thin bottom rule only
+  ctx.strokeStyle = w.correct
+    ? 'rgba(79,195,247,0.35)'
+    : 'rgba(239,83,80,0.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rx+6, ry+w.h-1);
+  ctx.lineTo(rx+w.w-6, ry+w.h-1);
   ctx.stroke();
 
-  // Arrow hint
-  if (obs.isCorrect) {
-    ctx.fillStyle = obs.color;
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('↑ JUMP', obs.x, ry - 12);
-  } else {
-    ctx.fillStyle = 'rgba(239,83,80,0.8)';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('↓ DUCK', obs.x, ry - 12);
-  }
-
-  // Text
-  ctx.fillStyle = obs.isCorrect ? '#0a1628' : '#ffcdd2';
-  ctx.font = 'bold 13px Orbitron, monospace';
+  // Text — large, white, clear
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px Orbitron, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(obs.text, obs.x, obs.y);
+  // Subtle text glow
+  ctx.shadowColor = w.correct ? '#4fc3f7' : '#ef5350';
+  ctx.shadowBlur = 4;
+  ctx.fillText(w.text, w.x, w.y);
 
   ctx.restore();
 }
 
+// ── Draw: HUD ─────────────────────────────────────────────────────
 function drawHUD() {
   ctx.save();
   const W = canvas.width;
 
   // Top bar
-  ctx.fillStyle = 'rgba(10,10,20,0.82)';
+  ctx.fillStyle = 'rgba(8,8,18,.8)';
   ctx.fillRect(0,0,W,44);
 
   // Score
@@ -756,498 +629,462 @@ function drawHUD() {
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(String(score).padStart(5,'0'), 14, 22);
 
-  // Level name
-  ctx.fillStyle = currentLevel ? currentLevel.color : '#4fc3f7';
-  ctx.font = '600 11px DM Sans, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText((currentLevel ? currentLevel.name + ' · ' : '') + 'Level ' + (currentLevel?.id || ''), W/2, 16);
-
-  // Progress bar
-  const pct = levelQuestions.length > 0 ? qIdx / levelQuestions.length : 0;
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.fillRect(W/2-60, 26, 120, 4);
-  ctx.fillStyle = currentLevel ? currentLevel.color : '#4fc3f7';
-  ctx.fillRect(W/2-60, 26, 120*pct, 4);
+  // Round + type
+  if (roundCfg) {
+    ctx.fillStyle = 'var(--gold)';
+    ctx.font = '600 11px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Round ${round}/10 · ${roundCfg.label}`, W/2, 16);
+    // Progress
+    const pct = wordsSpawned / (roundCfg?.wordsPerRound || 1);
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    ctx.fillRect(W/2-60,26,120,4);
+    ctx.fillStyle = '#ffd54f';
+    ctx.fillRect(W/2-60,26,120*pct,4);
+  }
 
   // Lives
   ctx.font = '16px serif';
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  for (let i=0;i<3;i++) {
-    ctx.globalAlpha = i < lives ? 1 : 0.15;
-    ctx.fillText('❤️', W - 12 - i*24, 22);
-  }
-  ctx.globalAlpha = 1;
-
-  // Prompt banner
-  const bannerY = 44;
-  ctx.fillStyle = 'rgba(14,60,120,0.7)';
-  ctx.fillRect(0, bannerY, W, 38);
-  if (currentPrompt) {
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 15px DM Sans, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(currentPrompt, W/2, bannerY + 19);
-  }
+  ctx.textAlign = 'right';
+  for(let i=0;i<3;i++){ctx.globalAlpha=i<lives?1:.15;ctx.fillText('❤️',W-10-i*24,22);}
+  ctx.globalAlpha=1;
 
   ctx.restore();
 }
 
-function drawParticles(dt) {
+// ── Particles ─────────────────────────────────────────────────────
+function burst(x,y,colour,n=14){
+  for(let i=0;i<n;i++){
+    const a=(Math.PI*2/n)*i+Math.random()*.4, sp=Math.random()*80+30;
+    particles.push({type:'c',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:Math.random()*3+2,life:1,colour});
+  }
+}
+function textPop(x,y,txt,colour){
+  particles.push({type:'t',x,y,vy:-45,vx:0,txt,colour,life:1});
+}
+function drawParticles(dt){
   ctx.save();
-  for (const p of particles) {
-    p.life -= dt * 1.8;
-    p.x += p.vx * dt; p.y += p.vy * dt;
-    if (p.life <= 0) continue;
-    ctx.globalAlpha = Math.max(0, p.life);
-    if (p.type === 'text') {
-      ctx.fillStyle = p.colour;
-      ctx.font = 'bold 14px Playfair Display, serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(p.txt, p.x, p.y);
-    } else {
-      ctx.fillStyle = p.colour;
-      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.1, p.r*p.life), 0, Math.PI*2); ctx.fill();
-    }
+  for(const p of particles){
+    p.life-=dt*(p.type==='t'?1.3:1.8);
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    if(p.life<=0) continue;
+    ctx.globalAlpha=Math.max(0,p.life);
+    if(p.type==='t'){ctx.fillStyle=p.colour;ctx.font='bold 13px Playfair Display,serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.txt,p.x,p.y);}
+    else{ctx.fillStyle=p.colour;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.1,p.r*p.life),0,Math.PI*2);ctx.fill();}
   }
   ctx.restore();
 }
 
-function burst(x, y, colour, count=14) {
-  for (let i=0;i<count;i++) {
-    const angle = (Math.PI*2/count)*i + Math.random()*.4;
-    const spd   = Math.random()*90+30;
-    particles.push({type:'circle',x,y,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd,r:Math.random()*3+2,life:1,colour});
-  }
-}
-function textPop(x,y,txt,colour) {
-  particles.push({type:'text',x,y,vy:-50,vx:0,txt,colour,life:1});
-}
+// ── Collision ─────────────────────────────────────────────────────
+function overlap(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;}
 
-// ── Collision ──────────────────────────────────────────────────────
-function overlap(ax,ay,aw,ah, bx,by,bw,bh) {
-  return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
-}
-
-// ── Master loop ────────────────────────────────────────────────────
-function masterLoop(ts) {
+// ── Master loop ───────────────────────────────────────────────────
+function masterLoop(ts){
   requestAnimationFrame(masterLoop);
-  const dt = Math.min((ts - lastTime)/1000, 0.05);
-  lastTime = ts; frameCount++;
+  const dt=Math.min((ts-lastTime)/1000,.05);
+  lastTime=ts; frameCount++;
 
-  const W = canvas.width, H = canvas.height;
-  const groundY = H - GROUND_OFFSET;
+  const W=canvas.width, H=canvas.height;
+  const groundY=H-GROUND_OFFSET;
 
-  drawBackground();
+  drawBg();
 
-  if (state === 'paused_orient') return; // screen is hidden, just skip frame
-  if (state !== 'playing') {
-    // Idle animation
-    runner.x = W * 0.22;
-    runner.y = groundY;
+  if(state==='idle'){
+    // Idle — runner jogs in place
+    runner.x=W*0.18; runner.y=groundY;
+    runner.isDucking=false; runner.isJumping=false;
     drawRunner();
     return;
   }
-
-  // ── Physics ──────────────────────────────────────────────────────
-  if (runner.isJumping || runner.y < groundY) {
-    runner.vy += GRAVITY;
-    runner.y  += runner.vy;
-    if (runner.y >= groundY) {
-      runner.y  = groundY;
-      runner.vy = 0;
-      runner.isJumping = false;
-    }
+  if(state==='paused'){
+    // Draw frozen frame
+    for(const w of words) if(!w.hit&&w.alpha>0) drawWord(w);
+    drawRunner(); drawHUD();
+    return;
   }
 
-  if (runner.isDucking) {
-    runner.duckTimer--;
-    if (runner.duckTimer <= 0) runner.isDucking = false;
+  // ── Physics ────────────────────────────────────────────────────
+  if(runner.isJumping||runner.y<groundY){
+    runner.vy+=GRAVITY; runner.y+=runner.vy;
+    if(runner.y>=groundY){runner.y=groundY;runner.vy=0;runner.isJumping=false;}
+  }
+  if(runner.isDucking){runner.duckTimer--;if(runner.duckTimer<=0)runner.isDucking=false;}
+  if(runner.invincible>0)runner.invincible--;
+
+  // ── Spawn ──────────────────────────────────────────────────────
+  spawnTimer--;
+  if(spawnTimer<=0 && wordsSpawned < roundWordPool.length){
+    spawnWord();
+    spawnTimer = roundCfg.spawnInterval + Math.floor(Math.random()*20-10);
   }
 
-  if (runner.invincible > 0) runner.invincible--;
+  // ── Words ──────────────────────────────────────────────────────
+  const dead=[];
+  const rh_actual = runner.isDucking ? runner.h*0.5 : runner.h;
+  const rw_actual = runner.isDucking ? runner.w*1.6 : runner.w;
+  const ry_top = runner.isDucking ? groundY - rh_actual : runner.y - runner.h;
 
-  // ── Obstacles ────────────────────────────────────────────────────
-  obstacleTimer--;
-  if (obstacleTimer <= 0) {
-    spawnObstacle();
-    obstacleTimer = obsInterval;
-    obsInterval = Math.max(70, obsInterval - 1); // gradually faster
-  }
-
-  const dead = [];
-  const rh_actual = runner.isDucking ? runner.h * 0.55 : runner.h;
-  const rw_actual = runner.isDucking ? runner.w * 1.3  : runner.w;
-  const ry_top    = (runner.isDucking ? groundY - rh_actual : runner.y - rh_actual);
-
-  for (let i=0;i<obstacles.length;i++) {
-    const obs = obstacles[i];
-    if (obs.hit) { obs.alpha -= dt*3; if(obs.alpha<=0) dead.push(i); continue; }
-    obs.x -= obs.speed;
-    if (obs.x < -obs.w - 40) { obs.hit=true; continue; }
-    drawObstacle(obs);
-
-    if (runner.invincible === 0 &&
-        overlap(runner.x-rw_actual/2, ry_top, rw_actual, rh_actual,
-                obs.x-obs.w/2, obs.y-obs.h/2, obs.w, obs.h)) {
-      obs.hit = true;
-      if (obs.isCorrect) {
-        // ✅ Collected correct word
-        const pts = 10 * (1 + Math.floor(streak/3));
-        score += pts; streak++; correctCount++;
-        if (streak > bestStreak) bestStreak = streak;
-        sfxCollect();
-        burst(obs.x, obs.y, currentLevel.color, 18);
-        textPop(runner.x, ry_top - 20, '+'+pts, '#ffd54f');
-      } else {
-        // ❌ Hit wrong word
-        lives--; streak = 0;
-        runner.invincible = 80;
+  for(let i=0;i<words.length;i++){
+    const w=words[i];
+    if(w.hit){w.alpha-=dt*3;if(w.alpha<=0)dead.push(i);continue;}
+    w.x-=w.speed;
+    if(w.x<-w.w-40){
+      // Scrolled off screen
+      if(w.correct){
+        // Missed a correct word — lose a life
+        lives--; streak=0;
+        textPop(runner.x+30, ry_top-20, 'MISSED! ❤️', '#ef5350');
         sfxMiss();
-        burst(runner.x, runner.y, '#ef5350', 20);
-        textPop(runner.x, ry_top - 20, '−1 ❤️', '#ef5350');
-        if (lives <= 0) { endLevel(false); return; }
+        if(lives<=0){endGame(false);return;}
+      }
+      w.hit=true; continue;
+    }
+    drawWord(w);
+
+    // Collision
+    if(runner.invincible===0 &&
+       overlap(runner.x-rw_actual/2, ry_top, rw_actual, rh_actual,
+               w.x-w.w/2, w.y-w.h/2, w.w, w.h)){
+      w.hit=true;
+      if(w.correct){
+        const pts=10*(1+Math.floor(streak/3));
+        score+=pts; streak++; correctCount++;
+        if(streak>bestStreak)bestStreak=streak;
+        burst(w.x,w.y,'#4fc3f7',16);
+        textPop(runner.x,ry_top-25,'+'+pts,'#ffd54f');
+        sfxCollect();
+      } else {
+        lives--; streak=0;
+        runner.invincible=80;
+        burst(runner.x,runner.y,'#ef5350',18);
+        textPop(runner.x,ry_top-25,'-1 ❤️','#ef5350');
+        sfxMiss();
+        if(lives<=0){endGame(false);return;}
       }
     }
   }
-  for (let i=dead.length-1;i>=0;i--) obstacles.splice(dead[i],1);
+  for(let i=dead.length-1;i>=0;i--)words.splice(dead[i],1);
 
-  // ── Check level complete ──────────────────────────────────────────
-  if (qIdx >= levelQuestions.length && obstacles.filter(o=>!o.hit).length===0) {
-    endLevel(true); return;
+  // ── Round complete? ────────────────────────────────────────────
+  if(wordsSpawned>=roundWordPool.length && words.filter(w=>!w.hit).length===0){
+    if(round<10){round++;startRound();}
+    else{endGame(true);}
+    return;
   }
 
   drawParticles(dt);
-  particles = particles.filter(p => p.life > 0);
-
+  particles=particles.filter(p=>p.life>0);
   drawRunner();
   drawHUD();
 }
 
-// ── Game flow ──────────────────────────────────────────────────────
-function startLevel(lv) {
-  // Start music for this level group
-  startAudio().then(() => {
-    scheduleMusic(getTrackForLevel(lv.id));
-  });
-  currentLevel = lv;
-  // Shuffle questions
-  levelQuestions = [...lv.questions].sort(() => Math.random() - 0.5);
-  qIdx = 0; score = 0; lives = 3; streak = 0; bestStreak = 0; correctCount = 0;
-  obstacles = []; particles = []; obstacleTimer = 60; obsInterval = OBS_INTERVAL_START;
-  currentPrompt = '';
-  frameCount = 0;
+// ── Game flow ─────────────────────────────────────────────────────
+function startRound(){
+  buildRoundPool();
+  words=[]; particles=[]; spawnTimer=60;
+  scheduleMusic(TRACKS[currentTrack]);
+}
 
-  const groundY = canvas.height - GROUND_OFFSET;
-  runner.x = canvas.width * 0.22;
-  runner.y = groundY;
-  runner.vy = 0; runner.isJumping = false; runner.isDucking = false;
-  runner.duckTimer = 0; runner.invincible = 0;
-
+function startGame(){
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
-  state = 'playing';
-  lastTime = performance.now();
+  round=1; score=0; lives=3; streak=0; bestStreak=0; correctCount=0;
+  frameCount=0; lastTime=performance.now();
+
+  const groundY=canvas.height-GROUND_OFFSET;
+  runner.x=canvas.width*0.18; runner.y=groundY;
+  runner.vy=0;runner.isJumping=false;runner.isDucking=false;runner.duckTimer=0;runner.invincible=0;
+
+  document.getElementById('pauseBtn').classList.add('visible');
+  state='playing';
+  startAudio().then(()=>startRound());
 }
 
-function endLevel(won) {
-  state = 'idle';
+function endGame(won){
+  state='idle';
   stopMusic();
-  if (won) sfxLevelComplete();
-  setBest(currentLevel.lbKey, score);
-  if (won) setUnlocked(currentLevel.id + 1);
-
-  document.getElementById('endReason').textContent = won ? '✅ Level complete!' : '💔 Out of lives!';
-  document.getElementById('endScore').textContent   = score + ' pts';
-  document.getElementById('endCorrect').textContent = correctCount;
-  document.getElementById('endStreak').textContent  = bestStreak;
-  document.getElementById('endLevel').textContent   = 'Level ' + currentLevel.id;
-  document.getElementById('endMsg').textContent     =
-    won && correctCount === levelQuestions.length ? '🎉 Perfect run — every word correct!' :
-    won ? '👏 Level cleared! Keep building your streak.' :
-    'No worries — try again to master ' + currentLevel.name;
-
+  if(score>bestScore){bestScore=score;localStorage.setItem('ar_best',bestScore);}
+  document.getElementById('hiScore').textContent='Best: '+bestScore;
+  document.getElementById('endReason').textContent=won?'🎉 All 10 rounds complete!':'💔 Out of lives!';
+  document.getElementById('endScore').textContent=score+' pts';
+  document.getElementById('endCorrect').textContent=correctCount;
+  document.getElementById('endStreak').textContent=bestStreak;
+  document.getElementById('endRound').textContent='Round '+round+'/10';
+  document.getElementById('endMsg').textContent=
+    score>=800?'Outstanding! You know your affixes!':
+    score>=400?'Great run — keep practising!':'Keep going — affixes take time!';
+  document.getElementById('pauseBtn').classList.remove('visible');
   document.getElementById('endScreen').classList.remove('hidden');
-  renderLeaderboard(currentLevel.lbKey, 'lbBody');
+  renderLeaderboard('affixrunner','lbBody');
+  if(won) sfxLevelComplete();
 }
 
-function replayLevel() {
-  document.getElementById('endScreen').classList.add('hidden');
-  startLevel(currentLevel);
-}
-function showStart() {
-  document.getElementById('endScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
-  buildLevelGrid();
-}
-async function doSubmit() {
-  const name = document.getElementById('nameInput').value.trim();
-  if (!name) return;
-  const ok = await window.submitScore(currentLevel.lbKey, name, score);
-  if (ok) { document.getElementById('nameInput').value=''; renderLeaderboard(currentLevel.lbKey,'lbBody'); }
+function togglePause(){
+  if(state==='playing'){
+    state='paused';
+    document.getElementById('pauseOverlay').classList.add('visible');
+    document.getElementById('pauseBtn').textContent='▶ RESUME';
+    if(audioReady)Tone.getTransport().pause();
+  } else if(state==='paused'){
+    state='playing';
+    lastTime=performance.now();
+    document.getElementById('pauseOverlay').classList.remove('visible');
+    document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+    if(audioReady)Tone.getTransport().start();
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// LANDSCAPE CHECK
-// ═══════════════════════════════════════════════════════════════════
-function checkOrientation() {
-  const isPortraitMobile = window.innerHeight > window.innerWidth && window.innerWidth < 600;
-  document.getElementById('rotatePlease').style.display = isPortraitMobile ? 'flex' : 'none';
-  // Pause game if we go portrait mid-game
-  if (isPortraitMobile && state === 'playing') state = 'paused_orient';
-  if (!isPortraitMobile && state === 'paused_orient') state = 'playing';
+async function doSubmit(){
+  const name=document.getElementById('nameInput').value.trim();
+  if(!name)return;
+  const ok=await window.submitScore('affixrunner',name,score);
+  if(ok){document.getElementById('nameInput').value='';renderLeaderboard('affixrunner','lbBody');}
 }
-window.addEventListener('resize', checkOrientation);
-window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 200));
-checkOrientation();
 
-// ═══════════════════════════════════════════════════════════════════
-// AUDIO — Mario-inspired upbeat chiptune, ambient-quality instruments
-// ═══════════════════════════════════════════════════════════════════
-let audioReady = false;
-let musicGain = null, meloSynth = null, bassSynth = null, harmSynth = null;
-let fxGood = null, fxBad = null, fxJump = null;
-let musicEventId = null, musicStep = 0, musicMode = 'none';
+// ════════════════════════════════════════════════════════════════════
+// AUDIO — ambient-quality, slightly upbeat
+// Three tracks; instruments from EnglishAce style
+// ════════════════════════════════════════════════════════════════════
+let audioReady=false, musicGain=null;
+let meloSynth=null, bassSynth=null, padSynth=null, fxSynth=null, fxBell=null, noiseFX=null;
+let musicEventId=null, musicStep=0, currentTrack=0;
 
-const VOL_STATES = [
-  { label:'🔊 100%', vol:0,         muted:false },
-  { label:'🔉  50%', vol:-12,       muted:false },
-  { label:'🔇  OFF', vol:-Infinity, muted:true  },
+const VOL_STATES=[
+  {label:'🔊 100%',vol:0,muted:false},
+  {label:'🔉  50%',vol:-12,muted:false},
+  {label:'🔇  OFF',vol:-Infinity,muted:true},
 ];
-let volState = 0;
-function isMuted(){ return VOL_STATES[volState].muted; }
+let volState=0;
+function isMuted(){return VOL_STATES[volState].muted;}
 
-// ── Music data ─────────────────────────────────────────────────────
-// Mario-esque: C major/minor pentatonic, bouncy, lots of rests,
-// short staccato notes with occasional held notes for warmth.
-// Three tracks — one per first 3 level groups.
-
-const MUSIC_TRACKS = [
+// ── Three music tracks ────────────────────────────────────────────
+// All use longer notes, smoother feel like EnglishAce ambient
+// but slightly more rhythmic/upbeat
+const TRACKS = [
   {
-    // Track A: bright C major — levels 1–3 (prefixes UN/RE/DIS)
-    bpm: 140,
-    // Melody — 32 eighth-note steps, lots of jumpy intervals
-    melody: [
-      'E5',null,'G5','E5', 'C5',null,'G4',null,
-      'A4','C5','E5',null, 'D5',null,'B4',null,
-      'C5',null,'E5','G5', 'E5','C5',null,'G4',
-      'F4','A4','C5',null, 'G4',null,'C5',null,
+    // Track 0: UPBEAT — C major, quarter-note pulse, warm
+    name:'Upbeat', bpm:108,
+    bass:[
+      'C2',null,null,null,'C2',null,null,null,
+      'F2',null,null,null,'F2',null,null,null,
+      'G2',null,null,null,'G2',null,null,null,
+      'C2',null,null,null,'C2',null,null,null,
     ],
-    // Bass — root on beat 1, fifth on beat 3
-    bass: [
-      'C3',null,'G3',null, 'C3',null,'G3',null,
-      'A2',null,'E3',null, 'G2',null,'D3',null,
-      'C3',null,'G3',null, 'C3',null,'G3',null,
-      'F2',null,'C3',null, 'G2',null,'G2',null,
+    melody:[
+      'E4',null,null,'G4',null,null,'C5',null,
+      null,null,'G4',null,null,null,'E4',null,
+      'F4',null,null,'A4',null,null,'C5',null,
+      null,null,'A4',null,null,null,'F4',null,
+      'G4',null,null,'B4',null,null,'D5',null,
+      null,null,'B4',null,null,null,'G4',null,
+      'E4',null,null,'G4',null,'C5',null,null,
+      null,'D5',null,'E5',null,null,null,null,
     ],
-    // Harmony — fills every 4 steps
-    harm: [
-      ['C4','E4'],null,null,null,   ['C4','E4'],null,null,null,
-      ['A3','C4'],null,null,null,   ['G3','B3'],null,null,null,
-      ['C4','E4'],null,null,null,   ['C4','E4'],null,null,null,
-      ['F3','A3'],null,null,null,   ['G3','B3'],null,null,null,
+    pad:[
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['F2','A2','C3'],null,null,null,null,null,null,null,
+      ['G2','B2','D3'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['F2','A2','C3'],null,null,null,null,null,null,null,
+      ['G2','B2','D3'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
     ],
   },
   {
-    // Track B: slightly darker Am — levels 4–5 (MIS/PRE)
-    bpm: 145,
-    melody: [
-      'A4',null,'C5','A4', 'E5',null,'C5',null,
-      'G4','B4','D5',null, 'E5',null,'A4',null,
-      'C5',null,'E5','C5', 'A4','E4',null,'C4',
-      'D4','F4','A4',null, 'E4',null,'A4',null,
+    // Track 1: CHILL — Am, slower, floaty
+    name:'Chill', bpm:80,
+    bass:[
+      'A1',null,null,null,null,null,null,null,
+      'F2',null,null,null,null,null,null,null,
+      'C2',null,null,null,null,null,null,null,
+      'G2',null,null,null,null,null,null,null,
     ],
-    bass: [
-      'A2',null,'E3',null, 'A2',null,'E3',null,
-      'G2',null,'D3',null, 'E2',null,'B2',null,
-      'A2',null,'E3',null, 'A2',null,'E3',null,
-      'D2',null,'A2',null, 'E2',null,'E2',null,
+    melody:[
+      'A4',null,null,null,'C5',null,null,null,
+      null,null,'E5',null,null,null,null,null,
+      'F4',null,null,null,'A4',null,null,null,
+      null,null,'C5',null,null,null,null,null,
+      'E4',null,null,null,'G4',null,null,null,
+      null,null,'B4',null,null,null,null,null,
+      'G4',null,null,null,'E4',null,null,null,
+      null,null,'A4',null,null,null,null,null,
     ],
-    harm: [
-      ['A3','C4'],null,null,null,   ['A3','C4'],null,null,null,
-      ['G3','B3'],null,null,null,   ['E3','G#3'],null,null,null,
-      ['A3','C4'],null,null,null,   ['A3','C4'],null,null,null,
-      ['D3','F3'],null,null,null,   ['E3','G#3'],null,null,null,
+    pad:[
+      ['A2','C3','E3'],null,null,null,null,null,null,null,
+      ['F2','A2','C3'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['G2','B2','D3'],null,null,null,null,null,null,null,
+      ['A2','C3','E3'],null,null,null,null,null,null,null,
+      ['F2','A2','C3'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['E2','G#2','B2'],null,null,null,null,null,null,null,
     ],
   },
   {
-    // Track C: triumphant G major — levels 6–8 (suffixes)
-    bpm: 150,
-    melody: [
-      'G5',null,'B5','G5', 'D5',null,'B4',null,
-      'E5','G5','B5',null, 'A5',null,'F#5',null,
-      'G5',null,'B5','D6', 'B5','G5',null,'D5',
-      'C5','E5','G5',null, 'D5',null,'G5',null,
+    // Track 2: HEROIC — G major, slightly driving, triumphant
+    name:'Heroic', bpm:118,
+    bass:[
+      'G2',null,null,null,'G2',null,null,null,
+      'C2',null,null,null,'C2',null,null,null,
+      'D2',null,null,null,'D2',null,null,null,
+      'G2',null,null,null,'G2',null,null,null,
     ],
-    bass: [
-      'G2',null,'D3',null, 'G2',null,'D3',null,
-      'E2',null,'B2',null, 'A2',null,'E3',null,
-      'G2',null,'D3',null, 'G2',null,'D3',null,
-      'C2',null,'G2',null, 'D2',null,'D2',null,
+    melody:[
+      'G4',null,'B4',null,'D5',null,null,null,
+      null,null,'B4',null,'G4',null,null,null,
+      'C5',null,'E5',null,'G5',null,null,null,
+      null,null,'E5',null,'C5',null,null,null,
+      'D5',null,'F#5',null,'A5',null,null,null,
+      null,null,'F#5',null,'D5',null,null,null,
+      'G4',null,'B4',null,'D5',null,'G5',null,
+      null,null,'D5',null,'G4',null,null,null,
     ],
-    harm: [
-      ['G3','B3'],null,null,null,   ['G3','B3'],null,null,null,
-      ['E3','G3'],null,null,null,   ['A3','C#4'],null,null,null,
-      ['G3','B3'],null,null,null,   ['G3','B3'],null,null,null,
-      ['C3','E3'],null,null,null,   ['D3','F#3'],null,null,null,
+    pad:[
+      ['G3','B3','D4'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['D3','F#3','A3'],null,null,null,null,null,null,null,
+      ['G3','B3','D4'],null,null,null,null,null,null,null,
+      ['G3','B3','D4'],null,null,null,null,null,null,null,
+      ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['D3','F#3','A3'],null,null,null,null,null,null,null,
+      ['G3','B3','D4'],null,null,null,null,null,null,null,
     ],
   },
 ];
 
-function getTrackForLevel(id) {
-  if (id <= 3) return MUSIC_TRACKS[0];
-  if (id <= 5) return MUSIC_TRACKS[1];
-  return MUSIC_TRACKS[2];
+function selectTrack(n){
+  currentTrack=n;
+  [0,1,2].forEach(i=>document.getElementById('track'+i).classList.toggle('active',i===n));
+  if(audioReady&&state==='playing') scheduleMusic(TRACKS[n]);
 }
 
-async function startAudio() {
-  if (audioReady) return;
-  try {
+async function startAudio(){
+  if(audioReady)return;
+  try{
     await Tone.start();
-    const ctx2 = Tone.getContext().rawContext;
-    if (ctx2.state === 'suspended') await ctx2.resume();
+    const ctx2=Tone.getContext().rawContext;
+    if(ctx2.state==='suspended')await ctx2.resume();
 
-    musicGain = new Tone.Gain(1).toDestination();
+    musicGain=new Tone.Gain(1).toDestination();
 
-    // Short reverb for warmth without muddiness
-    const rev = new Tone.Reverb({ decay:1.2, wet:0.22 }).connect(musicGain);
+    // Reverb — moderate warmth
+    const rev=new Tone.Reverb({decay:2.5,wet:0.35}).connect(musicGain);
     await rev.generate();
 
-    // Melody — bright square wave (classic Mario feel)
-    meloSynth = new Tone.Synth({
-      oscillator: { type:'square' },
-      envelope:   { attack:.001, decay:.08, sustain:.4, release:.05 },
-      volume: -10,
-    }).connect(rev);
+    // Delay on melody for spaciousness
+    const delay=new Tone.FeedbackDelay('8n.',0.2).connect(rev);
+    delay.wet.value=0.25;
 
-    // Bass — warm triangle (Mario's bass had no attack, just rounded thud)
-    bassSynth = new Tone.Synth({
-      oscillator: { type:'triangle' },
-      envelope:   { attack:.001, decay:.15, sustain:.5, release:.05 },
-      volume: -14,
+    // Melody — sine with gentle attack (not harsh square)
+    meloSynth=new Tone.Synth({
+      oscillator:{type:'triangle'},
+      envelope:{attack:.04,decay:.2,sustain:.6,release:.4},
+      volume:-10
+    }).connect(delay);
+
+    // Bass — rounded sawtooth
+    bassSynth=new Tone.Synth({
+      oscillator:{type:'sine'},
+      envelope:{attack:.05,decay:.3,sustain:.7,release:.5},
+      volume:-14
     }).connect(musicGain);
 
-    // Harmony — sine for softness
-    harmSynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type:'sine' },
-      envelope:   { attack:.005, decay:.1, sustain:.3, release:.08 },
-      volume: -18,
+    // Pad — lush polyphonic
+    padSynth=new Tone.PolySynth(Tone.Synth,{
+      oscillator:{type:'sine'},
+      envelope:{attack:.6,decay:.4,sustain:.8,release:2},
+      volume:-18
     }).connect(rev);
 
-    // SFX synths — direct, no reverb, crisp
-    fxGood = new Tone.Synth({
-      oscillator: { type:'square' },
-      envelope:   { attack:.001, decay:.12, sustain:.1, release:.05 },
-      volume: -8,
-    }).toDestination();
+    // SFX
+    fxSynth=new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:.001,decay:.15,sustain:.1,release:.1},volume:-8}).toDestination();
+    fxBell=new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.001,decay:.3,sustain:0,release:.2},volume:-12}).toDestination();
+    noiseFX=new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.05,sustain:0,release:.01},volume:-20}).toDestination();
 
-    fxBad = new Tone.Synth({
-      oscillator: { type:'triangle' },
-      envelope:   { attack:.001, decay:.18, sustain:.0, release:.05 },
-      volume: -10,
-    }).toDestination();
-
-    fxJump = new Tone.Synth({
-      oscillator: { type:'sine' },
-      envelope:   { attack:.001, decay:.08, sustain:0, release:.03 },
-      volume: -12,
-    }).toDestination();
-
-    audioReady = true;
+    audioReady=true;
     Tone.getTransport().start();
-    console.log('Audio ready');
-  } catch(e) { console.warn('Audio failed:', e); }
+  }catch(e){console.warn('Audio failed:',e);}
 }
 
-function scheduleMusic(track) {
-  if (musicEventId !== null) {
-    Tone.getTransport().cancel(musicEventId);
-    musicEventId = null;
-  }
-  if (!track || !audioReady) return;
-  musicStep = 0;
-  Tone.getTransport().bpm.value = track.bpm;
-
-  musicEventId = Tone.getTransport().scheduleRepeat(time => {
-    if (isMuted() || !audioReady) return;
-    const step = musicStep % track.melody.length;
-
-    // Melody
-    const mNote = track.melody[step];
-    if (mNote) meloSynth.triggerAttackRelease(mNote, '16n', time);
-
-    // Bass
-    const bNote = track.bass[step];
-    if (bNote) bassSynth.triggerAttackRelease(bNote, '8n', time);
-
-    // Harmony chords
-    const hChord = track.harm[step];
-    if (hChord) harmSynth.triggerAttackRelease(hChord, '8n', time);
-
+function scheduleMusic(track){
+  if(musicEventId!==null){Tone.getTransport().cancel(musicEventId);musicEventId=null;}
+  if(!track||!audioReady)return;
+  musicStep=0;
+  Tone.getTransport().bpm.value=track.bpm;
+  musicEventId=Tone.getTransport().scheduleRepeat(time=>{
+    if(isMuted()||!audioReady)return;
+    const step=musicStep%track.melody.length;
+    const mn=track.melody[step];  if(mn)meloSynth.triggerAttackRelease(mn,'8n',time);
+    const bn=track.bass[step];    if(bn)bassSynth.triggerAttackRelease(bn,'4n',time);
+    const pc=track.pad[step];     if(pc)padSynth.triggerAttackRelease(pc,'2n',time);
     musicStep++;
-  }, '8n', 0);
+  },'8n',0);
 }
 
-function stopMusic() {
-  if (musicEventId !== null) {
-    Tone.getTransport().cancel(musicEventId);
-    musicEventId = null;
-  }
+function stopMusic(){
+  if(musicEventId!==null){Tone.getTransport().cancel(musicEventId);musicEventId=null;}
 }
 
-// ── SFX ────────────────────────────────────────────────────────────
-function sfxCollect() {
-  // Classic Mario coin-style: short rising arpeggio
-  if (!audioReady || isMuted()) return;
-  const now = Tone.now();
-  fxGood.triggerAttackRelease('E6', '32n', now);
-  fxGood.triggerAttackRelease('G6', '32n', now + 0.06);
-  fxGood.triggerAttackRelease('C7', '16n', now + 0.12);
+function sfxCollect(){
+  if(!audioReady||isMuted())return;
+  const now=Tone.now();
+  fxBell.triggerAttackRelease('G5','8n',now);
+  fxBell.triggerAttackRelease('C6','8n',now+.1);
 }
-function sfxMiss() {
-  // Low descending blip
-  if (!audioReady || isMuted()) return;
-  const now = Tone.now();
-  fxBad.triggerAttackRelease('G3', '8n', now);
-  fxBad.triggerAttackRelease('D3', '8n', now + 0.15);
+function sfxMiss(){
+  if(!audioReady||isMuted())return;
+  const now=Tone.now();
+  fxSynth.triggerAttackRelease('D3','8n',now);
+  noiseFX.triggerAttackRelease('16n',now+.05);
 }
-function sfxJumpSfx() {
-  // Rising pitch glide like Mario jump
-  if (!audioReady || isMuted()) return;
-  const now = Tone.now();
-  fxJump.triggerAttackRelease('C5', '32n', now);
-  fxJump.triggerAttackRelease('E5', '32n', now + 0.04);
-  fxJump.triggerAttackRelease('G5', '32n', now + 0.08);
+function sfxJump(){
+  if(!audioReady||isMuted())return;
+  const now=Tone.now();
+  fxBell.triggerAttackRelease('E5','32n',now);
+  fxBell.triggerAttackRelease('G5','32n',now+.05);
 }
-function sfxLevelComplete() {
-  if (!audioReady || isMuted()) return;
-  const now = Tone.now();
-  // Short fanfare
-  ['C5','E5','G5','C6','E6','G6'].forEach((n,i) =>
-    fxGood.triggerAttackRelease(n, '16n', now + i*0.1)
-  );
+function sfxLevelComplete(){
+  if(!audioReady||isMuted())return;
+  const now=Tone.now();
+  ['C5','E5','G5','C6','E6'].forEach((n,i)=>fxBell.triggerAttackRelease(n,'8n',now+i*.12));
 }
 
-// ── Volume toggle ───────────────────────────────────────────────────
-document.getElementById('wrMuteBtn').addEventListener('click', async () => {
+// ── Volume toggle ─────────────────────────────────────────────────
+document.getElementById('muteBtn').addEventListener('click',async()=>{
   await startAudio();
-  volState = (volState + 1) % VOL_STATES.length;
-  const v = VOL_STATES[volState];
-  document.getElementById('wrMuteBtn').textContent = v.label;
-  if (musicGain) {
-    musicGain.gain.rampTo(
-      v.vol === -Infinity ? 0 : Math.pow(10, v.vol/20), 0.1
-    );
-  }
+  volState=(volState+1)%VOL_STATES.length;
+  const v=VOL_STATES[volState];
+  document.getElementById('muteBtn').textContent=v.label;
+  if(musicGain)musicGain.gain.rampTo(v.vol===-Infinity?0:Math.pow(10,v.vol/20),.1);
 });
 
-// Start audio on first interaction
-['click','pointerdown','touchstart'].forEach(evt => {
-  document.addEventListener(evt, function h(){ startAudio(); document.removeEventListener(evt,h); });
+// ── Landscape check ───────────────────────────────────────────────
+function checkOrientation(){
+  const portrait=window.innerHeight>window.innerWidth&&window.innerWidth<600;
+  document.getElementById('rotatePlease').style.display=portrait?'flex':'none';
+  if(portrait&&state==='playing')state='paused_orient';
+  if(!portrait&&state==='paused_orient')state='playing';
+}
+window.addEventListener('resize',checkOrientation);
+window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
+checkOrientation();
+
+// Start audio on first touch
+['click','pointerdown','touchstart'].forEach(evt=>{
+  document.addEventListener(evt,function h(){startAudio();document.removeEventListener(evt,h);});
 });
 
-// ── Boot ───────────────────────────────────────────────────────────
-buildLevelGrid();
-lastTime = performance.now();
+// ── Pause hint detection ──────────────────────────────────────────
+(function(){
+  const isTouch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
+  const hint=document.getElementById('pauseHint');
+  if(hint)hint.textContent=isTouch?'Double-tap screen or tap ▶ Resume':'Press Space or click ▶ Resume';
+})();
+
+// ── Boot ──────────────────────────────────────────────────────────
+document.getElementById('hiScore').textContent='Best: '+bestScore;
+lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 </script>
 </body>
