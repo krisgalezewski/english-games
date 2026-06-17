@@ -447,7 +447,31 @@ function spawnWord() {
     tier,
     w: 0, h: 36,
     hit: false, alpha: 1,
-    glow: Math.random() * Math.PI * 2, // phase offset for glow pulse
+    glow: Math.random() * Math.PI * 2,
+  });
+
+  // Occasionally spawn a powerup (5% chance per word, only after round 1)
+  if(round > 1 && Math.random() < 0.05){
+    spawnPowerup();
+  }
+}
+
+// ── Powerup spawning ──────────────────────────────────────────────
+let powerups = [];
+
+function spawnPowerup(){
+  const groundY = canvas.height - GROUND_OFFSET;
+  const type = Math.random() < 0.6 ? 'shield' : 'life';
+  // Powerups always at mid height so they're easy to collect
+  const y = groundY - runner.h * 0.9;
+  powerups.push({
+    type,
+    icon: type === 'shield' ? '🛡️' : '❤️',
+    x: canvas.width + 80,
+    y,
+    speed: 3 + round * 0.2,
+    hit: false, alpha: 1,
+    w: 36, h: 36,
   });
 }
 
@@ -661,41 +685,43 @@ function drawRunner() {
   ctx.restore();
 }
 
-// ── Draw: word — transparent bg, crisp text, two difficulty styles ──
+// ── Draw: word — no background, pure floating text ──────────────
 function drawWord(w) {
   ctx.save();
   ctx.globalAlpha = w.alpha;
-
-  ctx.font = 'bold 16px Orbitron, monospace';
-  if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 14);
-
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 0;
 
   if (difficulty === 'easy') {
-    // Easy: blue = collect, red = avoid — clear colour coding
-    const col = w.correct ? '#5bc8f5' : '#ff6b6b';
-    // Very faint background tint for contrast against dark sky
-    ctx.fillStyle = w.correct ? 'rgba(0,100,180,0.18)' : 'rgba(180,30,30,0.18)';
-    ctx.beginPath();
-    const rx = w.x - w.w/2 - 4, ry = w.y - 14;
-    ctx.roundRect(rx, ry, w.w+8, 28, 6);
-    ctx.fill();
-    // Clean, no-glow text
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = col;
-    ctx.fillText(w.text, w.x, w.y);
-    // Second pass for extra crispness (no glow — just solid)
+    // Easy: just coloured text, no bg, no frame
+    // Blue=collect, Red=avoid — pure colour, very readable
+    ctx.font = 'bold 17px Orbitron, monospace';
+    if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 10);
+    ctx.fillStyle = w.correct ? '#60d0f8' : '#ff5c5c';
     ctx.fillText(w.text, w.x, w.y);
   } else {
-    // Hard: all same colour — white, completely transparent background
-    // No shadow/glow — just crisp solid text
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#e8eaf6';
-    ctx.fillText(w.text, w.x, w.y);
+    // Hard: normal weight (not bold) = thinner strokes, off-white, very readable
+    ctx.font = 'normal 15px Orbitron, monospace';
+    if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 10);
+    ctx.fillStyle = '#d8e8f8'; // soft blue-white, easier on eyes than pure white
     ctx.fillText(w.text, w.x, w.y);
   }
 
+  ctx.restore();
+}
+
+// ── Draw: powerup ────────────────────────────────────────────────
+function drawPowerup(p){
+  ctx.save();
+  ctx.globalAlpha = p.alpha;
+  ctx.font = '28px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Gentle pulsing glow
+  ctx.shadowColor = p.type==='shield' ? '#ffd54f' : '#ef5350';
+  ctx.shadowBlur = 8 + Math.sin(frameCount*0.1)*4;
+  ctx.fillText(p.icon, p.x, p.y);
   ctx.restore();
 }
 
@@ -731,7 +757,7 @@ function drawHUD() {
   // Lives
   ctx.font = '16px serif';
   ctx.textAlign = 'right';
-  for(let i=0;i<3;i++){ctx.globalAlpha=i<lives?1:.15;ctx.fillText('❤️',W-10-i*24,22);}
+  for(let i=0;i<5;i++){ctx.globalAlpha=i<lives?1:.12;ctx.fillText('❤️',W-8-i*20,22);}
   ctx.globalAlpha=1;
 
   ctx.restore();
@@ -814,22 +840,25 @@ function masterLoop(ts){
     if(w.hit){w.alpha-=dt*3;if(w.alpha<=0)dead.push(i);continue;}
     w.x-=w.speed;
     if(w.x<-w.w-40){
-      // Scrolled off screen
+      // Scrolled off screen — only lose streak, never a life for missing correct
       if(w.correct){
-        // Missed a correct word — lose a life
-        lives--; streak=0;
-        textPop(runner.x+30, ry_top-20, 'MISSED! ❤️', '#ef5350');
-        sfxMiss();
-        if(lives<=0){endGame(false);return;}
+        streak=0;
+        textPop(W*0.15, canvas.height*0.5, 'missed', 'rgba(255,255,255,0.4)');
       }
       w.hit=true; continue;
     }
     drawWord(w);
 
-    // Collision
+    // Collision — tighter hitbox (60% of visual size for precision)
+    const hbW = rw_actual * 0.6;
+    const hbH = rh_actual * 0.65;
+    const hbX = runner.x - hbW/2;
+    const hbY = ry_top + rh_actual*0.18; // shift down slightly (head area exempt)
+    const wbW = w.w * 0.75; // word hitbox also tighter
+    const wbH = w.h * 0.6;
     if(runner.invincible===0 &&
-       overlap(runner.x-rw_actual/2, ry_top, rw_actual, rh_actual,
-               w.x-w.w/2, w.y-w.h/2, w.w, w.h)){
+       overlap(hbX, hbY, hbW, hbH,
+               w.x-wbW/2, w.y-wbH/2, wbW, wbH)){
       w.hit=true;
       if(w.correct){
         const pts=10*(1+Math.floor(streak/3));
@@ -850,8 +879,33 @@ function masterLoop(ts){
   }
   for(let i=dead.length-1;i>=0;i--)words.splice(dead[i],1);
 
+  // ── Powerups ──────────────────────────────────────────────────
+  const deadPu=[];
+  for(let i=0;i<powerups.length;i++){
+    const p=powerups[i];
+    if(p.hit){p.alpha-=dt*3;if(p.alpha<=0)deadPu.push(i);continue;}
+    p.x-=p.speed;
+    if(p.x<-60){p.hit=true;continue;}
+    drawPowerup(p);
+    // Collect collision (generous hitbox for powerups)
+    if(runner.invincible===0 &&
+       overlap(runner.x-20,ry_top+10,40,rh_actual-10,p.x-18,p.y-18,36,36)){
+      p.hit=true;
+      if(p.type==='shield'){
+        runner.invincible=200; // ~3.3 seconds of invincibility
+        textPop(runner.x, ry_top-25, '🛡️ SHIELD!', '#ffd54f');
+        sfxCollect();
+      } else if(p.type==='life' && lives<5){
+        lives++;
+        textPop(runner.x, ry_top-25, '❤️ +LIFE', '#ef5350');
+        sfxCollect();
+      }
+    }
+  }
+  for(let i=deadPu.length-1;i>=0;i--)powerups.splice(deadPu[i],1);
+
   // ── Round complete? ────────────────────────────────────────────
-  if(wordsSpawned>=roundWordPool.length && words.filter(w=>!w.hit).length===0){
+  if(wordsSpawned>=roundWordPool.length && words.filter(w=>!w.hit).length===0 && powerups.filter(p=>!p.hit).length===0){
     if(round<10){round++;startRound();}
     else{endGame(true);}
     return;
@@ -866,14 +920,14 @@ function masterLoop(ts){
 // ── Game flow ─────────────────────────────────────────────────────
 function startRound(){
   buildRoundPool();
-  words=[]; particles=[]; spawnTimer=60;
+  words=[]; particles=[]; powerups=[]; spawnTimer=60;
   scheduleMusic(TRACKS[currentTrack]);
 }
 
 function startGame(){
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
-  round=1; score=0; lives=3; streak=0; bestStreak=0; correctCount=0;
+  round=1; score=0; lives=5; streak=0; bestStreak=0; correctCount=0;
   frameCount=0; lastTime=performance.now();
 
   const groundY=canvas.height-GROUND_OFFSET;
