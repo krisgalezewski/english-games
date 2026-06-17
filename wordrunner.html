@@ -91,7 +91,12 @@ body { overflow:hidden; background:#0a0a14; }
 <nav id="topNav">
   <a href="index.html">← GAMES</a>
   <span class="nav-title">🏃 Affix Runner</span>
-  <div style="display:flex;gap:.5rem;align-items:center">
+  <div style="display:flex;gap:.4rem;align-items:center">
+    <div id="trackSel" style="display:none;gap:.25rem" class="track-bar">
+      <button class="track-btn active" id="track0" onclick="selectTrack(0)">Upbeat</button>
+      <button class="track-btn"        id="track1" onclick="selectTrack(1)">Chill</button>
+      <button class="track-btn"        id="track2" onclick="selectTrack(2)">Heroic</button>
+    </div>
     <button id="pauseBtn" onclick="togglePause()">⏸ PAUSE</button>
     <button id="muteBtn">🔊 100%</button>
   </div>
@@ -100,6 +105,14 @@ body { overflow:hidden; background:#0a0a14; }
 <div id="pauseOverlay">
   <div class="pause-title">PAUSED</div>
   <div class="pause-hint" id="pauseHint">Press Space or tap ▶ Resume</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
+    <div class="eyebrow" style="font-size:.6rem">Change music track</div>
+    <div class="track-bar">
+      <button class="track-btn active" id="pauseTrack0" onclick="selectTrack(0)">Upbeat</button>
+      <button class="track-btn"        id="pauseTrack1" onclick="selectTrack(1)">Chill</button>
+      <button class="track-btn"        id="pauseTrack2" onclick="selectTrack(2)">Heroic</button>
+    </div>
+  </div>
   <button class="btn-primary" onclick="togglePause()">▶ Resume</button>
 </div>
 
@@ -108,15 +121,6 @@ body { overflow:hidden; background:#0a0a14; }
   <div class="game-logo">Affix<br><em>Runner</em></div>
   <div class="tagline">Jump to collect · duck to dodge · master affixes</div>
   <div class="high-score" id="hiScore">Best: 0</div>
-
-  <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
-    <div class="eyebrow">Music track</div>
-    <div class="track-bar">
-      <button class="track-btn active" id="track0" onclick="selectTrack(0)">Upbeat</button>
-      <button class="track-btn"        id="track1" onclick="selectTrack(1)">Chill</button>
-      <button class="track-btn"        id="track2" onclick="selectTrack(2)">Heroic</button>
-    </div>
-  </div>
 
   <button class="btn-primary" style="font-size:1rem;padding:.8rem 2.5rem" onclick="startGame()">RUN →</button>
 
@@ -328,8 +332,8 @@ const runner = {
   legFrame:0, armFrame:0,
 };
 const GROUND_OFFSET = 80;
-const JUMP_VY = -15;
-const GRAVITY  = 0.6;
+const JUMP_VY = -20;
+const GRAVITY  = 0.45;
 const DUCK_DUR = 32;
 
 // Heights for word spawning:
@@ -486,129 +490,187 @@ function drawBg() {
   ctx.restore();
 }
 
-// ── Draw: runner (more human-like) ────────────────────────────────
+// ── Draw: refined human runner ────────────────────────────────────
 function drawRunner() {
   ctx.save();
   const groundY = canvas.height - GROUND_OFFSET;
-  const alpha = runner.invincible > 0 ? (Math.floor(runner.invincible/5)%2===0 ? 0.3:1) : 1;
+  const alpha = runner.invincible > 0 ? (Math.floor(runner.invincible/5)%2===0 ? 0.25:1) : 1;
   ctx.globalAlpha = alpha;
 
   const rx = runner.x;
   const isDuck = runner.isDucking;
-  const rh = isDuck ? runner.h * 0.5 : runner.h;
-  const ry = isDuck ? groundY - rh : runner.y - runner.h; // top of body
+  const phase = frameCount * 0.22;
 
-  // Animation frame
-  const phase = frameCount * 0.2;
-  const legSwing = isDuck ? 0 : Math.sin(phase) * 14;
-  const armSwing = isDuck ? 0 : Math.sin(phase) * 10;
+  // Colour palette
+  const SUIT  = '#4fc3f7'; // cyan suit
+  const SKIN  = '#f5c5a3'; // skin tone
+  const HAIR  = '#3a2a1a'; // dark hair
+  const SHOE  = '#1a1a2e'; // dark shoes
+  const SOLE  = '#ffd54f'; // gold sole
+  const VISOR = 'rgba(79,195,247,0.35)'; // helmet visor
 
-  const col = '#4fc3f7'; // runner colour
-
-  ctx.shadowColor = col; ctx.shadowBlur = 10;
+  ctx.shadowColor = SUIT;
+  ctx.shadowBlur  = 12;
 
   if (isDuck) {
-    // Ducking — crouched blob
-    ctx.fillStyle = col;
+    // ── Crouching/sliding ─────────────────────────────────────────
+    const duckY = groundY - 22;
+
+    // Body (horizontal)
+    ctx.fillStyle = SUIT;
     ctx.beginPath();
-    ctx.ellipse(rx, groundY - 14, 18, 14, 0, 0, Math.PI*2);
-    ctx.fill();
-    // Head forward
-    ctx.fillStyle = '#e8eaf6';
-    ctx.beginPath();
-    ctx.arc(rx+14, groundY-22, 9, 0, Math.PI*2);
-    ctx.fill();
-  } else {
-    // Torso
-    ctx.fillStyle = col;
-    roundRect(ctx, rx-9, ry+12, 18, rh*0.45, 4);
+    ctx.ellipse(rx, duckY, 22, 12, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // Head
+    // Head (helmet)
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#e8eaf6';
-    ctx.beginPath();
-    ctx.arc(rx, ry+8, 11, 0, Math.PI*2);
-    ctx.fill();
-    // Face dot (eye)
-    ctx.fillStyle = '#0a1628';
-    ctx.beginPath();
-    ctx.arc(rx+5, ry+7, 2.5, 0, Math.PI*2);
-    ctx.fill();
+    ctx.fillStyle = SUIT;
+    ctx.beginPath(); ctx.arc(rx+20, duckY-4, 12, 0, Math.PI*2); ctx.fill();
+    // Visor
+    ctx.fillStyle = VISOR;
+    ctx.beginPath(); ctx.ellipse(rx+24, duckY-5, 7, 5, 0.3, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(79,195,247,0.6)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(rx+24, duckY-5, 7, 5, 0.3, 0, Math.PI*2); ctx.stroke();
 
-    ctx.shadowColor = col; ctx.shadowBlur = 8;
+    // Legs back
+    ctx.fillStyle = SUIT;
+    ctx.beginPath(); ctx.ellipse(rx-12, duckY+10, 14, 7, -0.3, 0, Math.PI*2); ctx.fill();
+    // Shoes
+    ctx.fillStyle = SHOE;
+    ctx.beginPath(); ctx.ellipse(rx-22, duckY+12, 8, 5, -0.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = SOLE;
+    ctx.fillRect(rx-28, duckY+14, 12, 3);
 
-    // Arms
-    ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = 'round';
-    // Left arm
-    ctx.beginPath();
-    ctx.moveTo(rx-9, ry+20);
-    ctx.lineTo(rx-18, ry+28-armSwing);
-    ctx.stroke();
-    // Right arm
-    ctx.beginPath();
-    ctx.moveTo(rx+9, ry+20);
-    ctx.lineTo(rx+18, ry+28+armSwing);
-    ctx.stroke();
+  } else {
+    // ── Running ───────────────────────────────────────────────────
+    const topY = runner.y - runner.h; // top of runner
 
-    // Legs
-    ctx.lineWidth = 5;
-    const footY = groundY;
-    // Left leg
+    const legSwing  = Math.sin(phase) * 16;
+    const legSwing2 = Math.sin(phase + Math.PI) * 16;
+    const armSwing  = Math.sin(phase + Math.PI) * 12;
+    const armSwing2 = Math.sin(phase) * 12;
+
+    // ── Back leg ─────────────────────────────────────────────────
+    ctx.strokeStyle = SUIT; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    const hipY = runner.y - runner.h * 0.38;
+    // Back thigh
     ctx.beginPath();
-    ctx.moveTo(rx-4, ry+rh*0.55);
-    ctx.lineTo(rx-10, footY-legSwing*0.5);
-    ctx.lineTo(rx-14, footY);
+    ctx.moveTo(rx-2, hipY);
+    ctx.lineTo(rx-6 - legSwing2*0.3, runner.y - 18 + legSwing2*0.5);
     ctx.stroke();
-    // Right leg
+    // Back shin
     ctx.beginPath();
-    ctx.moveTo(rx+4, ry+rh*0.55);
-    ctx.lineTo(rx+10, footY+legSwing*0.5);
-    ctx.lineTo(rx+16, footY);
+    ctx.moveTo(rx-6 - legSwing2*0.3, runner.y - 18 + legSwing2*0.5);
+    ctx.lineTo(rx-10 - legSwing2*0.5, runner.y);
     ctx.stroke();
+    // Back shoe
+    ctx.fillStyle = SHOE;
+    ctx.beginPath(); ctx.ellipse(rx-10 - legSwing2*0.5, runner.y-2, 9, 5, 0, 0, Math.PI*2); ctx.fill();
+
+    // ── Torso ─────────────────────────────────────────────────────
+    ctx.shadowBlur = 8;
+    const torsoTop = topY + runner.h*0.15;
+    const torsoH   = runner.h * 0.4;
+    // Body shape — slightly tapered
+    ctx.fillStyle = SUIT;
+    ctx.beginPath();
+    ctx.moveTo(rx-10, torsoTop+4);
+    ctx.lineTo(rx+10, torsoTop+4);
+    ctx.lineTo(rx+8, torsoTop+torsoH);
+    ctx.lineTo(rx-8, torsoTop+torsoH);
+    ctx.closePath(); ctx.fill();
+
+    // Race number on chest
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(rx-5, torsoTop+8, 10, 8);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.font = 'bold 6px monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('42', rx, torsoTop+12);
+
+    // ── Back arm ─────────────────────────────────────────────────
+    ctx.strokeStyle = SKIN; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    const shoulderY = torsoTop + 8;
+    ctx.beginPath();
+    ctx.moveTo(rx-8, shoulderY);
+    ctx.lineTo(rx-16, shoulderY + 14 + armSwing2);
+    ctx.stroke();
+    // Back hand
+    ctx.fillStyle = SKIN;
+    ctx.beginPath(); ctx.arc(rx-16, shoulderY + 14 + armSwing2, 4, 0, Math.PI*2); ctx.fill();
+
+    // ── Front leg ─────────────────────────────────────────────────
+    ctx.strokeStyle = SUIT; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    // Front thigh
+    ctx.beginPath();
+    ctx.moveTo(rx+2, hipY);
+    ctx.lineTo(rx+5 + legSwing*0.3, runner.y - 18 - legSwing*0.5);
+    ctx.stroke();
+    // Front shin
+    ctx.beginPath();
+    ctx.moveTo(rx+5 + legSwing*0.3, runner.y - 18 - legSwing*0.5);
+    ctx.lineTo(rx+8 + legSwing*0.5, runner.y);
+    ctx.stroke();
+    // Front shoe
+    ctx.fillStyle = SHOE;
+    ctx.beginPath(); ctx.ellipse(rx+8 + legSwing*0.5, runner.y-2, 10, 5, 0, 0, Math.PI*2); ctx.fill();
+    // Gold sole
+    ctx.fillStyle = SOLE;
+    ctx.fillRect(rx+2 + legSwing*0.5, runner.y+2, 12, 3);
+
+    // ── Head / Helmet ─────────────────────────────────────────────
+    ctx.shadowColor = SUIT; ctx.shadowBlur = 8;
+    // Helmet
+    ctx.fillStyle = SUIT;
+    ctx.beginPath(); ctx.arc(rx, topY + 12, 13, 0, Math.PI*2); ctx.fill();
+    // Visor
+    ctx.fillStyle = VISOR;
+    ctx.beginPath(); ctx.ellipse(rx+4, topY + 14, 8, 5, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(79,195,247,0.7)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(rx+4, topY + 14, 8, 5, 0.2, 0, Math.PI*2); ctx.stroke();
+    // Helmet stripe
+    ctx.strokeStyle = SOLE; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(rx-6, topY+2); ctx.lineTo(rx+10, topY+6);
+    ctx.stroke();
+    // Hair under helmet
+    ctx.fillStyle = HAIR;
+    ctx.beginPath(); ctx.arc(rx-3, topY+20, 4, Math.PI*0.8, Math.PI*1.8); ctx.fill();
+
+    // ── Front arm ─────────────────────────────────────────────────
+    ctx.strokeStyle = SKIN; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(rx+8, shoulderY);
+    ctx.lineTo(rx+16, shoulderY + 14 + armSwing);
+    ctx.stroke();
+    // Front hand (with glove)
+    ctx.fillStyle = SUIT;
+    ctx.beginPath(); ctx.arc(rx+16, shoulderY + 14 + armSwing, 5, 0, Math.PI*2); ctx.fill();
   }
 
   ctx.restore();
 }
 
-// ── Draw: word block (transparent bg, clear text) ─────────────────
+// ── Draw: word — fully transparent background, uniform white ──────
 function drawWord(w) {
   ctx.save();
   ctx.globalAlpha = w.alpha;
 
-  ctx.font = 'bold 16px Orbitron, monospace';
-  if (!w.w) w.w = Math.max(80, ctx.measureText(w.text).width + 20);
+  ctx.font = 'bold 17px Orbitron, monospace';
+  if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 16);
 
-  const rx = w.x - w.w/2;
-  const ry = w.y - w.h/2;
-
-  // Very subtle background — nearly transparent
-  const pulse = 0.12 + Math.sin(frameCount*0.08 + w.glow)*0.06;
-  ctx.fillStyle = w.correct
-    ? `rgba(79,195,247,${pulse})`
-    : `rgba(239,83,80,${pulse})`;
-  roundRect(ctx, rx, ry, w.w, w.h, 6);
-  ctx.fill();
-
-  // No border on wrong words — uniform look
-  // Thin bottom rule only
-  ctx.strokeStyle = w.correct
-    ? 'rgba(79,195,247,0.35)'
-    : 'rgba(239,83,80,0.35)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(rx+6, ry+w.h-1);
-  ctx.lineTo(rx+w.w-6, ry+w.h-1);
-  ctx.stroke();
-
-  // Text — large, white, clear
+  // Completely transparent background — just the word floating
+  // Subtle white glow so text is readable against any background
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 16px Orbitron, monospace';
+  ctx.font = 'bold 17px Orbitron, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // Subtle text glow
-  ctx.shadowColor = w.correct ? '#4fc3f7' : '#ef5350';
-  ctx.shadowBlur = 4;
+  ctx.shadowColor = 'rgba(255,255,255,0.8)';
+  ctx.shadowBlur = 10;
+  ctx.fillText(w.text, w.x, w.y);
+  // Second pass for crispness
+  ctx.shadowBlur = 2;
   ctx.fillText(w.text, w.x, w.y);
 
   ctx.restore();
@@ -796,13 +858,18 @@ function startGame(){
   runner.vy=0;runner.isJumping=false;runner.isDucking=false;runner.duckTimer=0;runner.invincible=0;
 
   document.getElementById('pauseBtn').classList.add('visible');
+  document.getElementById('trackSel').style.display='flex';
   state='playing';
-  startAudio().then(()=>startRound());
+  startAudio().then(()=>{
+    scheduleMusic(TRACKS[currentTrack]); // switch to game track
+    startRound();
+  });
 }
 
 function endGame(won){
   state='idle';
-  stopMusic();
+  // Switch back to peaceful menu music
+  if(audioReady){ scheduleMusic(MENU_TRACK); Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm, 1); }
   if(score>bestScore){bestScore=score;localStorage.setItem('ar_best',bestScore);}
   document.getElementById('hiScore').textContent='Best: '+bestScore;
   document.getElementById('endReason').textContent=won?'🎉 All 10 rounds complete!':'💔 Out of lives!';
@@ -814,6 +881,7 @@ function endGame(won){
     score>=800?'Outstanding! You know your affixes!':
     score>=400?'Great run — keep practising!':'Keep going — affixes take time!';
   document.getElementById('pauseBtn').classList.remove('visible');
+  document.getElementById('trackSel').style.display='none';
   document.getElementById('endScreen').classList.remove('hidden');
   renderLeaderboard('affixrunner','lbBody');
   if(won) sfxLevelComplete();
@@ -860,25 +928,62 @@ function isMuted(){return VOL_STATES[volState].muted;}
 // ── Three music tracks ────────────────────────────────────────────
 // All use longer notes, smoother feel like EnglishAce ambient
 // but slightly more rhythmic/upbeat
+// ── Menu music — peaceful ambient (like EnglishAce menu) ────────
+const MENU_TRACK = {
+  name:'Menu', bpm:65,
+  // C major pentatonic — floating, sparse, peaceful
+  bass:[
+    'C2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+    'F2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+    'C2',null,null,null,null,null,null,null,
+    'A2',null,null,null,null,null,null,null,
+    'F2',null,null,null,null,null,null,null,
+    'G2',null,null,null,null,null,null,null,
+  ],
+  melody:[
+    'G4',null,null,null,null,null,'E4',null,
+    null,null,'C5',null,null,null,null,null,
+    'D4',null,null,null,'G4',null,null,null,
+    null,null,'E4',null,null,null,null,null,
+    'C5',null,null,null,null,null,'G4',null,
+    null,null,'A4',null,null,null,null,null,
+    'F4',null,null,null,null,null,'C5',null,
+    null,null,'G4',null,null,null,null,null,
+  ],
+  pad:[
+    ['C3','E3','G3'],null,null,null,null,null,null,null,
+    ['G2','B2','D3'],null,null,null,null,null,null,null,
+    ['F2','A2','C3'],null,null,null,null,null,null,null,
+    ['G2','B2','D3'],null,null,null,null,null,null,null,
+    ['C3','E3','G3'],null,null,null,null,null,null,null,
+    ['A2','C3','E3'],null,null,null,null,null,null,null,
+    ['F2','A2','C3'],null,null,null,null,null,null,null,
+    ['G2','B2','D3'],null,null,null,null,null,null,null,
+  ],
+};
+
 const TRACKS = [
   {
-    // Track 0: UPBEAT — C major, quarter-note pulse, warm
-    name:'Upbeat', bpm:108,
+    // Track 0: UPBEAT — C major, bouncy staccato, 120bpm
+    // Short notes with plenty of rhythm — energetic platform-game feel
+    name:'Upbeat', bpm:120,
     bass:[
-      'C2',null,null,null,'C2',null,null,null,
-      'F2',null,null,null,'F2',null,null,null,
-      'G2',null,null,null,'G2',null,null,null,
-      'C2',null,null,null,'C2',null,null,null,
+      'C2',null,'C2',null,'G2',null,'C2',null,
+      'F2',null,'F2',null,'C2',null,'F2',null,
+      'G2',null,'G2',null,'D2',null,'G2',null,
+      'C2',null,'C2',null,'G1',null,'C2',null,
     ],
     melody:[
-      'E4',null,null,'G4',null,null,'C5',null,
-      null,null,'G4',null,null,null,'E4',null,
-      'F4',null,null,'A4',null,null,'C5',null,
-      null,null,'A4',null,null,null,'F4',null,
-      'G4',null,null,'B4',null,null,'D5',null,
-      null,null,'B4',null,null,null,'G4',null,
-      'E4',null,null,'G4',null,'C5',null,null,
-      null,'D5',null,'E5',null,null,null,null,
+      'C5','E5','G5',null,'E5','C5',null,null,
+      'G4','C5','E5',null,'C5',null,'G4',null,
+      'F4','A4','C5',null,'A4','F4',null,null,
+      'G4','B4','D5',null,'B4',null,'G4',null,
+      'E5',null,'G5',null,'F5','E5',null,null,
+      'D5',null,'E5',null,'C5',null,null,null,
+      'C5','E5','G5',null,'A5',null,'G5',null,
+      'E5',null,'D5',null,'C5',null,null,null,
     ],
     pad:[
       ['C3','E3','G3'],null,null,null,null,null,null,null,
@@ -892,71 +997,77 @@ const TRACKS = [
     ],
   },
   {
-    // Track 1: CHILL — Am, slower, floaty
-    name:'Chill', bpm:80,
+    // Track 1: DRIVING — Dm, pulsing 16th bass, 100bpm, Smalltown Boy energy
+    // Very different from Upbeat: minor, driving pulse, hi-NRG feel
+    name:'Driving', bpm:100,
     bass:[
-      'A1',null,null,null,null,null,null,null,
-      'F2',null,null,null,null,null,null,null,
-      'C2',null,null,null,null,null,null,null,
-      'G2',null,null,null,null,null,null,null,
+      'D2','D2','D2','D2','D2','D2','D2','D2',
+      'Bb1','Bb1','Bb1','Bb1','Bb1','Bb1','Bb1','Bb1',
+      'F2','F2','F2','F2','F2','F2','F2','F2',
+      'C2','C2','C2','C2','C2','C2','C2','C2',
     ],
     melody:[
-      'A4',null,null,null,'C5',null,null,null,
-      null,null,'E5',null,null,null,null,null,
-      'F4',null,null,null,'A4',null,null,null,
-      null,null,'C5',null,null,null,null,null,
-      'E4',null,null,null,'G4',null,null,null,
-      null,null,'B4',null,null,null,null,null,
-      'G4',null,null,null,'E4',null,null,null,
-      null,null,'A4',null,null,null,null,null,
+      'D5',null,'A4',null,'F4',null,'D4',null,
+      'Bb4',null,'D5',null,'F5',null,null,null,
+      'F4',null,'A4',null,'C5',null,'F5',null,
+      null,null,'C5',null,'A4',null,null,null,
+      'D5',null,'F5',null,'A5',null,'F5',null,
+      'D5',null,'A4',null,'F4',null,null,null,
+      'Bb4','D5','F5',null,'A5',null,'F5',null,
+      'D5',null,'C5',null,'Bb4',null,null,null,
     ],
     pad:[
-      ['A2','C3','E3'],null,null,null,null,null,null,null,
+      ['D3','F3','A3'],null,null,null,null,null,null,null,
+      ['Bb2','D3','F3'],null,null,null,null,null,null,null,
       ['F2','A2','C3'],null,null,null,null,null,null,null,
       ['C3','E3','G3'],null,null,null,null,null,null,null,
-      ['G2','B2','D3'],null,null,null,null,null,null,null,
-      ['A2','C3','E3'],null,null,null,null,null,null,null,
+      ['D3','F3','A3'],null,null,null,null,null,null,null,
+      ['Bb2','D3','F3'],null,null,null,null,null,null,null,
       ['F2','A2','C3'],null,null,null,null,null,null,null,
       ['C3','E3','G3'],null,null,null,null,null,null,null,
-      ['E2','G#2','B2'],null,null,null,null,null,null,null,
     ],
   },
   {
-    // Track 2: HEROIC — G major, slightly driving, triumphant
-    name:'Heroic', bpm:118,
+    // Track 2: EPIC — Em, heroic march feel, 95bpm
+    // Totally different character: powerful, triumphant, orchestral synth
+    name:'Epic', bpm:95,
     bass:[
-      'G2',null,null,null,'G2',null,null,null,
-      'C2',null,null,null,'C2',null,null,null,
-      'D2',null,null,null,'D2',null,null,null,
-      'G2',null,null,null,'G2',null,null,null,
+      'E2',null,null,'B2','E2',null,'G2',null,
+      'C2',null,null,'G2','C2',null,'E2',null,
+      'G1',null,null,'D2','G1',null,'B1',null,
+      'D2',null,null,'A2','D2',null,'F#2',null,
     ],
     melody:[
-      'G4',null,'B4',null,'D5',null,null,null,
-      null,null,'B4',null,'G4',null,null,null,
-      'C5',null,'E5',null,'G5',null,null,null,
-      null,null,'E5',null,'C5',null,null,null,
-      'D5',null,'F#5',null,'A5',null,null,null,
-      null,null,'F#5',null,'D5',null,null,null,
+      'E4',null,'G4',null,'B4',null,'E5',null,
+      null,null,'B4',null,'G4',null,'E4',null,
+      'C5',null,'G4',null,'E4',null,'C4',null,
+      null,null,'G4',null,'B4',null,null,null,
       'G4',null,'B4',null,'D5',null,'G5',null,
-      null,null,'D5',null,'G4',null,null,null,
+      null,null,'D5',null,'B4',null,'G4',null,
+      'E5',null,'D5',null,'B4',null,'G4',null,
+      'A4',null,'F#4',null,'D4',null,null,null,
     ],
     pad:[
-      ['G3','B3','D4'],null,null,null,null,null,null,null,
+      ['E3','G3','B3'],null,null,null,null,null,null,null,
       ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['G2','B2','D3'],null,null,null,null,null,null,null,
       ['D3','F#3','A3'],null,null,null,null,null,null,null,
-      ['G3','B3','D4'],null,null,null,null,null,null,null,
-      ['G3','B3','D4'],null,null,null,null,null,null,null,
+      ['E3','G3','B3'],null,null,null,null,null,null,null,
       ['C3','E3','G3'],null,null,null,null,null,null,null,
+      ['A2','C3','E3'],null,null,null,null,null,null,null,
       ['D3','F#3','A3'],null,null,null,null,null,null,null,
-      ['G3','B3','D4'],null,null,null,null,null,null,null,
     ],
   },
 ];
 
 function selectTrack(n){
   currentTrack=n;
-  [0,1,2].forEach(i=>document.getElementById('track'+i).classList.toggle('active',i===n));
-  if(audioReady&&state==='playing') scheduleMusic(TRACKS[n]);
+  // Sync both sets of track buttons
+  [0,1,2].forEach(i=>{
+    const t=document.getElementById('track'+i); if(t) t.classList.toggle('active',i===n);
+    const p=document.getElementById('pauseTrack'+i); if(p) p.classList.toggle('active',i===n);
+  });
+  if(audioReady&&(state==='playing'||state==='paused')) scheduleMusic(TRACKS[n]);
 }
 
 async function startAudio(){
@@ -1004,6 +1115,7 @@ async function startAudio(){
 
     audioReady=true;
     Tone.getTransport().start();
+    scheduleMusic(MENU_TRACK); // peaceful menu music
   }catch(e){console.warn('Audio failed:',e);}
 }
 
@@ -1014,10 +1126,11 @@ function scheduleMusic(track){
   Tone.getTransport().bpm.value=track.bpm;
   musicEventId=Tone.getTransport().scheduleRepeat(time=>{
     if(isMuted()||!audioReady)return;
-    const step=musicStep%track.melody.length;
-    const mn=track.melody[step];  if(mn)meloSynth.triggerAttackRelease(mn,'8n',time);
-    const bn=track.bass[step];    if(bn)bassSynth.triggerAttackRelease(bn,'4n',time);
-    const pc=track.pad[step];     if(pc)padSynth.triggerAttackRelease(pc,'2n',time);
+    const stepLen=track.melody.length;
+    const step=musicStep%stepLen;
+    const mn=track.melody[step]; if(mn)meloSynth.triggerAttackRelease(mn,'8n',time);
+    const bn=track.bass[step];   if(bn)bassSynth.triggerAttackRelease(bn,'8n',time);
+    const pc=track.pad[step];    if(pc)padSynth.triggerAttackRelease(pc,'2n',time);
     musicStep++;
   },'8n',0);
 }
