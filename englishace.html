@@ -682,21 +682,35 @@ function startGame(){
 }
 
 function endGame(){
+  // Set state FIRST — stops masterLoop from doing anything else
   state='idle';
-  document.getElementById('trackSelector').style.display='none';
-  document.getElementById('pauseBtn').classList.remove('visible');
-  const psh2=document.getElementById('pauseSubHint');if(psh2)psh2.style.display='none';
-  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
-  document.getElementById('pauseOverlay').classList.remove('visible');
-  sfxGameOver();switchToMenuMusic();
+
+  // Hide game UI elements
+  try {
+    document.getElementById('trackSelector').style.display='none';
+    document.getElementById('pauseBtn').classList.remove('visible');
+    const psh2=document.getElementById('pauseSubHint');if(psh2)psh2.style.display='none';
+    document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+    document.getElementById('pauseOverlay').classList.remove('visible');
+  } catch(e){}
+
+  // Audio — in try/catch so a music error never blocks the end screen
+  try { sfxGameOver(); } catch(e){}
+  try { switchToMenuMusic(); } catch(e){}
+
+  // Update best score
   if(score>bestScore){bestScore=score;localStorage.setItem('ace_best',bestScore);}
-  document.getElementById('startHi').textContent='BEST: '+bestScore;
-  document.getElementById('endScoreNum').textContent=score;
-  document.getElementById('endWave').textContent=wave;
-  document.getElementById('endCorrect').textContent=correctCount;
-  document.getElementById('endStreak').textContent=bestStreak;
-  document.getElementById('endScreen').classList.remove('hidden');
-  renderLeaderboard('englishace','lbBody');
+
+  // Show end screen — guaranteed even if audio failed
+  try {
+    document.getElementById('startHi').textContent='BEST: '+bestScore;
+    document.getElementById('endScoreNum').textContent=score;
+    document.getElementById('endWave').textContent=wave;
+    document.getElementById('endCorrect').textContent=correctCount;
+    document.getElementById('endStreak').textContent=bestStreak;
+    document.getElementById('endScreen').classList.remove('hidden');
+    renderLeaderboard('englishace','lbBody');
+  } catch(e){ console.error('endGame display error:', e); }
 }
 
 function showStart(){

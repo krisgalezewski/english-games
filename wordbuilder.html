@@ -549,6 +549,8 @@ function finalEnd() {
 
 async function doSubmit(){
   await handleScoreSubmit('wordbuilder_'+diff, parseInt(document.getElementById('endCard').dataset.score), 'nameInput', 'submitArea', 'lbBody');
+  // Ensure LB tab shows correct mode after submission
+  switchWbLb(diff);
 }
 
 // Init
@@ -556,8 +558,12 @@ document.getElementById('switchBtn').textContent = 'Switch to Hard';
 loadDict().then(()=>restartGame());
 
 function switchWbLb(d){
-  ['easy','hard'].forEach(x=>document.getElementById('lbWb'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===d));
-  renderLeaderboard('wordbuilder_'+d,'lbBody');
+  // IDs are lbWbE and lbWbH
+  const eBtn = document.getElementById('lbWbE');
+  const hBtn = document.getElementById('lbWbH');
+  if(eBtn) eBtn.classList.toggle('active', d==='easy');
+  if(hBtn) hBtn.classList.toggle('active', d==='hard');
+  renderLeaderboard('wordbuilder_'+d, 'lbBody');
 }
 </script>
 </body>

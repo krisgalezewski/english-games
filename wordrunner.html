@@ -122,11 +122,19 @@ body { overflow:hidden; background:#0a0a14; }
   <div class="tagline">Jump to collect · duck to dodge · master affixes</div>
   <div class="high-score" id="hiScore">Best: 0</div>
 
+  <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
+    <div class="eyebrow" style="font-size:.6rem">Difficulty</div>
+    <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
+      <button class="diff-tab active" id="diffE" onclick="setDifficulty('easy')">Easy — words coloured</button>
+      <button class="diff-tab"        id="diffH" onclick="setDifficulty('hard')">Hard — all same colour</button>
+    </div>
+  </div>
+
   <button class="btn-primary" style="font-size:1rem;padding:.8rem 2.5rem" onclick="startGame()">RUN →</button>
 
   <div class="instr-box">
-    <strong>JUMP</strong> — <span class="key tip-kb">Space / ↑</span><span class="tip-mobile">tap right side</span> &nbsp;·&nbsp; collect ✅ words in the air<br>
-    <strong>DUCK</strong> — <span class="key tip-kb">↓</span><span class="tip-mobile">tap left side</span> &nbsp;·&nbsp; slide under ❌ words<br>
+    <strong>JUMP</strong> — <span class="key tip-kb">↑ arrow</span><span class="tip-mobile">tap right side</span> &nbsp;·&nbsp; collect ✅ words in the air<br>
+    <strong>DUCK</strong> — <span class="key tip-kb">↓ arrow</span><span class="tip-mobile">tap left side</span> &nbsp;·&nbsp; slide under ❌ words<br>
     <strong>NATURAL</strong> — some words are at running height: collect ✅, avoid ❌<br>
     <strong>ROUNDS 1–5</strong> — Prefixes &nbsp;·&nbsp; <strong>6–8</strong> — Suffixes &nbsp;·&nbsp; <strong>9–10</strong> — Mixed<br>
     <strong>LIVES</strong> — 3 hearts &nbsp;·&nbsp; <strong>PAUSE</strong> — <span class="key tip-kb">Space</span><span class="tip-mobile">double-tap</span>
@@ -314,6 +322,7 @@ const STARS = Array.from({length:100}, ()=>({
 
 // ── State ─────────────────────────────────────────────────────────
 let state = 'idle'; // idle | playing | paused | dead
+let difficulty = 'easy'; // 'easy' (coloured) | 'hard' (uniform)
 let round = 1, score = 0, lives = 3, streak = 0, bestStreak = 0, correctCount = 0;
 let bestScore = parseInt(localStorage.getItem('ar_best') || '0');
 let frameCount = 0, lastTime = 0;
@@ -652,26 +661,40 @@ function drawRunner() {
   ctx.restore();
 }
 
-// ── Draw: word — fully transparent background, uniform white ──────
+// ── Draw: word — transparent bg, crisp text, two difficulty styles ──
 function drawWord(w) {
   ctx.save();
   ctx.globalAlpha = w.alpha;
 
-  ctx.font = 'bold 17px Orbitron, monospace';
-  if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 16);
+  ctx.font = 'bold 16px Orbitron, monospace';
+  if (!w.w) w.w = Math.max(60, ctx.measureText(w.text).width + 14);
 
-  // Completely transparent background — just the word floating
-  // Subtle white glow so text is readable against any background
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 17px Orbitron, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(255,255,255,0.8)';
-  ctx.shadowBlur = 10;
-  ctx.fillText(w.text, w.x, w.y);
-  // Second pass for crispness
-  ctx.shadowBlur = 2;
-  ctx.fillText(w.text, w.x, w.y);
+
+  if (difficulty === 'easy') {
+    // Easy: blue = collect, red = avoid — clear colour coding
+    const col = w.correct ? '#5bc8f5' : '#ff6b6b';
+    // Very faint background tint for contrast against dark sky
+    ctx.fillStyle = w.correct ? 'rgba(0,100,180,0.18)' : 'rgba(180,30,30,0.18)';
+    ctx.beginPath();
+    const rx = w.x - w.w/2 - 4, ry = w.y - 14;
+    ctx.roundRect(rx, ry, w.w+8, 28, 6);
+    ctx.fill();
+    // Clean, no-glow text
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = col;
+    ctx.fillText(w.text, w.x, w.y);
+    // Second pass for extra crispness (no glow — just solid)
+    ctx.fillText(w.text, w.x, w.y);
+  } else {
+    // Hard: all same colour — white, completely transparent background
+    // No shadow/glow — just crisp solid text
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#e8eaf6';
+    ctx.fillText(w.text, w.x, w.y);
+    ctx.fillText(w.text, w.x, w.y);
+  }
 
   ctx.restore();
 }
@@ -883,7 +906,7 @@ function endGame(won){
   document.getElementById('pauseBtn').classList.remove('visible');
   document.getElementById('trackSel').style.display='none';
   document.getElementById('endScreen').classList.remove('hidden');
-  renderLeaderboard('affixrunner','lbBody');
+  renderLeaderboard('affixrunner_'+difficulty,'lbBody');
   if(won) sfxLevelComplete();
 }
 
@@ -905,8 +928,8 @@ function togglePause(){
 async function doSubmit(){
   const name=document.getElementById('nameInput').value.trim();
   if(!name)return;
-  const ok=await window.submitScore('affixrunner',name,score);
-  if(ok){document.getElementById('nameInput').value='';renderLeaderboard('affixrunner','lbBody');}
+  const ok=await window.submitScore('affixrunner_'+difficulty,name,score);
+  if(ok){document.getElementById('nameInput').value='';renderLeaderboard('affixrunner_'+difficulty,'lbBody');}
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -1059,6 +1082,12 @@ const TRACKS = [
     ],
   },
 ];
+
+function setDifficulty(d){
+  difficulty = d;
+  document.getElementById('diffE').classList.toggle('active', d==='easy');
+  document.getElementById('diffH').classList.toggle('active', d==='hard');
+}
 
 function selectTrack(n){
   currentTrack=n;
