@@ -89,7 +89,7 @@ body { overflow:hidden; background:#0a0a14; }
 </div>
 
 <nav id="topNav">
-  <a href="index.html">← GAMES</a>
+  <a href="index.html" onclick="stopMusic(true)">← GAMES</a>
   <span class="nav-title">🏃 Affix Runner</span>
   <div style="display:flex;gap:.4rem;align-items:center">
     <div id="trackSel" style="display:none;gap:.25rem" class="track-bar">
@@ -137,7 +137,7 @@ body { overflow:hidden; background:#0a0a14; }
     <strong>DUCK</strong> — <span class="key tip-kb">↓ arrow</span><span class="tip-mobile">tap left side</span> &nbsp;·&nbsp; slide under ❌ words<br>
     <strong>NATURAL</strong> — some words are at running height: collect ✅, avoid ❌<br>
     <strong>ROUNDS 1–5</strong> — Prefixes &nbsp;·&nbsp; <strong>6–8</strong> — Suffixes &nbsp;·&nbsp; <strong>9–10</strong> — Mixed<br>
-    <strong>LIVES</strong> — 3 hearts &nbsp;·&nbsp; <strong>PAUSE</strong> — <span class="key tip-kb">Space</span><span class="tip-mobile">double-tap</span>
+    <strong>LIVES</strong> — 5 hearts &nbsp;·&nbsp; <strong>PAUSE</strong> — <span class="key tip-kb">Space</span><span class="tip-mobile">double-tap</span><br><strong>SHIELDS & LIVES</strong> — catch the floating 🛡️ and ❤️ powerups!
   </div>
 </div>
 
@@ -156,8 +156,10 @@ body { overflow:hidden; background:#0a0a14; }
     <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-    <button class="btn-primary" onclick="startGame()">Play again</button>
-    <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    <button class="btn-primary"  onclick="startGame()">Play again</button>
+    <button class="btn-ghost"    onclick="switchEndDiff()">Switch to <span id="switchDiffLabel">Hard</span></button>
+    <button class="btn-ghost"    onclick="showMainMenu()">Main menu</button>
+    <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center" onclick="stopMusic(true)">← All games</a>
   </div>
   <div style="width:100%;max-width:340px;margin-top:.5rem">
     <div class="lb-wrap"><h2 style="font-size:1rem;margin-bottom:.5rem">🏆 Leaderboard</h2>
@@ -196,6 +198,7 @@ const PREFIX_WORDS = [
   {word:'UNABLE',      correct:true},  {word:'UNCLEAR',     correct:true},
   {word:'UNCOVER',     correct:true},  {word:'UNTIDY',      correct:true},
   {word:'UNLOAD',      correct:true},  {word:'UNFIT',       correct:true},
+  {word:'UNSURE',      correct:true},  {word:'UNSAFE',      correct:true},
   // RE- valid
   {word:'REWRITE',     correct:true},  {word:'REBUILD',     correct:true},
   {word:'REPLAY',      correct:true},  {word:'REFILL',      correct:true},
@@ -203,48 +206,71 @@ const PREFIX_WORDS = [
   {word:'REOPEN',      correct:true},  {word:'REMIND',      correct:true},
   {word:'REPLACE',     correct:true},  {word:'RECHARGE',    correct:true},
   {word:'REFORM',      correct:true},  {word:'REVIEW',      correct:true},
+  {word:'RESTART',     correct:true},  {word:'RETHINK',     correct:true},
   // DIS- valid
   {word:'DISAGREE',    correct:true},  {word:'DISAPPEAR',   correct:true},
   {word:'DISHONEST',   correct:true},  {word:'DISLIKE',     correct:true},
   {word:'DISCOVER',    correct:true},  {word:'DISTRUST',    correct:true},
   {word:'DISORDER',    correct:true},  {word:'DISOBEY',     correct:true},
   {word:'DISCONNECT',  correct:true},  {word:'DISQUALIFY',  correct:true},
+  {word:'DISCOMFORT',  correct:true},  {word:'DISMAY',      correct:true},
   // MIS- valid
   {word:'MISSPELL',    correct:true},  {word:'MISLEAD',     correct:true},
   {word:'MISTAKE',     correct:true},  {word:'MISUSE',      correct:true},
   {word:'MISPLACE',    correct:true},  {word:'MISBEHAVE',   correct:true},
   {word:'MISJUDGE',    correct:true},  {word:'MISPRINT',    correct:true},
   {word:'MISQUOTE',    correct:true},  {word:'MISMANAGE',   correct:true},
+  {word:'MISREAD',     correct:true},  {word:'MISCOUNT',    correct:true},
   // PRE- valid
   {word:'PREVIEW',     correct:true},  {word:'PREHEAT',     correct:true},
   {word:'PREPAID',     correct:true},  {word:'PREDICT',     correct:true},
   {word:'PRECOOKED',   correct:true},  {word:'PREARRANGED', correct:true},
   {word:'PRERECORDED', correct:true},  {word:'PRESCHOOL',   correct:true},
+  {word:'PRECAUTION',  correct:true},  {word:'PREHISTORIC', correct:true},
   // OVER- valid
   {word:'OVERWORK',    correct:true},  {word:'OVEREAT',     correct:true},
   {word:'OVERDUE',     correct:true},  {word:'OVERLOAD',    correct:true},
+  {word:'OVERCOME',    correct:true},  {word:'OVERLOOK',    correct:true},
+  {word:'OVERREACT',   correct:true},  {word:'OVERCHARGE',  correct:true},
   // UNDER- valid
   {word:'UNDERLINE',   correct:true},  {word:'UNDERMINE',   correct:true},
   {word:'UNDERRATE',   correct:true},  {word:'UNDERPAID',   correct:true},
-  // IR-/IL-/IM-/IN- valid
+  {word:'UNDERCOVER',  correct:true},  {word:'UNDERESTIMATE',correct:true},
+  // IR- valid (before r-)
   {word:'IRREGULAR',   correct:true},  {word:'IRRESPONSIBLE',correct:true},
+  {word:'IRRELEVANT',  correct:true},  {word:'IRRATIONAL',  correct:true},
+  {word:'IRREVERSIBLE',correct:true},  {word:'IRRESISTIBLE',correct:true},
+  // IL- valid (before l-)
   {word:'ILLEGAL',     correct:true},  {word:'ILLITERATE',  correct:true},
+  {word:'ILLOGICAL',   correct:true},  {word:'ILLEGIBLE',   correct:true},
+  // IM- valid (before m/p)
   {word:'IMPOSSIBLE',  correct:true},  {word:'IMPOLITE',    correct:true},
+  {word:'IMMATURE',    correct:true},  {word:'IMPATIENT',   correct:true},
+  {word:'IMPERFECT',   correct:true},  {word:'IMMORAL',     correct:true},
+  // IN- valid
   {word:'INCOMPLETE',  correct:true},  {word:'INDIRECT',    correct:true},
+  {word:'INVISIBLE',   correct:true},  {word:'INFORMAL',    correct:true},
+  {word:'INCAPABLE',   correct:true},  {word:'INSECURE',    correct:true},
+  // A- valid (not, without)
+  {word:'AMORAL',      correct:true},  {word:'ATYPICAL',    correct:true},
+  {word:'ASYMMETRIC',  correct:true},  {word:'APOLITICAL',  correct:true},
 
-  // WRONG combinations — plausible but incorrect
+  // ── WRONG combinations — plausible but incorrect ──────────────
   {word:'DISUNHAPPY',  correct:false}, {word:'REHAPPY',     correct:false},
   {word:'MISUNLOCK',   correct:false}, {word:'PREUNPACK',   correct:false},
   {word:'UNDISCOVER',  correct:false}, {word:'OVERREWRITE', correct:false},
   {word:'UNREPLACE',   correct:false}, {word:'MISREVIEW',   correct:false},
   {word:'DISRELIABLE', correct:false}, {word:'UNREUSE',     correct:false},
-  {word:'PREOBEY',     correct:false}, {word:'MISPRESCHOOL',correct:false},
-  {word:'DISMISSPELL', correct:false}, {word:'REOVERWORK',  correct:false},
+  {word:'PREOBEY',     correct:false}, {word:'IRRESTART',   correct:false},
+  {word:'ILOVERLOOK',  correct:false}, {word:'REOVERWORK',  correct:false},
   {word:'UNDISLIKE',   correct:false}, {word:'PREUNFIT',    correct:false},
   {word:'MISSREMIND',  correct:false}, {word:'REILLEGAL',   correct:false},
   {word:'DIRREASON',   correct:false}, {word:'PREIMPOLITE', correct:false},
   {word:'OVERREOPEN',  correct:false}, {word:'UNDISQUALIFY',correct:false},
-  {word:'MISIRREGULAR',correct:false}, {word:'REMISSPELL',  correct:false},
+  {word:'MISAMORAL',   correct:false}, {word:'REMISSPELL',  correct:false},
+  {word:'IMIMPOLITE',  correct:false}, {word:'INUNHAPPY',   correct:false},
+  {word:'AIRELEVANT',  correct:false}, {word:'OVERILLEGAL', correct:false},
+  {word:'PREINSECURE', correct:false}, {word:'DISIMMATURE', correct:false},
 ];
 
 const SUFFIX_WORDS = [
@@ -359,11 +385,16 @@ let lastTap = 0;
 
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
+  // Space = PAUSE only (never jump) — prevents jump-on-resume bug
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (state==='playing'||state==='paused') togglePause();
+    return; // don't fall through to jump
+  }
   if (state === 'playing') {
-    if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); if(!runner.isJumping) doJump(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); if(!runner.isJumping) doJump(); }
     if (e.key === 'ArrowDown') { e.preventDefault(); doDuck(); }
   }
-  if (e.code === 'Space' && (state==='playing'||state==='paused')) { e.preventDefault(); togglePause(); }
 });
 window.addEventListener('keyup', e => { keys[e.key]=false; });
 
@@ -856,24 +887,30 @@ function masterLoop(ts){
     const hbY = ry_top + rh_actual*0.18; // shift down slightly (head area exempt)
     const wbW = w.w * 0.75; // word hitbox also tighter
     const wbH = w.h * 0.6;
-    if(runner.invincible===0 &&
-       overlap(hbX, hbY, hbW, hbH,
-               w.x-wbW/2, w.y-wbH/2, wbW, wbH)){
+    const collides = overlap(hbX, hbY, hbW, hbH, w.x-wbW/2, w.y-wbH/2, wbW, wbH);
+    if(collides){
       w.hit=true;
       if(w.correct){
+        // Always collect correct words — even with shield active
         const pts=10*(1+Math.floor(streak/3));
         score+=pts; streak++; correctCount++;
         if(streak>bestStreak)bestStreak=streak;
         burst(w.x,w.y,'#4fc3f7',16);
         textPop(runner.x,ry_top-25,'+'+pts,'#ffd54f');
         sfxCollect();
-      } else {
+      } else if(runner.invincible===0){
+        // Wrong word — only damages if not shielded
         lives--; streak=0;
         runner.invincible=80;
         burst(runner.x,runner.y,'#ef5350',18);
         textPop(runner.x,ry_top-25,'-1 ❤️','#ef5350');
         sfxMiss();
         if(lives<=0){endGame(false);return;}
+      } else {
+        // Shielded — absorb wrong word, show shield effect
+        runner.invincible=Math.max(runner.invincible, 40); // brief extra immunity
+        burst(runner.x,runner.y,'#ffd54f',10);
+        textPop(runner.x,ry_top-25,'🛡️','#ffd54f');
       }
     }
   }
@@ -959,6 +996,7 @@ function endGame(won){
     score>=400?'Great run — keep practising!':'Keep going — affixes take time!';
   document.getElementById('pauseBtn').classList.remove('visible');
   document.getElementById('trackSel').style.display='none';
+  document.getElementById('switchDiffLabel').textContent = difficulty==='easy' ? 'Hard' : 'Easy';
   document.getElementById('endScreen').classList.remove('hidden');
   renderLeaderboard('affixrunner_'+difficulty,'lbBody');
   if(won) sfxLevelComplete();
@@ -977,6 +1015,20 @@ function togglePause(){
     document.getElementById('pauseBtn').textContent='⏸ PAUSE';
     if(audioReady)Tone.getTransport().start();
   }
+}
+
+function showMainMenu(){
+  document.getElementById('endScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  // Switch to menu music
+  if(audioReady){ scheduleMusic(MENU_TRACK); Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,1); }
+}
+
+function switchEndDiff(){
+  const next = difficulty==='easy' ? 'hard' : 'easy';
+  setDifficulty(next);
+  document.getElementById('switchDiffLabel').textContent = difficulty==='easy' ? 'Hard' : 'Easy';
+  startGame();
 }
 
 async function doSubmit(){
@@ -1218,8 +1270,25 @@ function scheduleMusic(track){
   },'8n',0);
 }
 
-function stopMusic(){
+function stopMusic(fade=false){
   if(musicEventId!==null){Tone.getTransport().cancel(musicEventId);musicEventId=null;}
+  if(!fade || !audioReady) return;
+  // Fade out over 1.5s then stop transport
+  try{
+    if(musicGain) musicGain.gain.rampTo(0, 1.5);
+    setTimeout(()=>{
+      try{
+        Tone.getTransport().stop();
+        Tone.getTransport().cancel();
+        // Dispose synths to kill any sustained sounds (crucial for mobile bass hum)
+        [meloSynth,bassSynth,padSynth,fxSynth,fxBell,noiseFX].forEach(s=>{
+          try{ if(s) s.dispose(); }catch(e){}
+        });
+        meloSynth=bassSynth=padSynth=fxSynth=fxBell=noiseFX=null;
+        audioReady=false;
+      }catch(e){}
+    }, 1600);
+  }catch(e){}
 }
 
 function sfxCollect(){
@@ -1257,13 +1326,34 @@ document.getElementById('muteBtn').addEventListener('click',async()=>{
 
 // ── Landscape check ───────────────────────────────────────────────
 function checkOrientation(){
-  const portrait=window.innerHeight>window.innerWidth&&window.innerWidth<600;
-  document.getElementById('rotatePlease').style.display=portrait?'flex':'none';
-  if(portrait&&state==='playing')state='paused_orient';
-  if(!portrait&&state==='paused_orient')state='playing';
+  const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 600;
+  document.getElementById('rotatePlease').style.display = portrait ? 'flex' : 'none';
+  if(portrait && state==='playing') state='paused_orient';
+  if(!portrait && state==='paused_orient') state='playing';
+
+  // Auto fullscreen on landscape mobile, exit on portrait
+  const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if(isMobile){
+    if(!portrait){
+      // Landscape — request fullscreen
+      const el = document.documentElement;
+      if(!document.fullscreenElement && el.requestFullscreen){
+        el.requestFullscreen().catch(()=>{}); // ignore if blocked
+      } else if(!document.fullscreenElement && el.webkitRequestFullscreen){
+        el.webkitRequestFullscreen(); // iOS Safari
+      }
+    } else {
+      // Portrait — exit fullscreen
+      if(document.fullscreenElement && document.exitFullscreen){
+        document.exitFullscreen().catch(()=>{});
+      } else if(document.webkitFullscreenElement && document.webkitExitFullscreen){
+        document.webkitExitFullscreen();
+      }
+    }
+  }
 }
-window.addEventListener('resize',checkOrientation);
-window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', ()=>setTimeout(checkOrientation, 200));
 checkOrientation();
 
 // Start audio on first touch
