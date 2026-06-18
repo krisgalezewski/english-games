@@ -164,7 +164,7 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
   <!-- IF clause card -->
   <div class="if-card" id="ifCard">
     <div>
-      <div class="if-label">Complete the conditional sentence</div>
+      <div class="if-label" id="taskLabel">Complete the conditional sentence</div>
       <div id="typeBadge"></div>
     </div>
     <div class="if-text" id="ifText">Loading…</div>
@@ -172,13 +172,13 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 
   <!-- Drop zone -->
   <div class="drop-zone" id="dropZone">
-    <span class="drop-hint" id="dropHint">Drag the correct ending here · or tap to select</span>
+    <span class="drop-hint" id="dropHint">Drag your answer here · or tap to select</span>
     <span class="dropped-text" id="droppedText" style="display:none"></span>
   </div>
 
   <!-- Options -->
   <div class="options-area">
-    <div class="options-label">Choose the correct THEN clause — drag or tap</div>
+    <div class="options-label" id="optionsLabel">Choose the correct THEN clause — drag or tap</div>
     <div class="options-grid" id="optionsGrid"></div>
   </div>
 
@@ -521,10 +521,10 @@ const ALL_QUESTIONS = [
     note:"He is stubborn (present personality) — so he ignored medical advice in the past. Mixed 2→3." },
 
   { t:'m23',
-    if:"If I were more patient,",
-    c:"I would have waited for a better moment to raise the issue.",
-    w:["I would wait for a better moment to raise the issue.","I will have waited for a better moment.","I waited for a better moment to raise the issue."],
-    note:"My present character (impatient) explains a past action (raising the issue at the wrong moment)." },
+    if:"If I were more patient by nature,",
+    c:"I would have handled that confrontation much better last week.",
+    w:["I would handle confrontation much better in general.","I will have handled it better.","I handled that confrontation better last week."],
+    note:"A permanent present trait explains a specific past event (last week). 'Would handle' (no past reference) is wrong for 2→3 mixed — we need 'would have handled' + past time marker." },
 
   // ══ INVERSION — 1ST CONDITIONAL (Should + subject) ═════════════════
   { t:'inv1',
@@ -629,9 +629,9 @@ const ALL_QUESTIONS = [
 
   { t:'invm23',
     if:"Were he less impulsive,",
-    c:"he would have thought before sending that message.",
-    w:["he would think before sending that message.","he will have thought before sending that message.","he thought before sending that message."],
-    note:"His present character (impulsive) explains a past action (sending the message hastily). 'Were he less impulsive' is the inverted form of 'If he were less impulsive'." },
+    c:"he would have thought twice before sending that message yesterday.",
+    w:["he would think twice before sending messages.","he will have thought twice about that message.","he thought twice before sending that message yesterday."],
+    note:"'Were he less impulsive' = inverted 'If he were less impulsive'. His present character explains a specific past action (yesterday). Mixed 2→3 inversion." },
 
   { t:'invm23',
     if:"Were she a better communicator,",
@@ -641,12 +641,34 @@ const ALL_QUESTIONS = [
 ];
 
 // ── Difficulty filter ───────────────────────────────────────────────
+// Build ifw (wrong IF options) dynamically from same-type question pool
+// Called once after ALL_QUESTIONS is defined
+function buildIfwOptions(){
+  const byType = {};
+  ALL_QUESTIONS.forEach(q => {
+    if(!byType[q.t]) byType[q.t] = [];
+    byType[q.t].push(q.if);
+  });
+  ALL_QUESTIONS.forEach(q => {
+    if(!q.ifw){
+      // Pick 3 wrong IF clauses from same type (different from q.if)
+      const pool = (byType[q.t]||[]).filter(x => x !== q.if);
+      q.ifw = pool.sort(()=>Math.random()-.5).slice(0,3);
+    }
+  });
+}
+buildIfwOptions();
+
+// ── Difficulty filter ─────────────────────────────────────────────────
 const DIFF_TYPES = {
   beginner:     ['zero','first','second'],
   intermediate: ['zero','first','second','third'],
   advanced:     ['zero','first','second','third','m32','m23'],
-  expert:       ['zero','first','second','third','m32','m23','inv1','inv2','inv3','invm32','invm23'],
+  expert:       ['m32','m23','inv1','inv2','inv3','invm32','invm23'], // heavy on advanced types
 };
+
+// Expert gets a sprinkling of basic types too (max 2 per round)
+const EXPERT_BASIC = ['zero','first','second','third'];
 
 // ── Game state ──────────────────────────────────────────────────────
 const ROUND_SIZE = 10;
@@ -683,13 +705,30 @@ function switchEndDiff(){
 // ── Init ────────────────────────────────────────────────────────────
 function initRound(){
   // Filter questions by difficulty
-  const pool = ALL_QUESTIONS.filter(q => DIFF_TYPES[currentDiff].includes(q.t));
-  // Use freshIndices per-level so each difficulty has independent tracking
   const key = 'conditionals_'+currentDiff;
-  const indices = freshIndices(key, pool, Math.min(ROUND_SIZE, pool.length));
-  indices.forEach(i => markSeen(key, i));
-  let selected = indices.map(i => pool[i]);
+  let pool, selected;
 
+  if(currentDiff === 'expert'){
+    // Expert: 8 advanced types + 2 from basic types
+    const advPool   = ALL_QUESTIONS.filter(q => DIFF_TYPES.expert.includes(q.t));
+    const basicPool = ALL_QUESTIONS.filter(q => EXPERT_BASIC.includes(q.t));
+    const advIdx    = freshIndices(key+'_adv', advPool, Math.min(8, advPool.length));
+    const basicIdx  = freshIndices(key+'_basic', basicPool, Math.min(2, basicPool.length));
+    advIdx.forEach(i => markSeen(key+'_adv', i));
+    basicIdx.forEach(i => markSeen(key+'_basic', i));
+    selected = [...advIdx.map(i=>advPool[i]), ...basicIdx.map(i=>basicPool[i])];
+  } else {
+    pool = ALL_QUESTIONS.filter(q => DIFF_TYPES[currentDiff].includes(q.t));
+    const indices = freshIndices(key, pool, Math.min(ROUND_SIZE, pool.length));
+    indices.forEach(i => markSeen(key, i));
+    selected = indices.map(i => pool[i]);
+  }
+
+  // Flip roughly half the questions to reversed mode (find the IF clause)
+  selected = selected.map((q, i) => {
+    const shouldReverse = i % 2 === 1; // alternate: even=find result, odd=find IF
+    return {...q, reversed: shouldReverse && q.ifw && q.ifw.length >= 3};
+  });
   // Shuffle to avoid consecutive same conditional type
   selected = avoidConsecutiveTypes(selected);
   roundQs = selected;
@@ -773,13 +812,34 @@ function loadQuestion(){
     badgeEl.innerHTML = `<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
   }
 
-  // IF clause
-  document.getElementById('ifText').textContent = q.if;
+  // Update task label and options label based on direction
+  const taskLabelEl    = document.getElementById('taskLabel');
+  const optionsLabelEl = document.getElementById('optionsLabel');
+
+  if(q.reversed){
+    // Show the RESULT clause — student finds the correct IF clause
+    taskLabelEl.textContent    = 'Find the correct IF clause';
+    optionsLabelEl.textContent = 'Choose the correct IF clause — drag or tap';
+    document.getElementById('ifText').textContent = q.c; // show result
+  } else {
+    // Show the IF clause — student finds the correct result clause
+    taskLabelEl.textContent    = 'Complete the conditional sentence';
+    optionsLabelEl.textContent = 'Choose the correct THEN clause — drag or tap';
+    document.getElementById('ifText').textContent = q.if;
+  }
 
   // Build shuffled options
+  let correctOpt, wrongOpts;
+  if(q.reversed){
+    correctOpt = q.if;
+    wrongOpts  = (q.ifw && q.ifw.length >= 3) ? q.ifw.slice(0,3) : q.w;
+  } else {
+    correctOpt = q.c;
+    wrongOpts  = q.w;
+  }
   const options = [
-    {text:q.c, correct:true},
-    ...q.w.map(w=>({text:w,correct:false}))
+    {text:correctOpt, correct:true},
+    ...wrongOpts.map(w=>({text:w,correct:false}))
   ].sort(()=>Math.random()-.5);
 
   const grid=document.getElementById('optionsGrid'); grid.innerHTML='';
@@ -948,12 +1008,15 @@ function endRound(){
     const el=document.createElement('div');
     el.className='review-item '+(r.skipped?'skip':r.isCorrect?'correct':'wrong');
     el.innerHTML=`
-      <div class="rv-sentence">"${r.q.if} <strong>${r.isCorrect?r.q.c:(r.chose||'—')}</strong>"</div>
+      <div class="rv-sentence">${r.q.reversed
+        ? '"<strong>' + (r.isCorrect?r.q.if:(r.chose||'—')) + '</strong> ' + r.q.c + '"'
+        : '"' + r.q.if + ' <strong>' + (r.isCorrect?r.q.c:(r.chose||'—')) + '</strong>"'
+      }</div>
       <div style="display:flex;gap:.5rem;align-items:center">
         <span class="type-badge" style="background:${type.color};font-size:.5rem;padding:.15rem .5rem">${type.label}</span>
         <span class="rv-tag" style="color:${r.isCorrect?'var(--correct)':'var(--wrong)'}">${r.isCorrect?'✓ correct':r.skipped?'time out':'✗ wrong'}</span>
       </div>
-      ${!r.isCorrect&&!r.skipped?`<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Correct: "${r.q.c}"</div>`:''}`;
+      ${!r.isCorrect&&!r.skipped?`<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Correct: "${r.q.reversed?r.q.if:r.q.c}"</div>`:''}`;
     grid.appendChild(el);
   });
 
