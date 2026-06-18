@@ -139,10 +139,11 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 <main>
   <!-- Difficulty tabs -->
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
-    <div class="diff-tabs">
+    <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
       <button class="diff-tab active" id="tabA" onclick="setDiff('beginner')">Beginner</button>
       <button class="diff-tab"        id="tabB" onclick="setDiff('intermediate')">Intermediate</button>
       <button class="diff-tab"        id="tabC" onclick="setDiff('advanced')">Advanced</button>
+      <button class="diff-tab"        id="tabD" onclick="setDiff('expert')">Expert</button>
     </div>
     <div class="dots" id="dots"></div>
   </div>
@@ -212,10 +213,11 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 <div class="lb-section">
   <div class="lb-wrap">
     <h2>🏆 Leaderboard</h2>
-    <div class="diff-tabs" style="margin-bottom:.75rem">
+    <div class="diff-tabs" style="margin-bottom:.75rem;flex-wrap:wrap;gap:.3rem">
       <button class="diff-tab active" id="lbA" onclick="switchLb('beginner')">Beginner</button>
       <button class="diff-tab"        id="lbB" onclick="switchLb('intermediate')">Intermediate</button>
       <button class="diff-tab"        id="lbC" onclick="switchLb('advanced')">Advanced</button>
+      <button class="diff-tab"        id="lbD" onclick="switchLb('expert')">Expert</button>
     </div>
     <table class="lb-table">
       <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
@@ -246,6 +248,16 @@ const TYPES = {
     rule:'If + past perfect, would + infinitive. An unreal PAST condition with a present result. The past event still affects the present.' },
   m23:   { label:'Mixed conditional (2→3)', color:'var(--cm23)',
     rule:'If + past simple, would have + past participle. An unreal PRESENT state that would have changed a past event.' },
+  inv1:  { label:'1st conditional — inversion', color:'var(--c1)',
+    rule:'Should + subject + infinitive, will + infinitive. Formal inversion replaces "if" with "should". Used in formal writing and speech.' },
+  inv2:  { label:'2nd conditional — inversion', color:'var(--c2)',
+    rule:'Were + subject + to + infinitive / Were + subject, would + infinitive. Formal inversion of the second conditional.' },
+  inv3:  { label:'3rd conditional — inversion', color:'var(--c3)',
+    rule:'Had + subject + past participle, would have + past participle. Inversion of "if" with "had" in the third conditional.' },
+  invm32:{ label:'Mixed (3→2) — inversion', color:'var(--cm32)',
+    rule:'Had + subject + past participle, would + infinitive. Inverted mixed conditional — unreal past condition, present result.' },
+  invm23:{ label:'Mixed (2→3) — inversion', color:'var(--cm23)',
+    rule:'Were + subject + adjective/noun, would have + past participle. Inverted mixed — unreal present state, past result.' },
 };
 
 // ── Question bank ───────────────────────────────────────────────────
@@ -513,18 +525,132 @@ const ALL_QUESTIONS = [
     c:"I would have waited for a better moment to raise the issue.",
     w:["I would wait for a better moment to raise the issue.","I will have waited for a better moment.","I waited for a better moment to raise the issue."],
     note:"My present character (impatient) explains a past action (raising the issue at the wrong moment)." },
+
+  // ══ INVERSION — 1ST CONDITIONAL (Should + subject) ═════════════════
+  { t:'inv1',
+    if:"Should you need any further assistance,",
+    c:"please do not hesitate to contact us.",
+    w:["please do not hesitate to have contacted us.","you will not hesitate to contact us.","you should not hesitate to contact us."],
+    note:"Formal inversion: 'Should you need' = 'If you need'. Common in formal letters and professional correspondence." },
+
+  { t:'inv1',
+    if:"Should the situation change at short notice,",
+    c:"we will inform all participants immediately.",
+    w:["we would inform all participants immediately.","we would have informed all participants immediately.","we inform all participants immediately."],
+    note:"'Should the situation change' is a formal way of saying 'If the situation changes'. Note: will (not would) in the result clause — this is still a first conditional." },
+
+  { t:'inv1',
+    if:"Should you decide to accept our offer,",
+    c:"we will send you a formal contract within 24 hours.",
+    w:["we would send you a formal contract within 24 hours.","we would have sent you a formal contract within 24 hours.","we send you a formal contract within 24 hours."],
+    note:"Formal register. 'Should you decide' = 'If you decide'. The result clause uses will + infinitive, as in all first conditionals." },
+
+  { t:'inv1',
+    if:"Should any problems arise during the installation,",
+    c:"our technical team will be available to help.",
+    w:["our technical team would be available to help.","our technical team would have been available to help.","our technical team is available to help."],
+    note:"A polite, formal way of expressing a real but unlikely possibility. Inversion with 'should' is typical of official communications." },
+
+  // ══ INVERSION — 2ND CONDITIONAL (Were + subject) ════════════════════
+  { t:'inv2',
+    if:"Were you to accept the position,",
+    c:"you would be expected to start immediately.",
+    w:["you will be expected to start immediately.","you would have been expected to start immediately.","you are expected to start immediately."],
+    note:"'Were you to accept' is the formal inversion of 'If you were to accept' (second conditional). The result clause uses would + infinitive." },
+
+  { t:'inv2',
+    if:"Were he more hardworking,",
+    c:"he would live in a much bigger house.",
+    w:["he will live in a much bigger house.","he would have lived in a much bigger house.","he lives in a much bigger house."],
+    note:"'Were he more hardworking' = 'If he were more hardworking'. Note 'were' for all persons in formal second conditional inversion." },
+
+  { t:'inv2',
+    if:"Were the company to relocate its headquarters,",
+    c:"hundreds of employees would need to move.",
+    w:["hundreds of employees will need to move.","hundreds of employees would have needed to move.","hundreds of employees need to move."],
+    note:"Formal second conditional inversion. 'Were the company to relocate' = 'If the company were to relocate'." },
+
+  { t:'inv2',
+    if:"Were she to resign from her position,",
+    c:"the board would face a serious crisis.",
+    w:["the board will face a serious crisis.","the board would have faced a serious crisis.","the board faces a serious crisis."],
+    note:"'Were she to resign' is a formal, literary alternative to 'If she resigned'. The result is still would + infinitive." },
+
+  // ══ INVERSION — 3RD CONDITIONAL (Had + subject) ═════════════════════
+  { t:'inv3',
+    if:"Had I known about the problem earlier,",
+    c:"I would not have made such a serious mistake.",
+    w:["I will not have made such a serious mistake.","I would not make such a serious mistake.","I did not make such a serious mistake."],
+    note:"'Had I known' is the inversion of 'If I had known'. Past perfect inversion: Had + subject + past participle. Very common in literary and formal English." },
+
+  { t:'inv3',
+    if:"Had she read the report more carefully,",
+    c:"she would have noticed the critical error.",
+    w:["she will have noticed the critical error.","she would notice the critical error.","she noticed the critical error."],
+    note:"'Had she read' = 'If she had read'. Third conditional inversion — the result clause uses would have + past participle." },
+
+  { t:'inv3',
+    if:"Had they invested in renewable energy a decade ago,",
+    c:"they would have saved millions in costs by now.",
+    w:["they will have saved millions in costs by now.","they would save millions in costs by now.","they saved millions in costs by now."],
+    note:"A third conditional with inversion. 'Had they invested' = 'If they had invested'. An imaginary past situation with an imaginary past result." },
+
+  { t:'inv3',
+    if:"Had the rescue team arrived five minutes later,",
+    c:"the outcome would have been very different.",
+    w:["the outcome will have been very different.","the outcome would be very different.","the outcome was very different."],
+    note:"'Had the team arrived' = 'If the team had arrived'. Third conditional inversion used to discuss a past event that did not happen." },
+
+  // ══ INVERSION — MIXED 3→2 (Had + subject → would now) ══════════════
+  { t:'invm32',
+    if:"Had I gone to a better university,",
+    c:"I would be in a very different position now.",
+    w:["I would have been in a very different position.","I will be in a very different position now.","I was in a very different position now."],
+    note:"Inverted mixed 3→2: 'Had I gone' (unreal past condition) + 'I would be' (present result). Past decision still shapes the present." },
+
+  { t:'invm32',
+    if:"Had she taken better care of her health in her youth,",
+    c:"she would feel much stronger today.",
+    w:["she would have felt much stronger.","she will feel much stronger today.","she felt much stronger today."],
+    note:"'Had she taken care' = inverted third conditional for the if-clause. 'Would feel today' = present result. Classic 3→2 mixed with inversion." },
+
+  { t:'invm32',
+    if:"Had he chosen a different career path,",
+    c:"he would be doing something completely different now.",
+    w:["he would have been doing something completely different.","he will be doing something completely different now.","he was doing something completely different now."],
+    note:"Past choice (inverted) → present reality. 'Had he chosen' = 'If he had chosen'. The present would clause shows the consequence today." },
+
+  // ══ INVERSION — MIXED 2→3 (Were + subject → would have) ═══════════
+  { t:'invm23',
+    if:"Were I more courageous,",
+    c:"I would have climbed that mountain yesterday.",
+    w:["I would climb that mountain yesterday.","I will have climbed that mountain yesterday.","I climbed that mountain yesterday."],
+    note:"'Were I more courageous' (unreal present state) + 'I would have climbed' (past result). Present character explains a past action. Inversion of 2→3 mixed conditional." },
+
+  { t:'invm23',
+    if:"Were he less impulsive,",
+    c:"he would have thought before sending that message.",
+    w:["he would think before sending that message.","he will have thought before sending that message.","he thought before sending that message."],
+    note:"His present character (impulsive) explains a past action (sending the message hastily). 'Were he less impulsive' is the inverted form of 'If he were less impulsive'." },
+
+  { t:'invm23',
+    if:"Were she a better communicator,",
+    c:"she would have handled the situation very differently last week.",
+    w:["she would handle the situation very differently last week.","she will have handled the situation very differently.","she handled the situation very differently last week."],
+    note:"Present personality trait (inverted 2nd conditional form) → past consequence. 'Were she a better communicator' = 'If she were a better communicator'." },
 ];
 
 // ── Difficulty filter ───────────────────────────────────────────────
 const DIFF_TYPES = {
-  beginner:     ['zero','first'],
+  beginner:     ['zero','first','second'],
   intermediate: ['zero','first','second','third'],
   advanced:     ['zero','first','second','third','m32','m23'],
+  expert:       ['zero','first','second','third','m32','m23','inv1','inv2','inv3','invm32','invm23'],
 };
 
 // ── Game state ──────────────────────────────────────────────────────
 const ROUND_SIZE = 10;
-const TIMES = { beginner:120, intermediate:120, advanced:150 };
+const TIMES = { beginner:120, intermediate:120, advanced:150, expert:120 };
 let currentDiff = 'beginner';
 let roundQs = [], current = 0, score = 0, correct = 0, streak = 0;
 let timerInterval = null, timeLeft = 120;
@@ -533,23 +659,24 @@ let selectedOption = null; // for tap-to-select
 let answered = false;
 
 // ── Diff switch ─────────────────────────────────────────────────────
+const DIFF_IDS = {beginner:'A',intermediate:'B',advanced:'C',expert:'D'};
 function setDiff(d) {
   currentDiff = d;
-  ['beginner','intermediate','advanced'].forEach(x=>{
-    document.getElementById('tab'+{beginner:'A',intermediate:'B',advanced:'C'}[x]).classList.toggle('active',x===d);
+  Object.keys(DIFF_IDS).forEach(x=>{
+    const t=document.getElementById('tab'+DIFF_IDS[x]);if(t)t.classList.toggle('active',x===d);
   });
   switchLb(d);
   restartGame();
 }
 function switchLb(d){
-  ['beginner','intermediate','advanced'].forEach(x=>{
-    document.getElementById('lb'+{beginner:'A',intermediate:'B',advanced:'C'}[x]).classList.toggle('active',x===d);
+  Object.keys(DIFF_IDS).forEach(x=>{
+    const t=document.getElementById('lb'+DIFF_IDS[x]);if(t)t.classList.toggle('active',x===d);
   });
   renderLeaderboard('conditionals_'+d,'lbBody');
 }
 function switchEndDiff(){
-  const order=['beginner','intermediate','advanced'];
-  const next=order[(order.indexOf(currentDiff)+1)%3];
+  const order=['beginner','intermediate','advanced','expert'];
+  const next=order[(order.indexOf(currentDiff)+1)%4];
   setDiff(next);
 }
 
@@ -557,9 +684,15 @@ function switchEndDiff(){
 function initRound(){
   // Filter questions by difficulty
   const pool = ALL_QUESTIONS.filter(q => DIFF_TYPES[currentDiff].includes(q.t));
-  const indices = freshIndices('conditionals_'+currentDiff, pool, Math.min(ROUND_SIZE, pool.length));
-  indices.forEach(i => markSeen('conditionals_'+currentDiff, i));
-  roundQs = indices.map(i => pool[i]);
+  // Use freshIndices per-level so each difficulty has independent tracking
+  const key = 'conditionals_'+currentDiff;
+  const indices = freshIndices(key, pool, Math.min(ROUND_SIZE, pool.length));
+  indices.forEach(i => markSeen(key, i));
+  let selected = indices.map(i => pool[i]);
+
+  // Shuffle to avoid consecutive same conditional type
+  selected = avoidConsecutiveTypes(selected);
+  roundQs = selected;
 
   current=0; score=0; correct=0; streak=0; results=[];
   document.getElementById('endCard').style.display='none';
@@ -569,6 +702,23 @@ function initRound(){
   buildDots();
   loadQuestion();
   startTimer();
+}
+
+// Reorder questions so no same conditional type appears consecutively
+function avoidConsecutiveTypes(qs){
+  if(qs.length <= 1) return qs;
+  const result = [];
+  const remaining = [...qs];
+  let lastType = null;
+  while(remaining.length > 0){
+    // Find first question with different type from last
+    let idx = remaining.findIndex(q => q.t !== lastType);
+    if(idx === -1) idx = 0; // fallback if all remaining are same type
+    result.push(remaining[idx]);
+    lastType = remaining[idx].t;
+    remaining.splice(idx, 1);
+  }
+  return result;
 }
 
 function buildDots(){
@@ -615,12 +765,12 @@ function loadQuestion(){
   // Hide feedback panel
   document.getElementById('feedbackPanel').style.display='none';
 
-  // Type badge
-  if(currentDiff==='advanced'){
-    document.getElementById('typeBadge').innerHTML=`<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
+  // Type badge: shown in beginner/intermediate, hidden in advanced/expert
+  const badgeEl = document.getElementById('typeBadge');
+  if(currentDiff === 'advanced' || currentDiff === 'expert'){
+    badgeEl.innerHTML = ''; // no type hint — student must identify it themselves
   } else {
-    // Beginner/intermediate: show the type to help learning
-    document.getElementById('typeBadge').innerHTML=`<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
+    badgeEl.innerHTML = `<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
   }
 
   // IF clause

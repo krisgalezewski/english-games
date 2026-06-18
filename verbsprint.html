@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Verb Sprint — English Games</title>
+<title>Irregular Verb Sprint — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
@@ -139,7 +139,7 @@ main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 <body>
 <nav class="site-nav">
   <a href="index.html" class="back">← Games</a>
-  <span class="game-title">⚡ Verb Sprint</span>
+  <span class="game-title">⚡ Irregular Verb Sprint</span>
   <span></span>
 </nav>
 
@@ -602,8 +602,10 @@ function switchLb(m) {
 
 // ── Init round ──────────────────────────────────────────────────────
 function initRound() {
-  const indices = freshIndices('verbsprint_'+currentMode, VERBS, ROUND_SIZE);
-  indices.forEach(i => markSeen('verbsprint_'+currentMode, i));
+  // Each mode uses its own seen-tracking key so verb pools are independent
+  const modeKey = 'verbsprint_' + currentMode;
+  const indices = freshIndices(modeKey, VERBS, ROUND_SIZE);
+  indices.forEach(i => markSeen(modeKey, i));
   roundVerbs = indices.map(i => VERBS[i]);
 
   current = 0; score = 0; skips = 3; hints = 1; streak = 0;
@@ -680,8 +682,7 @@ function loadVerb() {
     document.getElementById('sentenceDisplay').innerHTML =
       displayed.replace('___', '<span class="blank">___</span>');
     document.getElementById('formHint').textContent =
-      s.f === 'ps' ? 'Past simple of: ' + v.b.toUpperCase()
-                   : 'Past participle of: ' + v.b.toUpperCase();
+      'Infinitive: ' + v.b.toUpperCase();
     // Build single input
     const grid = document.getElementById('inputGrid');
     grid.innerHTML = `
@@ -691,7 +692,7 @@ function loadVerb() {
                placeholder="type here…" autofocus/>
       </div>`;
     document.getElementById('inp0').focus();
-    document.getElementById('inp0').addEventListener('keydown', e => { if(e.key==='Enter') submitAnswer(); });
+    // Handled by global keydown
   } else {
     // Easy / Medium: show base verb
     document.getElementById('baseView').style.display     = 'block';
@@ -723,16 +724,9 @@ function loadVerb() {
           <input class="verb-input" id="inp1" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…"/>
         </div>`;
       // Enter in PS → focus PP; Enter in PP → submit
-      document.getElementById('inp0').addEventListener('keydown', e => {
-        if(e.key==='Enter'){ e.preventDefault(); document.getElementById('inp1').focus(); }
-      });
-      document.getElementById('inp1').addEventListener('keydown', e => {
-        if(e.key==='Enter') submitAnswer();
-      });
+      // Handled by global keydown
     }
-    document.getElementById('inp0').addEventListener('keydown', e => {
-      if(e.key==='Enter' && currentMode==='easy') submitAnswer();
-    });
+    // Handled by global keydown
     document.getElementById('inp0').focus();
   }
 }
@@ -938,12 +932,18 @@ function endRound() {
       <span class="rv-form ${(r.skipped||!psOk)?'bad':'ok'}">${r.verb.ps.toUpperCase()}</span>
       <span class="rv-form ${(r.skipped||!ppOk)?'bad':'ok'}">${r.verb.pp.toUpperCase()}</span>
       <span class="rv-tag">${r.correct?'✓':r.partial?'~':r.skipped?'skip':'✗'}</span>`;
-    // Clickable — shows example sentence
+    // Clickable — shows example sentences for this verb (no definition modal)
     el.addEventListener('click',()=>{
-      const sent = r.verb.s[0];
-      const ans  = sent.f==='ps' ? r.verb.ps : r.verb.pp;
-      const filled = sent.t.replace('___', ans.toUpperCase());
-      showDefinitionModal(r.verb.b + ' / ' + r.verb.ps + ' / ' + r.verb.pp);
+      const exs = r.verb.s.map(s=>{
+        const ans = s.f==='ps' ? r.verb.ps : r.verb.pp;
+        return s.t.replace('___', ans.toUpperCase());
+      }).join('\n\n');
+      // Use phrasal modal to show the triplet + sentences
+      showPhrasalModal(
+        r.verb.b.toUpperCase() + ' / ' + r.verb.ps.toUpperCase() + ' / ' + r.verb.pp.toUpperCase(),
+        'Group: ' + r.verb.g,
+        exs
+      );
     });
     grid.appendChild(el);
   });
@@ -955,6 +955,23 @@ function restartGame() { document.getElementById('endCard').style.display='none'
 async function doSubmit(){
   await handleScoreSubmit('verbsprint_'+currentMode, parseInt(document.getElementById('endCard').dataset.score||'0'), 'nameInput', 'submitArea', 'lbBody');
 }
+
+// ── Global keyboard handler (single listener, no accumulation) ───────
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter') return;
+  const inp0 = document.getElementById('inp0');
+  const inp1 = document.getElementById('inp1');
+  if(!inp0 || document.activeElement !== inp0 && document.activeElement !== inp1) return;
+  e.preventDefault();
+  if(currentMode === 'easy' && document.activeElement === inp0){
+    submitAnswer();
+  } else if(currentMode === 'medium'){
+    if(document.activeElement === inp0){ if(inp1) inp1.focus(); }
+    else { submitAnswer(); }
+  } else if(currentMode === 'hard' && document.activeElement === inp0){
+    submitAnswer();
+  }
+});
 
 // ── Boot ────────────────────────────────────────────────────────────
 switchLb('easy');
