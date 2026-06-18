@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Conditional Constructor — English Games</title>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1.1rem; }
+
+/* Timer */
+.timer-wrap { width:100%; }
+.timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
+.timer-fill  { height:100%; border-radius:99px; transition:width .8s linear, background .4s; }
+.timer-fill.urgent { background:var(--wrong) !important; }
+.timer-row   { display:flex; justify-content:space-between; margin-top:.3rem; }
+.timer-row span { font-family:'Space Mono',monospace; font-size:.65rem; color:var(--muted); }
+.timer-val   { font-weight:700; }
+.timer-val.urgent { color:var(--wrong) !important; }
+
+/* HUD */
+.hud { display:flex; gap:.5rem; width:100%; }
+.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .9rem; text-align:center; flex:1; }
+.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
+.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+/* Dots */
+.dots { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
+.dot  { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
+
+/* Conditional type colour coding */
+:root {
+  --c0: #4caf50;   /* zero  — green */
+  --c1: #2196f3;   /* first — blue */
+  --c2: #ff9800;   /* second — amber */
+  --c3: #e91e63;   /* third — pink/red */
+  --cm32: #9c27b0; /* mixed 3→2 — purple */
+  --cm23: #00bcd4; /* mixed 2→3 — cyan */
+}
+
+/* Type badge */
+.type-badge {
+  display:inline-block; padding:.2rem .7rem;
+  border-radius:99px; font-family:'Space Mono',monospace;
+  font-size:.62rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:#fff; margin-bottom:.4rem;
+}
+
+/* IF clause card */
+.if-card {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:1.5rem 1.75rem;
+  display:flex; flex-direction:column; align-items:flex-start; gap:.5rem;
+  animation:fadeIn .25s ease;
+}
+.if-label { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.if-text  { font-size:1.35rem; font-family:'Playfair Display',serif; font-weight:700; color:var(--text); line-height:1.5; }
+
+/* Drop zone */
+.drop-zone {
+  width:100%; min-height:80px;
+  border:2.5px dashed var(--border2); border-radius:12px;
+  background:var(--surface); position:relative;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color .2s, background .2s;
+  padding:.75rem 1rem;
+}
+.drop-zone.drag-over { border-color:var(--gold); background:var(--gold-dim); }
+.drop-zone.correct-drop { border-color:var(--correct) !important; background:var(--correct-dim) !important; animation:pop .35s ease; }
+.drop-zone.wrong-drop   { border-color:var(--wrong)   !important; background:var(--wrong-dim)   !important; animation:shake .35s; }
+.drop-hint { font-family:'Space Mono',monospace; font-size:.72rem; color:var(--muted); letter-spacing:.08em; pointer-events:none; }
+.dropped-text { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--text); text-align:center; line-height:1.5; }
+
+/* Options grid */
+.options-area { width:100%; }
+.options-label { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+.options-grid  { display:flex; flex-direction:column; gap:.5rem; }
+
+.option-card {
+  width:100%; background:var(--surface2); border:1.5px solid var(--border2);
+  border-radius:10px; padding:.85rem 1.1rem;
+  font-family:'Playfair Display',serif; font-size:1rem;
+  color:var(--text); cursor:grab; user-select:none;
+  transition:all .18s; line-height:1.5;
+  position:relative;
+}
+.option-card:hover  { border-color:var(--gold); background:var(--gold-dim); transform:translateY(-1px); box-shadow:0 4px 16px rgba(212,175,55,.2); }
+.option-card.dragging { opacity:.4; cursor:grabbing; }
+.option-card.selected { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
+.option-card.used     { opacity:.15; pointer-events:none; }
+.option-card.tap-hint { border-color:var(--gold); }
+
+/* Feedback panel */
+.feedback-panel {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:1.1rem 1.4rem;
+  display:none; flex-direction:column; gap:.5rem;
+  animation:fadeIn .3s ease;
+}
+.fb-type   { font-family:'Space Mono',monospace; font-size:.65rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+.fb-rule   { font-size:.88rem; color:var(--text); line-height:1.65; }
+.fb-wrong  { font-size:.82rem; color:var(--muted); font-style:italic; }
+
+/* End card */
+.end-card {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(13,13,13,.97); backdrop-filter:blur(8px);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:1rem; padding:2rem 1.5rem;
+  overflow-y:auto; animation:fadeIn .4s ease;
+}
+.end-score { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--gold); }
+.review-grid { display:flex; flex-direction:column; gap:.4rem; width:100%; max-width:500px; max-height:40vh; overflow-y:auto; }
+.review-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.6rem 1rem; cursor:pointer; transition:border-color .15s; }
+.review-item:hover { border-color:var(--gold); }
+.review-item.correct { border-left:3px solid var(--correct); }
+.review-item.wrong   { border-left:3px solid var(--wrong); }
+.review-item.skip    { border-left:3px solid rgba(255,255,255,.2); opacity:.6; }
+.rv-sentence { font-size:.88rem; color:var(--text); line-height:1.6; margin-bottom:.2rem; }
+.rv-tag { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; }
+
+.lb-section { width:100%; max-width:620px; padding:0 1rem 2.5rem; }
+
+/* blink inactive tabs */
+@keyframes modePulse{0%,100%{opacity:1}50%{opacity:.55}}
+.diff-tab:not(.active){ animation:modePulse 2.8s ease-in-out infinite; }
+.diff-tab:not(.active):hover{ animation:none; opacity:1; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">🧩 Conditional Constructor</span>
+  <span></span>
+</nav>
+
+<main>
+  <!-- Difficulty tabs -->
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="tabA" onclick="setDiff('beginner')">Beginner</button>
+      <button class="diff-tab"        id="tabB" onclick="setDiff('intermediate')">Intermediate</button>
+      <button class="diff-tab"        id="tabC" onclick="setDiff('advanced')">Advanced</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+    <div class="hud-pill"><div class="val" id="correctVal">0</div><div class="lbl">Correct</div></div>
+    <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-wrap">
+    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%;background:var(--gold)"></div></div>
+    <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">120s</span></div>
+  </div>
+
+  <!-- IF clause card -->
+  <div class="if-card" id="ifCard">
+    <div>
+      <div class="if-label">Complete the conditional sentence</div>
+      <div id="typeBadge"></div>
+    </div>
+    <div class="if-text" id="ifText">Loading…</div>
+  </div>
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="dropZone">
+    <span class="drop-hint" id="dropHint">Drag the correct ending here · or tap to select</span>
+    <span class="dropped-text" id="droppedText" style="display:none"></span>
+  </div>
+
+  <!-- Options -->
+  <div class="options-area">
+    <div class="options-label">Choose the correct THEN clause — drag or tap</div>
+    <div class="options-grid" id="optionsGrid"></div>
+  </div>
+
+  <!-- Feedback panel (shown after answer) -->
+  <div class="feedback-panel" id="feedbackPanel">
+    <div id="fbType" class="fb-type"></div>
+    <div id="fbRule" class="fb-rule"></div>
+    <div id="fbWrong" class="fb-wrong" style="display:none"></div>
+    <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
+  </div>
+
+  <!-- End card -->
+  <div class="end-card" id="endCard" style="display:none">
+    <div class="eyebrow" id="endTitle">Round complete</div>
+    <div class="end-score" id="endScore">0 pts</div>
+    <p style="color:var(--muted);font-size:.88rem;text-align:center;max-width:380px" id="endMsg"></p>
+    <div class="review-grid" id="reviewGrid"></div>
+    <div id="submitArea" style="width:100%;max-width:460px">
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+      <button class="btn-ghost" onclick="restartGame()">Play again</button>
+      <button class="btn-ghost" onclick="switchEndDiff()">Switch level</button>
+      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    </div>
+  </div>
+</main>
+
+<div class="lb-section">
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbA" onclick="switchLb('beginner')">Beginner</button>
+      <button class="diff-tab"        id="lbB" onclick="switchLb('intermediate')">Intermediate</button>
+      <button class="diff-tab"        id="lbC" onclick="switchLb('advanced')">Advanced</button>
+    </div>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════════════
+// CONDITIONAL CONSTRUCTOR
+// Drag-and-drop: given an IF clause, find the correct THEN clause.
+// Each question has exactly one unambiguous correct answer.
+// ════════════════════════════════════════════════════════════════════
+
+// ── Conditional type definitions ────────────────────────────────────
+const TYPES = {
+  zero:  { label:'Zero conditional',    color:'var(--c0)',
+    rule:'If + present simple, present simple. General truths and facts that are always true.' },
+  first: { label:'First conditional',   color:'var(--c1)',
+    rule:'If + present simple, will + infinitive. Real and possible future situations.' },
+  second:{ label:'Second conditional',  color:'var(--c2)',
+    rule:'If + past simple, would + infinitive. Imaginary present or future situations — unreal.' },
+  third: { label:'Third conditional',   color:'var(--c3)',
+    rule:'If + past perfect, would have + past participle. Imaginary past situations — cannot be changed.' },
+  m32:   { label:'Mixed conditional (3→2)', color:'var(--cm32)',
+    rule:'If + past perfect, would + infinitive. An unreal PAST condition with a present result. The past event still affects the present.' },
+  m23:   { label:'Mixed conditional (2→3)', color:'var(--cm23)',
+    rule:'If + past simple, would have + past participle. An unreal PRESENT state that would have changed a past event.' },
+};
+
+// ── Question bank ───────────────────────────────────────────────────
+// Each item: { type, if, correct, wrong[] (3 distractors from other types) }
+// Distractors are carefully chosen to be clearly wrong grammatically,
+// and never from the same type (to avoid ambiguity).
+const ALL_QUESTIONS = [
+
+  // ══ ZERO CONDITIONAL ══════════════════════════════════════════════
+  { t:'zero',
+    if:"If you mix blue and yellow,",
+    c:"you get green.",
+    w:["you will get green.","you would get green.","you would have got green."],
+    note:"This is a scientific fact — always true. Both clauses use present simple." },
+
+  { t:'zero',
+    if:"If water reaches 100 degrees Celsius,",
+    c:"it boils.",
+    w:["it will boil.","it would boil.","it would have boiled."],
+    note:"A law of physics — always happens. Present simple in both clauses." },
+
+  { t:'zero',
+    if:"If you heat metal,",
+    c:"it expands.",
+    w:["it will expand.","it would expand.","it would have expanded."],
+    note:"A general scientific truth. Zero conditional uses present simple throughout." },
+
+  { t:'zero',
+    if:"If plants don't get enough light,",
+    c:"they die.",
+    w:["they will die.","they would die.","they would have died."],
+    note:"A biological fact. The zero conditional describes what always happens in this situation." },
+
+  { t:'zero',
+    if:"If you press this button,",
+    c:"the alarm goes off.",
+    w:["the alarm will go off.","the alarm would go off.","the alarm would have gone off."],
+    note:"An automatic, predictable result — like instructions. Present simple in both clauses." },
+
+  { t:'zero',
+    if:"If iron is exposed to moisture,",
+    c:"it rusts.",
+    w:["it will rust.","it would rust.","it would have rusted."],
+    note:"A chemical process that always occurs. Zero conditional — general truth." },
+
+  { t:'zero',
+    if:"If children don't sleep enough,",
+    c:"they struggle to concentrate.",
+    w:["they will struggle to concentrate.","they would struggle to concentrate.","they would have struggled to concentrate."],
+    note:"A general fact about child development. Both clauses are in the present simple." },
+
+  // ══ FIRST CONDITIONAL ══════════════════════════════════════════════
+  { t:'first',
+    if:"If it rains tomorrow,",
+    c:"I will cancel the barbecue.",
+    w:["I cancel the barbecue.","I would cancel the barbecue.","I would have cancelled the barbecue."],
+    note:"A real possibility about tomorrow. First conditional — if + present, will + infinitive." },
+
+  { t:'first',
+    if:"If she passes her driving test,",
+    c:"her parents will buy her a car.",
+    w:["her parents buy her a car.","her parents would buy her a car.","her parents would have bought her a car."],
+    note:"A real and likely future event. Note: present simple in the if-clause, not future." },
+
+  { t:'first',
+    if:"If you don't hurry,",
+    c:"we will miss the train.",
+    w:["we miss the train.","we would miss the train.","we would have missed the train."],
+    note:"A genuine warning about a real present situation with a real future consequence." },
+
+  { t:'first',
+    if:"If the weather improves this weekend,",
+    c:"we will go hiking in the mountains.",
+    w:["we go hiking in the mountains.","we would go hiking in the mountains.","we would have gone hiking in the mountains."],
+    note:"A real plan dependent on a real possibility. First conditional." },
+
+  { t:'first',
+    if:"If he studies hard enough,",
+    c:"he will get into medical school.",
+    w:["he gets into medical school.","he would get into medical school.","he would have got into medical school."],
+    note:"A realistic and achievable future outcome." },
+
+  { t:'first',
+    if:"If you send your application today,",
+    c:"you will hear back within two weeks.",
+    w:["you hear back within two weeks.","you would hear back within two weeks.","you would have heard back within two weeks."],
+    note:"A real and concrete future consequence of a present action." },
+
+  { t:'first',
+    if:"If they don't receive the payment by Friday,",
+    c:"they will take legal action.",
+    w:["they take legal action.","they would take legal action.","they would have taken legal action."],
+    note:"A real future threat based on a real present condition." },
+
+  // ══ SECOND CONDITIONAL ═════════════════════════════════════════════
+  { t:'second',
+    if:"If I had more free time,",
+    c:"I would learn to play the piano.",
+    w:["I will learn to play the piano.","I learn to play the piano.","I would have learnt to play the piano."],
+    note:"I don't have enough free time now — this is imaginary. Would + infinitive for the result." },
+
+  { t:'second',
+    if:"If she lived closer to the city centre,",
+    c:"she would walk to work every day.",
+    w:["she will walk to work every day.","she walks to work every day.","she would have walked to work every day."],
+    note:"She doesn't live close to the city — this is hypothetical, not real." },
+
+  { t:'second',
+    if:"If I were the Prime Minister,",
+    c:"I would invest far more in public transport.",
+    w:["I will invest far more in public transport.","I invest far more in public transport.","I would have invested far more in public transport."],
+    note:"'Were' is used for all persons in formal second conditional — I am not the Prime Minister." },
+
+  { t:'second',
+    if:"If he earned more money,",
+    c:"he would move to a bigger flat.",
+    w:["he will move to a bigger flat.","he moves to a bigger flat.","he would have moved to a bigger flat."],
+    note:"He doesn't earn enough now — imaginary present situation." },
+
+  { t:'second',
+    if:"If they knew the truth,",
+    c:"they would be furious.",
+    w:["they will be furious.","they are furious.","they would have been furious."],
+    note:"They don't know the truth — hypothetical. Would + infinitive describes the imaginary result." },
+
+  { t:'second',
+    if:"If she weren't so shy,",
+    c:"she would make friends much more easily.",
+    w:["she will make friends much more easily.","she makes friends much more easily.","she would have made friends much more easily."],
+    note:"She is shy — 'weren't' signals this is contrary to current reality." },
+
+  { t:'second',
+    if:"If we had a bigger garden,",
+    c:"we would grow our own vegetables.",
+    w:["we will grow our own vegetables.","we grow our own vegetables.","we would have grown our own vegetables."],
+    note:"Our garden is too small — this is an imaginary present situation." },
+
+  // ══ THIRD CONDITIONAL ══════════════════════════════════════════════
+  { t:'third',
+    if:"If she had left ten minutes earlier,",
+    c:"she would have caught the last bus.",
+    w:["she would catch the last bus.","she will have caught the last bus.","she catches the last bus."],
+    note:"She didn't leave early enough — this is past and impossible to change. Would have + PP." },
+
+  { t:'third',
+    if:"If he had studied medicine instead of law,",
+    c:"he would have become a doctor.",
+    w:["he would become a doctor.","he becomes a doctor.","he would be a doctor now."],
+    note:"He studied law, not medicine — an imaginary past choice. Past perfect in the if-clause." },
+
+  { t:'third',
+    if:"If they had invested in that company in 2010,",
+    c:"they would have made a fortune.",
+    w:["they would make a fortune.","they will have made a fortune.","they make a fortune."],
+    note:"They didn't invest — a missed opportunity in the past. Third conditional." },
+
+  { t:'third',
+    if:"If the firefighters had arrived five minutes later,",
+    c:"the entire building would have burnt down.",
+    w:["the entire building would burn down.","the entire building burns down.","the entire building will have burnt down."],
+    note:"The firefighters arrived in time — imagining a different past outcome." },
+
+  { t:'third',
+    if:"If she had been paying attention,",
+    c:"she would have noticed the warning signs.",
+    w:["she would notice the warning signs.","she notices the warning signs.","she will have noticed the warning signs."],
+    note:"She wasn't paying attention — past situation that cannot now be changed." },
+
+  { t:'third',
+    if:"If the weather had been better last weekend,",
+    c:"we would have gone to the beach.",
+    w:["we would go to the beach.","we go to the beach.","we will have gone to the beach."],
+    note:"The weather was bad last weekend — we're imagining an alternative past." },
+
+  { t:'third',
+    if:"If he had read the contract more carefully,",
+    c:"he would have spotted the clause.",
+    w:["he would spot the clause.","he spots the clause.","he will have spotted the clause."],
+    note:"He didn't read carefully enough — past mistake, past hypothetical result." },
+
+  // ══ MIXED CONDITIONAL 3→2 (past condition → present result) ════════
+  // If + past perfect (unreal past) → would + infinitive (present result)
+  { t:'m32',
+    if:"If I had accepted that job offer in New York,",
+    c:"I would be living there now.",
+    w:["I would have been living there now.","I will be living there now.","I would have lived there by now."],
+    note:"I didn't take the job (past condition) — so I'm not in New York now (present result). The past decision still affects my present situation." },
+
+  { t:'m32',
+    if:"If she had completed her degree,",
+    c:"she would have much better career prospects now.",
+    w:["she would have had much better career prospects.","she will have much better career prospects now.","she had much better career prospects now."],
+    note:"She didn't complete her degree (past) — which affects her present situation. Mixed 3→2: past unreal condition, present result." },
+
+  { t:'m32',
+    if:"If he had taken better care of his health,",
+    c:"he would feel much stronger today.",
+    w:["he would have felt much stronger.","he will feel much stronger today.","he felt much stronger today."],
+    note:"He didn't take care of his health in the past — his current health suffers as a result." },
+
+  { t:'m32',
+    if:"If they hadn't moved to the countryside,",
+    c:"they would still be living in a small flat now.",
+    w:["they would still have been living in a small flat.","they will still be living in a small flat.","they had still been living in a small flat."],
+    note:"They did move (past action) — so they're not in the flat now. Imagining the alternative present." },
+
+  { t:'m32',
+    if:"If she had chosen a different career path,",
+    c:"she would be a very different person today.",
+    w:["she would have been a very different person.","she will be a very different person today.","she was a very different person today."],
+    note:"Her past career choices have made her who she is now. The past condition shapes her present identity." },
+
+  { t:'m32',
+    if:"If I had saved my money instead of spending it,",
+    c:"I would be financially comfortable now.",
+    w:["I would have been financially comfortable.","I will be financially comfortable now.","I was financially comfortable now."],
+    note:"Past spending habits → present financial situation. Classic mixed 3→2 structure." },
+
+  { t:'m32',
+    if:"If he hadn't emigrated as a young man,",
+    c:"he would probably still be working in the same factory.",
+    w:["he would probably have still been working in the same factory.","he will probably still be working in the same factory.","he was probably still working in the same factory."],
+    note:"He did emigrate (past) — so he's not in the factory now. The past decision changed his present life." },
+
+  // ══ MIXED CONDITIONAL 2→3 (present state → past result) ════════════
+  // If + past simple (unreal present) → would have + past participle (past result)
+  { t:'m23',
+    if:"If she were more assertive,",
+    c:"she would have refused his unreasonable request yesterday.",
+    w:["she would refuse his unreasonable request yesterday.","she will have refused his unreasonable request.","she refused his unreasonable request yesterday."],
+    note:"She is not assertive (present reality) — so she didn't refuse the request yesterday (past result). Her present character explains a past event." },
+
+  { t:'m23',
+    if:"If he weren't so disorganised,",
+    c:"he would have submitted the report on time last week.",
+    w:["he would submit the report on time last week.","he will have submitted the report on time.","he submitted the report on time last week."],
+    note:"He is disorganised (present trait) — which caused him to miss the deadline last week (past consequence)." },
+
+  { t:'m23',
+    if:"If I were a better cook,",
+    c:"I would have made something more impressive for the dinner party last night.",
+    w:["I would make something more impressive for the dinner party.","I will have made something more impressive.","I made something more impressive last night."],
+    note:"I'm not a good cook (present state) — so the dinner last night was not impressive. Present ability → past result." },
+
+  { t:'m23',
+    if:"If they were more careful with money,",
+    c:"they would have been able to afford the holiday last summer.",
+    w:["they would be able to afford the holiday last summer.","they will have been able to afford the holiday.","they were able to afford the holiday last summer."],
+    note:"They are careless with money (present characteristic) — so they couldn't afford the holiday (past consequence)." },
+
+  { t:'m23',
+    if:"If she spoke better English,",
+    c:"she would have got the job she applied for last month.",
+    w:["she would get the job she applied for last month.","she will have got the job she applied for.","she got the job she applied for last month."],
+    note:"Her present English level is insufficient — which is why she didn't get the job last month." },
+
+  { t:'m23',
+    if:"If he weren't so stubborn,",
+    c:"he would have listened to his doctor's advice last year.",
+    w:["he would listen to his doctor's advice last year.","he will have listened to his doctor's advice.","he listened to his doctor's advice last year."],
+    note:"He is stubborn (present personality) — so he ignored medical advice in the past. Mixed 2→3." },
+
+  { t:'m23',
+    if:"If I were more patient,",
+    c:"I would have waited for a better moment to raise the issue.",
+    w:["I would wait for a better moment to raise the issue.","I will have waited for a better moment.","I waited for a better moment to raise the issue."],
+    note:"My present character (impatient) explains a past action (raising the issue at the wrong moment)." },
+];
+
+// ── Difficulty filter ───────────────────────────────────────────────
+const DIFF_TYPES = {
+  beginner:     ['zero','first'],
+  intermediate: ['zero','first','second','third'],
+  advanced:     ['zero','first','second','third','m32','m23'],
+};
+
+// ── Game state ──────────────────────────────────────────────────────
+const ROUND_SIZE = 10;
+const TIMES = { beginner:120, intermediate:120, advanced:150 };
+let currentDiff = 'beginner';
+let roundQs = [], current = 0, score = 0, correct = 0, streak = 0;
+let timerInterval = null, timeLeft = 120;
+let results = [];
+let selectedOption = null; // for tap-to-select
+let answered = false;
+
+// ── Diff switch ─────────────────────────────────────────────────────
+function setDiff(d) {
+  currentDiff = d;
+  ['beginner','intermediate','advanced'].forEach(x=>{
+    document.getElementById('tab'+{beginner:'A',intermediate:'B',advanced:'C'}[x]).classList.toggle('active',x===d);
+  });
+  switchLb(d);
+  restartGame();
+}
+function switchLb(d){
+  ['beginner','intermediate','advanced'].forEach(x=>{
+    document.getElementById('lb'+{beginner:'A',intermediate:'B',advanced:'C'}[x]).classList.toggle('active',x===d);
+  });
+  renderLeaderboard('conditionals_'+d,'lbBody');
+}
+function switchEndDiff(){
+  const order=['beginner','intermediate','advanced'];
+  const next=order[(order.indexOf(currentDiff)+1)%3];
+  setDiff(next);
+}
+
+// ── Init ────────────────────────────────────────────────────────────
+function initRound(){
+  // Filter questions by difficulty
+  const pool = ALL_QUESTIONS.filter(q => DIFF_TYPES[currentDiff].includes(q.t));
+  const indices = freshIndices('conditionals_'+currentDiff, pool, Math.min(ROUND_SIZE, pool.length));
+  indices.forEach(i => markSeen('conditionals_'+currentDiff, i));
+  roundQs = indices.map(i => pool[i]);
+
+  current=0; score=0; correct=0; streak=0; results=[];
+  document.getElementById('endCard').style.display='none';
+  document.getElementById('scoreVal').textContent =0;
+  document.getElementById('correctVal').textContent=0;
+  document.getElementById('streakVal').textContent =0;
+  buildDots();
+  loadQuestion();
+  startTimer();
+}
+
+function buildDots(){
+  const el=document.getElementById('dots'); el.innerHTML='';
+  const n=Math.min(ROUND_SIZE,roundQs.length);
+  for(let i=0;i<n;i++){const d=document.createElement('div');d.className='dot';d.id='qdot'+i;el.appendChild(d);}
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timeLeft=TIMES[currentDiff];
+  updateTimer();
+  timerInterval=setInterval(()=>{timeLeft--;updateTimer();if(timeLeft<=0){clearInterval(timerInterval);autoEndRound();}},1000);
+}
+
+function updateTimer(){
+  const pct=Math.max(0,timeLeft/TIMES[currentDiff]);
+  const fill=document.getElementById('timerFill');
+  const val=document.getElementById('timerVal');
+  fill.style.width=(pct*100)+'%';
+  const type=TYPES[roundQs[current]?.t||'zero'];
+  fill.style.background=type?type.color:'var(--gold)';
+  val.textContent=timeLeft+'s';
+  val.style.color=timeLeft<=25?'var(--wrong)':'var(--gold)';
+  val.classList.toggle('urgent',timeLeft<=25);
+  fill.classList.toggle('urgent',timeLeft<=25);
+}
+
+// ── Load question ────────────────────────────────────────────────────
+function loadQuestion(){
+  if(current>=roundQs.length){clearInterval(timerInterval);endRound();return;}
+  const q=roundQs[current];
+  const type=TYPES[q.t];
+  answered=false; selectedOption=null;
+
+  // Reset drop zone
+  const dz=document.getElementById('dropZone');
+  dz.className='drop-zone';
+  dz.dataset.answer='';
+  document.getElementById('dropHint').style.display='block';
+  document.getElementById('droppedText').style.display='none';
+  document.getElementById('droppedText').textContent='';
+
+  // Hide feedback panel
+  document.getElementById('feedbackPanel').style.display='none';
+
+  // Type badge
+  if(currentDiff==='advanced'){
+    document.getElementById('typeBadge').innerHTML=`<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
+  } else {
+    // Beginner/intermediate: show the type to help learning
+    document.getElementById('typeBadge').innerHTML=`<span class="type-badge" style="background:${type.color}">${type.label}</span>`;
+  }
+
+  // IF clause
+  document.getElementById('ifText').textContent = q.if;
+
+  // Build shuffled options
+  const options = [
+    {text:q.c, correct:true},
+    ...q.w.map(w=>({text:w,correct:false}))
+  ].sort(()=>Math.random()-.5);
+
+  const grid=document.getElementById('optionsGrid'); grid.innerHTML='';
+  options.forEach((opt,i)=>{
+    const card=document.createElement('div');
+    card.className='option-card';
+    card.textContent=opt.text;
+    card.dataset.correct=opt.correct;
+    card.dataset.idx=i;
+    // Drag events
+    card.draggable=true;
+    card.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text',opt.text);
+      e.dataTransfer.setData('correct',opt.correct);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    // Tap/click
+    card.addEventListener('click',()=>tapSelect(card,opt));
+    grid.appendChild(card);
+  });
+
+  // Drop zone events
+  const dropZone=document.getElementById('dropZone');
+  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+  dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop',e=>{
+    e.preventDefault();
+    if(answered) return;
+    dropZone.classList.remove('drag-over');
+    const text=e.dataTransfer.getData('text');
+    const isCorrect=e.dataTransfer.getData('correct')==='true';
+    submitAnswer(text,isCorrect);
+  });
+}
+
+// ── Tap to select then confirm ───────────────────────────────────────
+function tapSelect(card, opt){
+  if(answered) return;
+  // Deselect previous
+  document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+  if(selectedOption && selectedOption.text===opt.text){
+    // Tapping same card again = confirm
+    selectedOption=null;
+    document.getElementById('dropHint').style.display='block';
+    document.getElementById('droppedText').style.display='none';
+    return;
+  }
+  selectedOption=opt;
+  card.classList.add('selected');
+  // Show in drop zone as preview
+  document.getElementById('dropHint').style.display='none';
+  document.getElementById('droppedText').style.display='block';
+  document.getElementById('droppedText').textContent=opt.text;
+  document.getElementById('dropZone').dataset.answer=opt.text;
+  // Auto-submit on second tap or after brief moment
+  submitAnswer(opt.text, opt.correct);
+}
+
+// ── Submit answer ────────────────────────────────────────────────────
+function submitAnswer(text, isCorrect){
+  if(answered) return;
+  answered=true;
+
+  const q=roundQs[current];
+  const type=TYPES[q.t];
+  const dz=document.getElementById('dropZone');
+
+  // Show dropped text
+  document.getElementById('dropHint').style.display='none';
+  document.getElementById('droppedText').style.display='block';
+  document.getElementById('droppedText').textContent=text;
+
+  // Mark all options
+  document.querySelectorAll('.option-card').forEach(card=>{
+    card.classList.remove('selected');
+    if(card.dataset.correct==='true'){
+      card.style.borderColor='var(--correct)';
+      card.style.background='var(--correct-dim)';
+      card.style.color='var(--correct)';
+    } else {
+      card.classList.add('used');
+    }
+  });
+
+  if(isCorrect){
+    dz.classList.add('correct-drop');
+    const pts=20+(streak>=2?streak*3:0);
+    score+=pts; correct++; streak++;
+    document.getElementById('scoreVal').textContent   = score;
+    document.getElementById('correctVal').textContent = correct;
+    document.getElementById('streakVal').textContent  = streak;
+    document.getElementById('qdot'+current).className='dot correct';
+    results.push({q, chose:text, isCorrect:true, pts});
+    showFeedback(true, q, text, pts);
+  } else {
+    dz.classList.add('wrong-drop');
+    streak=0;
+    document.getElementById('streakVal').textContent=0;
+    document.getElementById('qdot'+current).className='dot wrong';
+    results.push({q, chose:text, isCorrect:false, pts:0});
+    showFeedback(false, q, text, 0);
+  }
+}
+
+function showFeedback(correct, q, chose, pts){
+  const type=TYPES[q.t];
+  const panel=document.getElementById('feedbackPanel');
+  panel.style.display='flex';
+  // Scroll into view
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+
+  document.getElementById('fbType').textContent=type.label;
+  document.getElementById('fbType').style.color=type.color;
+  document.getElementById('fbRule').innerHTML=
+    `<strong>${correct?'✓ Correct!':'✗ Not quite.'}</strong> ${type.rule}${pts>0?' <em>(+'+pts+' pts)</em>':''}`;
+
+  const wrongEl=document.getElementById('fbWrong');
+  if(!correct){
+    wrongEl.style.display='block';
+    wrongEl.textContent='The correct answer was: "'+q.c+'"';
+  } else {
+    wrongEl.style.display='none';
+  }
+
+  // Additional note if available
+  if(q.note){
+    document.getElementById('fbRule').innerHTML+=
+      '<br><span style="color:var(--muted);font-size:.82rem">'+q.note+'</span>';
+  }
+}
+
+function nextQuestion(){
+  current++;
+  loadQuestion();
+}
+
+function autoEndRound(){
+  // Mark remaining as skipped
+  for(let i=current;i<roundQs.length;i++){
+    const el=document.getElementById('qdot'+i);
+    if(el) el.className='dot skip';
+    results.push({q:roundQs[i], chose:'', isCorrect:false, pts:0, skipped:true});
+  }
+  endRound();
+}
+
+// ── End round ────────────────────────────────────────────────────────
+function endRound(){
+  clearInterval(timerInterval);
+  const total=roundQs.length;
+  document.getElementById('endCard').style.display='flex';
+  document.getElementById('endScore').textContent=score+' pts';
+  document.getElementById('endTitle').textContent=correct+'/'+total+' correct';
+  document.getElementById('endMsg').textContent=
+    correct>=total?'🎉 Perfect! You have mastered all conditional types.':
+    correct>=Math.ceil(total*.8)?'👏 Excellent — you clearly understand conditionals!':
+    correct>=Math.ceil(total*.6)?'Good work! Focus on the mixed conditionals.':
+    'Keep practising — conditionals take time to master. Study the grammar notes!';
+  document.getElementById('endCard').dataset.score=score;
+
+  // Review grid
+  const grid=document.getElementById('reviewGrid'); grid.innerHTML='';
+  results.forEach(r=>{
+    const type=TYPES[r.q.t];
+    const el=document.createElement('div');
+    el.className='review-item '+(r.skipped?'skip':r.isCorrect?'correct':'wrong');
+    el.innerHTML=`
+      <div class="rv-sentence">"${r.q.if} <strong>${r.isCorrect?r.q.c:(r.chose||'—')}</strong>"</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span class="type-badge" style="background:${type.color};font-size:.5rem;padding:.15rem .5rem">${type.label}</span>
+        <span class="rv-tag" style="color:${r.isCorrect?'var(--correct)':'var(--wrong)'}">${r.isCorrect?'✓ correct':r.skipped?'time out':'✗ wrong'}</span>
+      </div>
+      ${!r.isCorrect&&!r.skipped?`<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Correct: "${r.q.c}"</div>`:''}`;
+    grid.appendChild(el);
+  });
+
+  renderLeaderboard('conditionals_'+currentDiff,'lbBody');
+}
+
+function restartGame(){ document.getElementById('endCard').style.display='none'; initRound(); }
+async function doSubmit(){
+  await handleScoreSubmit('conditionals_'+currentDiff,
+    parseInt(document.getElementById('endCard').dataset.score||'0'),
+    'nameInput','submitArea','lbBody');
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────
+switchLb('beginner');
+initRound();
+</script>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Verb Sprint — English Games</title>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+
+/* Timer */
+.timer-wrap { width:100%; }
+.timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
+.timer-fill  { height:100%; background:var(--gold); border-radius:99px; transition:width .5s linear, background .4s; }
+.timer-fill.urgent { background:var(--wrong); }
+.timer-row   { display:flex; justify-content:space-between; margin-top:.3rem; }
+.timer-row span { font-family:'Space Mono',monospace; font-size:.65rem; color:var(--muted); }
+.timer-val   { color:var(--gold) !important; font-weight:700; }
+.timer-val.urgent { color:var(--wrong) !important; }
+
+/* HUD pills */
+.hud { display:flex; gap:.5rem; width:100%; flex-wrap:wrap; }
+.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .9rem; text-align:center; flex:1; min-width:64px; }
+.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
+.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+/* Round dots */
+.dots { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
+.dot  { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
+.dot.correct { background:var(--correct); }
+.dot.partial { background:#b8860b; }
+.dot.wrong   { background:var(--wrong); }
+.dot.skip    { background:rgba(255,255,255,.2); }
+
+/* Verb card */
+.verb-card {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:1.5rem 1.75rem;
+  display:flex; flex-direction:column; gap:1rem;
+  animation:fadeIn .25s ease;
+}
+.verb-card.flash-correct { border-color:var(--correct); background:var(--correct-dim); }
+.verb-card.flash-wrong   { border-color:var(--wrong);   background:var(--wrong-dim);   animation:shake .35s; }
+
+/* Mode A: base form shown */
+.base-verb {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2rem,8vw,3rem); font-weight:900;
+  color:var(--gold); text-align:center; letter-spacing:.02em;
+}
+.base-verb .group-tag {
+  display:block; font-family:'Space Mono',monospace;
+  font-size:.6rem; color:var(--muted); letter-spacing:.14em;
+  text-transform:uppercase; margin-top:.2rem; font-weight:400;
+}
+
+/* Mode B: sentence shown */
+.sentence-display {
+  font-size:1.1rem; line-height:1.75; color:var(--text);
+  text-align:center; padding:.5rem 0;
+}
+.sentence-display .blank {
+  display:inline-block;
+  border-bottom:2px solid var(--gold);
+  min-width:80px; color:var(--gold);
+  font-family:'Space Mono',monospace;
+  font-size:.9rem; letter-spacing:.08em;
+  padding:0 .25rem; text-align:center;
+  vertical-align:middle;
+}
+.form-hint {
+  font-family:'Space Mono',monospace; font-size:.65rem;
+  color:var(--muted); text-align:center; letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+/* Input rows */
+.input-grid { display:flex; flex-direction:column; gap:.6rem; width:100%; }
+.input-row  { display:flex; gap:.5rem; align-items:center; }
+.input-label {
+  font-family:'Space Mono',monospace; font-size:.62rem;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); min-width:110px; flex-shrink:0;
+}
+.verb-input {
+  flex:1; background:var(--surface2); border:1.5px solid var(--border2);
+  border-radius:8px; padding:.55rem .9rem;
+  font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
+  color:var(--text); outline:none; transition:border-color .2s, background .2s;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.verb-input:focus  { border-color:var(--gold); background:var(--gold-dim); }
+.verb-input.ok     { border-color:var(--correct) !important; background:var(--correct-dim) !important; color:var(--correct); }
+.verb-input.err    { border-color:var(--wrong)   !important; background:var(--wrong-dim)   !important; color:var(--wrong); }
+.verb-input.readonly { opacity:.6; cursor:default; }
+.reveal-text { font-family:'Space Mono',monospace; font-size:.7rem; color:var(--correct); display:none; }
+
+/* Action row */
+.action-row { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; }
+
+/* Feedback */
+.feedback { min-height:1.3rem; font-size:.85rem; font-weight:600; text-align:center; font-family:'Space Mono',monospace; }
+.feedback.ok   { color:var(--correct); }
+.feedback.bad  { color:var(--wrong); }
+.feedback.info { color:var(--gold); }
+
+/* End card */
+.end-card {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(13,13,13,.97); backdrop-filter:blur(8px);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:1rem; padding:2rem 1.5rem;
+  overflow-y:auto; animation:fadeIn .4s ease;
+}
+.end-score { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:900; color:var(--gold); }
+.review-grid  { display:flex; flex-direction:column; gap:.35rem; width:100%; max-width:460px; max-height:38vh; overflow-y:auto; }
+.review-item  { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.45rem .9rem; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:.5rem; align-items:center; font-size:.8rem; cursor:pointer; transition:border-color .15s; }
+.review-item:hover { border-color:var(--gold); }
+.review-item.correct { border-left:3px solid var(--correct); }
+.review-item.partial { border-left:3px solid #b8860b; }
+.review-item.wrong   { border-left:3px solid var(--wrong); }
+.review-item.skip    { border-left:3px solid rgba(255,255,255,.2); opacity:.6; }
+.rv-base { font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); }
+.rv-form { font-family:'Space Mono',monospace; font-size:.7rem; }
+.rv-form.ok  { color:var(--correct); }
+.rv-form.bad { color:var(--wrong); text-decoration:line-through; }
+.rv-tag  { font-family:'Space Mono',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; }
+
+.lb-section { width:100%; max-width:580px; padding:0 1rem 2.5rem; }
+
+/* blink inactive tabs */
+@keyframes modePulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.diff-tab:not(.active) { animation:modePulse 2.8s ease-in-out infinite; }
+.diff-tab:not(.active):hover { animation:none; opacity:1; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">⚡ Verb Sprint</span>
+  <span></span>
+</nav>
+
+<main>
+  <!-- Difficulty tabs -->
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="tabA" onclick="setMode('easy')">Easy</button>
+      <button class="diff-tab"        id="tabB" onclick="setMode('medium')">Medium</button>
+      <button class="diff-tab"        id="tabC" onclick="setMode('hard')">Hard</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+    <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+    <div class="hud-pill"><div class="val" id="hintVal">1</div><div class="lbl">Hint</div></div>
+    <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-wrap">
+    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">90s</span></div>
+  </div>
+
+  <!-- Verb card -->
+  <div class="verb-card" id="verbCard">
+    <!-- Easy/Medium: base form -->
+    <div id="baseView">
+      <div class="base-verb" id="baseVerb">—<span class="group-tag" id="groupTag"></span></div>
+    </div>
+    <!-- Hard: sentence with blank -->
+    <div id="sentenceView" style="display:none">
+      <div class="sentence-display" id="sentenceDisplay"></div>
+      <div class="form-hint" id="formHint"></div>
+    </div>
+
+    <!-- Input grid (changes based on mode) -->
+    <div class="input-grid" id="inputGrid"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <button class="btn-primary" id="submitBtn" onclick="submitAnswer()">Check ✓</button>
+    <button class="btn-ghost"   id="hintBtn"   onclick="useHint()">💡 Hint</button>
+    <button class="btn-ghost"   id="skipBtn"   onclick="skipVerb()">⏭ Skip (−5)</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <!-- End card -->
+  <div class="end-card" id="endCard" style="display:none">
+    <div class="eyebrow" id="endTitle">Round complete</div>
+    <div class="end-score" id="endScore">0 pts</div>
+    <p style="color:var(--muted);font-size:.88rem;text-align:center;max-width:340px" id="endMsg"></p>
+    <div class="review-grid" id="reviewGrid"></div>
+    <div id="submitArea" style="width:100%;max-width:460px">
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+      <button class="btn-ghost" onclick="restartGame()">Play again</button>
+      <button class="btn-ghost" onclick="setMode(currentMode==='easy'?'medium':currentMode==='medium'?'hard':'easy')">Switch mode</button>
+      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    </div>
+  </div>
+</main>
+
+<div class="lb-section">
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <div class="diff-tabs" style="margin-bottom:.75rem">
+      <button class="diff-tab active" id="lbTabE" onclick="switchLb('easy')">Easy</button>
+      <button class="diff-tab"        id="lbTabM" onclick="switchLb('medium')">Medium</button>
+      <button class="diff-tab"        id="lbTabH" onclick="switchLb('hard')">Hard</button>
+    </div>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// VERB SPRINT
+// Modes:
+//   easy   — show base verb, type PAST SIMPLE only (PP shown)
+//   medium — show base verb, type BOTH forms
+//   hard   — show a sentence with a blank, type the ONE missing form
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Full irregular verb list ───────────────────────────────────────
+// Format: [base, pastSimple, pastParticiple, group, sentences]
+// sentences: [{text, blank:'ps'|'pp'|'base', answer}]
+const VERBS = [
+  // ── A ─────────────────────────────────────────────────────────
+  {b:'arise',   ps:'arose',    pp:'arisen',    g:'A/B/C',
+   s:[{t:'A problem ___ during the meeting that no one had expected.',         f:'ps'},
+      {t:'Several issues have ___ from the new policy.',                       f:'pp'}]},
+  {b:'awake',   ps:'awoke',    pp:'awoken',    g:'A/B/C',
+   s:[{t:'She ___ to the sound of birds singing outside her window.',          f:'ps'},
+      {t:'He had ___ several times during the night.',                         f:'pp'}]},
+  // ── B ─────────────────────────────────────────────────────────
+  {b:'be',      ps:'was/were', pp:'been',      g:'A/B/C',
+   s:[{t:'She ___ a doctor before she retired.',                               f:'ps'},
+      {t:'He has ___ working here for ten years.',                             f:'pp'}]},
+  {b:'bear',    ps:'bore',     pp:'borne',     g:'A/B/C',
+   s:[{t:'She ___ the pain with remarkable courage.',                          f:'ps'},
+      {t:'He has ___ the responsibility alone for too long.',                  f:'pp'}]},
+  {b:'beat',    ps:'beat',     pp:'beaten',    g:'A/B/C',
+   s:[{t:'Our team ___ theirs by three goals to one.',                         f:'ps'},
+      {t:'The record had not been ___ in over twenty years.',                  f:'pp'}]},
+  {b:'become',  ps:'became',   pp:'become',    g:'A/B/A',
+   s:[{t:'She ___ a well-known author after her first novel was published.',   f:'ps'},
+      {t:'It has ___ increasingly difficult to find affordable housing.',      f:'pp'}]},
+  {b:'begin',   ps:'began',    pp:'begun',     g:'A/B/C',
+   s:[{t:'The concert ___ an hour late due to technical problems.',            f:'ps'},
+      {t:'Work has already ___ on the new bridge.',                            f:'pp'}]},
+  {b:'bend',    ps:'bent',     pp:'bent',      g:'A/B/B',
+   s:[{t:'He ___ down to pick up the coin from the floor.',                   f:'ps'},
+      {t:'The metal pipe had been ___ out of shape.',                          f:'pp'}]},
+  {b:'bite',    ps:'bit',      pp:'bitten',    g:'A/B/C',
+   s:[{t:'The dog ___ the postman on the ankle.',                              f:'ps'},
+      {t:'She had been ___ by a mosquito during the night.',                   f:'pp'}]},
+  {b:'blow',    ps:'blew',     pp:'blown',     g:'A/B/C',
+   s:[{t:'A strong wind ___ the leaves across the garden.',                   f:'ps'},
+      {t:'The roof had been ___ off in the storm.',                            f:'pp'}]},
+  {b:'break',   ps:'broke',    pp:'broken',    g:'A/B/C',
+   s:[{t:'She ___ her leg while skiing last winter.',                          f:'ps'},
+      {t:'The window had been ___ by a stray ball.',                           f:'pp'}]},
+  {b:'breed',   ps:'bred',     pp:'bred',      g:'A/B/B',
+   s:[{t:'Farmers ___ cattle on this land for generations.',                  f:'ps'},
+      {t:'These dogs were specifically ___ for hunting.',                      f:'pp'}]},
+  {b:'bring',   ps:'brought',  pp:'brought',   g:'A/B/B',
+   s:[{t:'She ___ flowers to the hospital every week.',                        f:'ps'},
+      {t:'He has ___ his lunch to work every day this week.',                  f:'pp'}]},
+  {b:'build',   ps:'built',    pp:'built',     g:'A/B/B',
+   s:[{t:'They ___ the bridge in just eighteen months.',                       f:'ps'},
+      {t:'The house was ___ in the early nineteenth century.',                 f:'pp'}]},
+  {b:'burn',    ps:'burnt',    pp:'burnt',     g:'A/B/B',
+   s:[{t:'She accidentally ___ the toast while reading the newspaper.',        f:'ps'},
+      {t:'The old factory had been ___ to the ground.',                        f:'pp'}]},
+  {b:'buy',     ps:'bought',   pp:'bought',    g:'A/B/B',
+   s:[{t:'He ___ a new laptop before starting university.',                    f:'ps'},
+      {t:'She has just ___ a house in the countryside.',                       f:'pp'}]},
+  // ── C ─────────────────────────────────────────────────────────
+  {b:'catch',   ps:'caught',   pp:'caught',    g:'A/B/B',
+   s:[{t:'She ___ the ball with one hand.',                                    f:'ps'},
+      {t:'The thief was finally ___ by police.',                               f:'pp'}]},
+  {b:'choose',  ps:'chose',    pp:'chosen',    g:'A/B/C',
+   s:[{t:'She ___ the red dress for the ceremony.',                            f:'ps'},
+      {t:'He was ___ to represent his country at the competition.',            f:'pp'}]},
+  {b:'come',    ps:'came',     pp:'come',      g:'A/B/A',
+   s:[{t:'She ___ home late every night that week.',                           f:'ps'},
+      {t:'He has ___ a long way since his difficult childhood.',               f:'pp'}]},
+  {b:'cost',    ps:'cost',     pp:'cost',      g:'A/A/A',
+   s:[{t:'The repairs ___ far more than we had anticipated.',                  f:'ps'},
+      {t:'It has ___ the company millions in lost revenue.',                   f:'pp'}]},
+  {b:'cut',     ps:'cut',      pp:'cut',       g:'A/A/A',
+   s:[{t:'She ___ her finger while chopping vegetables.',                      f:'ps'},
+      {t:'The budget had been ___ by twenty per cent.',                        f:'pp'}]},
+  // ── D ─────────────────────────────────────────────────────────
+  {b:'deal',    ps:'dealt',    pp:'dealt',     g:'A/B/B',
+   s:[{t:'The company ___ with thousands of complaints last year.',            f:'ps'},
+      {t:'The matter has been ___ with very efficiently.',                     f:'pp'}]},
+  {b:'dig',     ps:'dug',      pp:'dug',       g:'A/B/B',
+   s:[{t:'The archaeologists ___ carefully through the soil.',                 f:'ps'},
+      {t:'A large hole had been ___ in the middle of the garden.',             f:'pp'}]},
+  {b:'do',      ps:'did',      pp:'done',      g:'A/B/C',
+   s:[{t:'She ___ all the housework while her husband was in hospital.',       f:'ps'},
+      {t:'He has ___ everything he possibly can to help.',                     f:'pp'}]},
+  {b:'draw',    ps:'drew',     pp:'drawn',     g:'A/B/C',
+   s:[{t:'The artist ___ a beautiful portrait of her mother.',                 f:'ps'},
+      {t:'The curtains had been ___ to keep out the light.',                   f:'pp'}]},
+  {b:'dream',   ps:'dreamt',   pp:'dreamt',    g:'A/B/B',
+   s:[{t:'He ___ about his childhood home almost every night.',                f:'ps'},
+      {t:'She had never ___ that she would become so famous.',                 f:'pp'}]},
+  {b:'drink',   ps:'drank',    pp:'drunk',     g:'A/B/C',
+   s:[{t:'He ___ three cups of coffee before the meeting.',                   f:'ps'},
+      {t:'She had ___ the entire bottle of water during the run.',             f:'pp'}]},
+  {b:'drive',   ps:'drove',    pp:'driven',    g:'A/B/C',
+   s:[{t:'She ___ through the night to reach the hospital in time.',          f:'ps'},
+      {t:'He has ___ the same route every morning for twenty years.',          f:'pp'}]},
+  // ── E ─────────────────────────────────────────────────────────
+  {b:'eat',     ps:'ate',      pp:'eaten',     g:'A/B/C',
+   s:[{t:'They ___ dinner in silence after the argument.',                     f:'ps'},
+      {t:'She had ___ nothing all day and was exhausted.',                     f:'pp'}]},
+  // ── F ─────────────────────────────────────────────────────────
+  {b:'fall',    ps:'fell',     pp:'fallen',    g:'A/B/C',
+   s:[{t:'She ___ asleep the moment her head touched the pillow.',             f:'ps'},
+      {t:'Several trees had ___ across the road during the storm.',            f:'pp'}]},
+  {b:'feed',    ps:'fed',      pp:'fed',       g:'A/B/B',
+   s:[{t:'She ___ the ducks in the park every Sunday morning.',                f:'ps'},
+      {t:'The children had already been ___ when their father arrived.',       f:'pp'}]},
+  {b:'feel',    ps:'felt',     pp:'felt',      g:'A/B/B',
+   s:[{t:'He ___ a sharp pain in his chest during the meeting.',               f:'ps'},
+      {t:'She has always ___ more comfortable in small groups.',               f:'pp'}]},
+  {b:'fight',   ps:'fought',   pp:'fought',    g:'A/B/B',
+   s:[{t:'They ___ for justice for over twenty years.',                        f:'ps'},
+      {t:'He has ___ against the decision from the very beginning.',           f:'pp'}]},
+  {b:'find',    ps:'found',    pp:'found',     g:'A/B/B',
+   s:[{t:'She ___ the missing document at the bottom of her bag.',             f:'ps'},
+      {t:'No solution has yet been ___ to the problem.',                       f:'pp'}]},
+  {b:'fly',     ps:'flew',     pp:'flown',     g:'A/B/C',
+   s:[{t:'She ___ to New York for the conference.',                            f:'ps'},
+      {t:'He has ___ over a hundred different routes in his career.',          f:'pp'}]},
+  {b:'forbid',  ps:'forbade',  pp:'forbidden', g:'A/B/C',
+   s:[{t:'The doctor ___ him from drinking alcohol.',                          f:'ps'},
+      {t:'Smoking is strictly ___ on all company premises.',                   f:'pp'}]},
+  {b:'forget',  ps:'forgot',   pp:'forgotten', g:'A/B/C',
+   s:[{t:'She ___ to lock the door when she left in a hurry.',                 f:'ps'},
+      {t:'He had completely ___ about the appointment.',                       f:'pp'}]},
+  {b:'freeze',  ps:'froze',    pp:'frozen',    g:'A/B/C',
+   s:[{t:'The pipes ___ overnight when the temperature dropped sharply.',      f:'ps'},
+      {t:'She stood ___, unable to move or speak.',                            f:'pp'}]},
+  // ── G ─────────────────────────────────────────────────────────
+  {b:'get',     ps:'got',      pp:'got',       g:'A/B/B',
+   s:[{t:'She ___ a promotion after only six months in the job.',              f:'ps'},
+      {t:'He has ___ much better at managing his time.',                       f:'pp'}]},
+  {b:'give',    ps:'gave',     pp:'given',     g:'A/B/C',
+   s:[{t:'The teacher ___ the students a very difficult assignment.',          f:'ps'},
+      {t:'He was ___ an award for his contribution to the community.',         f:'pp'}]},
+  {b:'go',      ps:'went',     pp:'gone',      g:'A/B/C',
+   s:[{t:'She ___ to university in Edinburgh.',                                f:'ps'},
+      {t:'He has ___ to great lengths to avoid making a decision.',            f:'pp'}]},
+  {b:'grow',    ps:'grew',     pp:'grown',     g:'A/B/C',
+   s:[{t:'The company ___ rapidly during the first three years.',              f:'ps'},
+      {t:'The children had ___ so much since the last time she saw them.',     f:'pp'}]},
+  // ── H ─────────────────────────────────────────────────────────
+  {b:'hang',    ps:'hung',     pp:'hung',      g:'A/B/B',
+   s:[{t:'She ___ the painting carefully on the living room wall.',            f:'ps'},
+      {t:'The decorations had been ___ the night before the party.',           f:'pp'}]},
+  {b:'have',    ps:'had',      pp:'had',       g:'A/B/B',
+   s:[{t:'They ___ a wonderful time at the wedding reception.',                f:'ps'},
+      {t:'She has ___ three job offers in the past month.',                    f:'pp'}]},
+  {b:'hear',    ps:'heard',    pp:'heard',     g:'A/B/B',
+   s:[{t:'I ___ a strange noise coming from the attic.',                       f:'ps'},
+      {t:'Have you ___ the news about the company merger?',                    f:'pp'}]},
+  {b:'hide',    ps:'hid',      pp:'hidden',    g:'A/B/C',
+   s:[{t:'The children ___ behind the sofa during the game.',                  f:'ps'},
+      {t:'The treasure had been ___ beneath the floorboards.',                 f:'pp'}]},
+  {b:'hit',     ps:'hit',      pp:'hit',       g:'A/A/A',
+   s:[{t:'The car ___ a lamp post and came to a sudden stop.',                 f:'ps'},
+      {t:'The sales target was ___ two months ahead of schedule.',             f:'pp'}]},
+  {b:'hold',    ps:'held',     pp:'held',      g:'A/B/B',
+   s:[{t:'She ___ his hand tightly throughout the operation.',                 f:'ps'},
+      {t:'The ceremony was ___ in the great hall of the university.',          f:'pp'}]},
+  {b:'hurt',    ps:'hurt',     pp:'hurt',      g:'A/A/A',
+   s:[{t:'He ___ his knee when he slipped on the wet floor.',                  f:'ps'},
+      {t:'Several people were ___ in the accident.',                           f:'pp'}]},
+  // ── K ─────────────────────────────────────────────────────────
+  {b:'keep',    ps:'kept',     pp:'kept',      g:'A/B/B',
+   s:[{t:'She ___ a diary every day for thirty years.',                        f:'ps'},
+      {t:'The files had been ___ in a locked cabinet.',                        f:'pp'}]},
+  {b:'know',    ps:'knew',     pp:'known',     g:'A/B/C',
+   s:[{t:'She ___ immediately that something was wrong.',                      f:'ps'},
+      {t:'He has ___ about the problem for months but said nothing.',          f:'pp'}]},
+  // ── L ─────────────────────────────────────────────────────────
+  {b:'lay',     ps:'laid',     pp:'laid',      g:'A/B/B',
+   s:[{t:'She ___ the baby gently in the cot.',                                f:'ps'},
+      {t:'The foundations had been ___ before winter arrived.',                f:'pp'}]},
+  {b:'lead',    ps:'led',      pp:'led',       g:'A/B/B',
+   s:[{t:'She ___ the team to victory in the championship.',                   f:'ps'},
+      {t:'The investigation was ___ by the most senior detective.',            f:'pp'}]},
+  {b:'learn',   ps:'learnt',   pp:'learnt',    g:'A/B/B',
+   s:[{t:'She ___ to play the piano when she was only four.',                  f:'ps'},
+      {t:'He had ___ three languages by the time he was twenty.',              f:'pp'}]},
+  {b:'leave',   ps:'left',     pp:'left',      g:'A/B/B',
+   s:[{t:'She ___ the office without saying goodbye to anyone.',               f:'ps'},
+      {t:'The children were ___ alone in the house for the first time.',       f:'pp'}]},
+  {b:'lend',    ps:'lent',     pp:'lent',      g:'A/B/B',
+   s:[{t:'She ___ him her car for the weekend.',                               f:'ps'},
+      {t:'The money had been ___ on very favourable terms.',                   f:'pp'}]},
+  {b:'let',     ps:'let',      pp:'let',       g:'A/A/A',
+   s:[{t:'Her parents ___ her stay out until midnight.',                       f:'ps'},
+      {t:'He was not ___ into the building without identification.',           f:'pp'}]},
+  {b:'lie',     ps:'lay',      pp:'lain',      g:'A/B/C',
+   s:[{t:'She ___ awake for hours worrying about the exam.',                   f:'ps'},
+      {t:'The book had ___ unopened on his desk for weeks.',                   f:'pp'}]},
+  {b:'lose',    ps:'lost',     pp:'lost',      g:'A/B/B',
+   s:[{t:'She ___ her keys for the third time that week.',                     f:'ps'},
+      {t:'The company has ___ a significant share of the market.',             f:'pp'}]},
+  // ── M ─────────────────────────────────────────────────────────
+  {b:'make',    ps:'made',     pp:'made',      g:'A/B/B',
+   s:[{t:'She ___ a real effort to get to know her new colleagues.',           f:'ps'},
+      {t:'A decision has been ___ to close the factory.',                      f:'pp'}]},
+  {b:'mean',    ps:'meant',    pp:'meant',     g:'A/B/B',
+   s:[{t:'He ___ to apologise but never found the right moment.',              f:'ps'},
+      {t:'It was not ___ to cause offence.',                                   f:'pp'}]},
+  {b:'meet',    ps:'met',      pp:'met',       g:'A/B/B',
+   s:[{t:'She ___ her future husband at a conference in Vienna.',              f:'ps'},
+      {t:'Have you ever ___ anyone truly famous?',                             f:'pp'}]},
+  // ── P ─────────────────────────────────────────────────────────
+  {b:'pay',     ps:'paid',     pp:'paid',      g:'A/B/B',
+   s:[{t:'She ___ the bill before the waiter could argue.',                    f:'ps'},
+      {t:'The invoice has not yet been ___ by the client.',                    f:'pp'}]},
+  {b:'put',     ps:'put',      pp:'put',       g:'A/A/A',
+   s:[{t:'She ___ the kettle on before sitting down.',                         f:'ps'},
+      {t:'Considerable pressure has been ___ on the government.',              f:'pp'}]},
+  // ── R ─────────────────────────────────────────────────────────
+  {b:'read',    ps:'read',     pp:'read',      g:'A/A/A',
+   s:[{t:'She ___ the entire novel in one sitting.',                           f:'ps'},
+      {t:'The report has been ___ by all members of the committee.',           f:'pp'}]},
+  {b:'ride',    ps:'rode',     pp:'ridden',    g:'A/B/C',
+   s:[{t:'She ___ her bicycle to school every day until she was sixteen.',     f:'ps'},
+      {t:'He had never ___ a horse before that afternoon.',                    f:'pp'}]},
+  {b:'ring',    ps:'rang',     pp:'rung',      g:'A/B/C',
+   s:[{t:'She ___ the doorbell three times before anyone answered.',           f:'ps'},
+      {t:'The alarm had already ___ twice that morning.',                      f:'pp'}]},
+  {b:'rise',    ps:'rose',     pp:'risen',     g:'A/B/C',
+   s:[{t:'The sun ___ earlier than expected that June morning.',               f:'ps'},
+      {t:'Prices have ___ sharply over the past twelve months.',               f:'pp'}]},
+  {b:'run',     ps:'ran',      pp:'run',       g:'A/B/A',
+   s:[{t:'She ___ the fastest mile of her career at the championships.',       f:'ps'},
+      {t:'The company has been ___ by the same family since 1952.',            f:'pp'}]},
+  // ── S ─────────────────────────────────────────────────────────
+  {b:'say',     ps:'said',     pp:'said',      g:'A/B/B',
+   s:[{t:'She ___ goodbye and walked out without looking back.',               f:'ps'},
+      {t:'It has been ___ that he will not return to the club.',               f:'pp'}]},
+  {b:'see',     ps:'saw',      pp:'seen',      g:'A/B/C',
+   s:[{t:'She ___ the accident happen right in front of her.',                 f:'ps'},
+      {t:'Have you ___ the documentary about climate change?',                 f:'pp'}]},
+  {b:'sell',    ps:'sold',     pp:'sold',      g:'A/B/B',
+   s:[{t:'They ___ the house for much less than they had hoped.',              f:'ps'},
+      {t:'All tickets had been ___ within the first hour.',                    f:'pp'}]},
+  {b:'send',    ps:'sent',     pp:'sent',      g:'A/B/B',
+   s:[{t:'She ___ a long letter to her parents explaining everything.',        f:'ps'},
+      {t:'The package was ___ by express delivery.',                           f:'pp'}]},
+  {b:'set',     ps:'set',      pp:'set',       g:'A/A/A',
+   s:[{t:'She ___ her alarm for six o\'clock.',                                f:'ps'},
+      {t:'A new world record has been ___ at the championships.',              f:'pp'}]},
+  {b:'shake',   ps:'shook',    pp:'shaken',    g:'A/B/C',
+   s:[{t:'She ___ his hand firmly when they were introduced.',                 f:'ps'},
+      {t:'He was visibly ___ by the news of the accident.',                    f:'pp'}]},
+  {b:'shine',   ps:'shone',    pp:'shone',     g:'A/B/B',
+   s:[{t:'The sun ___ all day and the temperature soared.',                   f:'ps'},
+      {t:'Her talent has always ___ through in everything she does.',          f:'pp'}]},
+  {b:'show',    ps:'showed',   pp:'shown',     g:'A/B/C',
+   s:[{t:'She ___ him around the building on his first day.',                  f:'ps'},
+      {t:'The evidence has clearly ___ that the policy has failed.',           f:'pp'}]},
+  {b:'shut',    ps:'shut',     pp:'shut',      g:'A/A/A',
+   s:[{t:'She ___ the door quietly so as not to wake the children.',          f:'ps'},
+      {t:'The factory was ___ down after the safety inspection.',              f:'pp'}]},
+  {b:'sing',    ps:'sang',     pp:'sung',      g:'A/B/C',
+   s:[{t:'She ___ beautifully at the wedding ceremony.',                       f:'ps'},
+      {t:'The anthem has been ___ at this stadium for fifty years.',           f:'pp'}]},
+  {b:'sink',    ps:'sank',     pp:'sunk',      g:'A/B/C',
+   s:[{t:'The ship ___ within minutes of hitting the rocks.',                  f:'ps'},
+      {t:'His heart ___ when he realised what had happened.',                  f:'ps'}]},
+  {b:'sit',     ps:'sat',      pp:'sat',       g:'A/B/B',
+   s:[{t:'She ___ by the window and watched the rain for hours.',              f:'ps'},
+      {t:'He had ___ in the same chair for thirty years.',                     f:'pp'}]},
+  {b:'sleep',   ps:'slept',    pp:'slept',     g:'A/B/B',
+   s:[{t:'She ___ for twelve hours after the long journey.',                   f:'ps'},
+      {t:'He has barely ___ since the baby was born.',                         f:'pp'}]},
+  {b:'speak',   ps:'spoke',    pp:'spoken',    g:'A/B/C',
+   s:[{t:'She ___ to the manager about the complaint.',                        f:'ps'},
+      {t:'He has ___ publicly about his experience for the first time.',       f:'pp'}]},
+  {b:'spend',   ps:'spent',    pp:'spent',     g:'A/B/B',
+   s:[{t:'She ___ three years living abroad before returning home.',           f:'ps'},
+      {t:'A great deal of money has been ___ on the renovation.',              f:'pp'}]},
+  {b:'spill',   ps:'spilt',    pp:'spilt',     g:'A/B/B',
+   s:[{t:'She ___ coffee all over the important documents.',                   f:'ps'},
+      {t:'The chemicals had been ___ into the river.',                         f:'pp'}]},
+  {b:'stand',   ps:'stood',    pp:'stood',     g:'A/B/B',
+   s:[{t:'She ___ at the window for an hour, waiting.',                        f:'ps'},
+      {t:'He has always ___ by his principles, regardless of the cost.',       f:'pp'}]},
+  {b:'steal',   ps:'stole',    pp:'stolen',    g:'A/B/C',
+   s:[{t:'Someone ___ her bicycle while she was in the shop.',                 f:'ps'},
+      {t:'The painting had been ___ from the museum overnight.',               f:'pp'}]},
+  {b:'stick',   ps:'stuck',    pp:'stuck',     g:'A/B/B',
+   s:[{t:'She ___ the poster to the wall with tape.',                          f:'ps'},
+      {t:'The drawer had been ___ for months.',                                f:'pp'}]},
+  {b:'sting',   ps:'stung',    pp:'stung',     g:'A/B/B',
+   s:[{t:'A bee ___ him on the hand while he was gardening.',                  f:'ps'},
+      {t:'His eyes were ___ by the smoke.',                                    f:'pp'}]},
+  {b:'strike',  ps:'struck',   pp:'struck',    g:'A/B/B',
+   s:[{t:'Lightning ___ the tree and split it in two.',                        f:'ps'},
+      {t:'He was ___ by the sheer beauty of the landscape.',                   f:'pp'}]},
+  {b:'swear',   ps:'swore',    pp:'sworn',     g:'A/B/C',
+   s:[{t:'She ___ she had never seen him before in her life.',                 f:'ps'},
+      {t:'He has ___ to tell the truth, the whole truth.',                     f:'pp'}]},
+  {b:'sweep',   ps:'swept',    pp:'swept',     g:'A/B/B',
+   s:[{t:'She ___ the floor before the guests arrived.',                       f:'ps'},
+      {t:'The fire had ___ through the building in minutes.',                  f:'pp'}]},
+  {b:'swim',    ps:'swam',     pp:'swum',      g:'A/B/C',
+   s:[{t:'She ___ the Channel when she was only seventeen.',                   f:'ps'},
+      {t:'He has ___ in every major competition for the past decade.',         f:'pp'}]},
+  // ── T ─────────────────────────────────────────────────────────
+  {b:'take',    ps:'took',     pp:'taken',     g:'A/B/C',
+   s:[{t:'She ___ a photograph of every place she visited.',                   f:'ps'},
+      {t:'The medicine should be ___ twice a day with food.',                  f:'pp'}]},
+  {b:'teach',   ps:'taught',   pp:'taught',    g:'A/B/B',
+   s:[{t:'She ___ English at the same school for thirty years.',               f:'ps'},
+      {t:'I was ___ to always tell the truth.',                                f:'pp'}]},
+  {b:'tear',    ps:'tore',     pp:'torn',      g:'A/B/C',
+   s:[{t:'She ___ the letter into pieces without reading it.',                 f:'ps'},
+      {t:'His jacket had been ___ on the barbed wire.',                        f:'pp'}]},
+  {b:'tell',    ps:'told',     pp:'told',      g:'A/B/B',
+   s:[{t:'She ___ him exactly what she thought of his behaviour.',             f:'ps'},
+      {t:'We were ___ that the project had been cancelled.',                   f:'pp'}]},
+  {b:'think',   ps:'thought',  pp:'thought',   g:'A/B/B',
+   s:[{t:'She ___ carefully before giving her answer.',                        f:'ps'},
+      {t:'It had been ___ impossible to complete the task in time.',           f:'pp'}]},
+  {b:'throw',   ps:'threw',    pp:'thrown',    g:'A/B/C',
+   s:[{t:'She ___ the ball with remarkable accuracy.',                         f:'ps'},
+      {t:'The rubbish should be ___ into the bin provided.',                   f:'pp'}]},
+  // ── U ─────────────────────────────────────────────────────────
+  {b:'understand',ps:'understood',pp:'understood',g:'A/B/B',
+   s:[{t:'She ___ immediately why he had made that decision.',                 f:'ps'},
+      {t:'It is widely ___ that the situation is more complex than it seems.', f:'pp'}]},
+  // ── W ─────────────────────────────────────────────────────────
+  {b:'wake',    ps:'woke',     pp:'woken',     g:'A/B/C',
+   s:[{t:'She ___ early and lay listening to the birds.',                      f:'ps'},
+      {t:'He had been ___ by a loud noise in the street.',                     f:'pp'}]},
+  {b:'wear',    ps:'wore',     pp:'worn',      g:'A/B/C',
+   s:[{t:'She ___ the same coat every winter for twenty years.',               f:'ps'},
+      {t:'The carpet had been ___ thin by constant foot traffic.',             f:'pp'}]},
+  {b:'win',     ps:'won',      pp:'won',       g:'A/B/B',
+   s:[{t:'She ___ the championship three years in a row.',                     f:'ps'},
+      {t:'The prize has been ___ by someone from the local school.',           f:'pp'}]},
+  {b:'write',   ps:'wrote',    pp:'written',   g:'A/B/C',
+   s:[{t:'She ___ three novels before she was thirty.',                        f:'ps'},
+      {t:'The report had been ___ in a hurry and contained several errors.',   f:'pp'}]},
+];
+
+// ── Game state ─────────────────────────────────────────────────────
+const ROUND_SIZE = 10;
+const TIMES = { easy:90, medium:90, hard:100 };
+let currentMode = 'easy';
+let roundVerbs = [], current = 0, score = 0, skips = 3, hints = 1, streak = 0;
+let timerInterval = null, timeLeft = 90;
+let results = []; // {verb, psTyped, ppTyped, correct, partial, skipped}
+let hintUsed = false;
+
+// ── Mode switch ─────────────────────────────────────────────────────
+function setMode(m) {
+  currentMode = m;
+  ['easy','medium','hard'].forEach(x => {
+    document.getElementById('tab'+{easy:'A',medium:'B',hard:'C'}[x]).classList.toggle('active', x===m);
+  });
+  switchLb(m);
+  restartGame();
+}
+
+function switchLb(m) {
+  ['easy','medium','hard'].forEach(x => {
+    const el = document.getElementById('lbTab'+{easy:'E',medium:'M',hard:'H'}[x]);
+    if(el) el.classList.toggle('active', x===m);
+  });
+  renderLeaderboard('verbsprint_'+m, 'lbBody');
+}
+
+// ── Init round ──────────────────────────────────────────────────────
+function initRound() {
+  const indices = freshIndices('verbsprint_'+currentMode, VERBS, ROUND_SIZE);
+  indices.forEach(i => markSeen('verbsprint_'+currentMode, i));
+  roundVerbs = indices.map(i => VERBS[i]);
+
+  current = 0; score = 0; skips = 3; hints = 1; streak = 0;
+  hintUsed = false; results = [];
+
+  document.getElementById('endCard').style.display = 'none';
+  document.getElementById('scoreVal').textContent  = 0;
+  document.getElementById('skipsVal').textContent  = 3;
+  document.getElementById('hintVal').textContent   = 1;
+  document.getElementById('streakVal').textContent = 0;
+  buildDots();
+  loadVerb();
+  startTimer();
+}
+
+function buildDots() {
+  const el = document.getElementById('dots'); el.innerHTML='';
+  for(let i=0;i<ROUND_SIZE;i++){
+    const d=document.createElement('div'); d.className='dot'; d.id='dot'+i;
+    el.appendChild(d);
+  }
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = TIMES[currentMode];
+  updateTimer();
+  timerInterval = setInterval(()=>{ timeLeft--; updateTimer(); if(timeLeft<=0){clearInterval(timerInterval);timeOut();} },1000);
+}
+
+function updateTimer() {
+  const pct = Math.max(0, timeLeft / TIMES[currentMode]);
+  const fill = document.getElementById('timerFill');
+  const val  = document.getElementById('timerVal');
+  fill.style.width = (pct*100)+'%';
+  val.textContent  = timeLeft+'s';
+  const u = timeLeft <= 20;
+  fill.classList.toggle('urgent', u);
+  val.classList.toggle('urgent', u);
+}
+
+function timeOut() {
+  // Auto-skip remaining
+  if(current < ROUND_SIZE) {
+    results.push({verb:roundVerbs[current], psTyped:'', ppTyped:'', correct:false, partial:false, skipped:true, timeOut:true});
+    document.getElementById('dot'+current).className='dot skip';
+    current++;
+    if(current < ROUND_SIZE) { for(let i=current;i<ROUND_SIZE;i++){ results.push({verb:roundVerbs[i],psTyped:'',ppTyped:'',correct:false,partial:false,skipped:true,timeOut:true}); document.getElementById('dot'+i).className='dot skip'; } }
+  }
+  endRound();
+}
+
+// ── Load verb ───────────────────────────────────────────────────────
+let currentSentenceIdx = 0;
+
+function loadVerb() {
+  if(current >= ROUND_SIZE){ clearInterval(timerInterval); endRound(); return; }
+  const v = roundVerbs[current];
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className   = 'feedback';
+  hintUsed = false;
+
+  // Choose a sentence for hard mode
+  currentSentenceIdx = Math.floor(Math.random() * v.s.length);
+
+  if(currentMode === 'hard') {
+    // Show sentence with blank
+    document.getElementById('baseView').style.display     = 'none';
+    document.getElementById('sentenceView').style.display = 'block';
+    const s   = v.s[currentSentenceIdx];
+    const ans = s.f === 'ps' ? v.ps : v.pp;
+    const displayed = s.t.replace('.', '. ').replace(',', ', ').trim();
+    // Show blank
+    document.getElementById('sentenceDisplay').innerHTML =
+      displayed.replace('___', '<span class="blank">___</span>');
+    document.getElementById('formHint').textContent =
+      s.f === 'ps' ? 'Past simple of: ' + v.b.toUpperCase()
+                   : 'Past participle of: ' + v.b.toUpperCase();
+    // Build single input
+    const grid = document.getElementById('inputGrid');
+    grid.innerHTML = `
+      <div class="input-row">
+        <span class="input-label">${s.f==='ps'?'Past simple':'Past participle'}</span>
+        <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false"
+               placeholder="type here…" autofocus/>
+      </div>`;
+    document.getElementById('inp0').focus();
+    document.getElementById('inp0').addEventListener('keydown', e => { if(e.key==='Enter') submitAnswer(); });
+  } else {
+    // Easy / Medium: show base verb
+    document.getElementById('baseView').style.display     = 'block';
+    document.getElementById('sentenceView').style.display = 'none';
+    document.getElementById('baseVerb').innerHTML =
+      v.b.toUpperCase() + `<span class="group-tag">${v.g}</span>`;
+
+    const grid = document.getElementById('inputGrid');
+    if(currentMode === 'easy') {
+      // Easy: type past simple only, PP shown
+      grid.innerHTML = `
+        <div class="input-row">
+          <span class="input-label">Past simple</span>
+          <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
+        </div>
+        <div class="input-row">
+          <span class="input-label">Past participle</span>
+          <input class="verb-input readonly" id="inp1" value="${v.pp.toUpperCase()}" readonly/>
+        </div>`;
+    } else {
+      // Medium: type both
+      grid.innerHTML = `
+        <div class="input-row">
+          <span class="input-label">Past simple</span>
+          <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
+        </div>
+        <div class="input-row">
+          <span class="input-label">Past participle</span>
+          <input class="verb-input" id="inp1" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…"/>
+        </div>`;
+      // Enter in PS → focus PP; Enter in PP → submit
+      document.getElementById('inp0').addEventListener('keydown', e => {
+        if(e.key==='Enter'){ e.preventDefault(); document.getElementById('inp1').focus(); }
+      });
+      document.getElementById('inp1').addEventListener('keydown', e => {
+        if(e.key==='Enter') submitAnswer();
+      });
+    }
+    document.getElementById('inp0').addEventListener('keydown', e => {
+      if(e.key==='Enter' && currentMode==='easy') submitAnswer();
+    });
+    document.getElementById('inp0').focus();
+  }
+}
+
+// ── Submit ──────────────────────────────────────────────────────────
+function submitAnswer() {
+  const v    = roundVerbs[current];
+  const inp0 = document.getElementById('inp0');
+  const inp1 = document.getElementById('inp1');
+  if(!inp0) return;
+
+  if(currentMode === 'hard') {
+    const s   = v.s[currentSentenceIdx];
+    const ans = (s.f === 'ps' ? v.ps : v.pp).toLowerCase();
+    const typed = inp0.value.trim().toLowerCase();
+    if(!typed) return;
+
+    // Accept both variant spellings (e.g. burnt/burned)
+    const correct = checkAnswer(typed, ans);
+    if(correct) {
+      const pts = 20 + Math.floor(timeLeft/10)*2;
+      score += pts; streak++;
+      document.getElementById('scoreVal').textContent  = score;
+      document.getElementById('streakVal').textContent = streak;
+      inp0.classList.add('ok');
+      document.getElementById('dot'+current).className='dot correct';
+      results.push({verb:v, psTyped:typed, ppTyped:'', correct:true, partial:false, skipped:false, pts});
+      showFeedback('✓ Correct! +'+pts+' pts', 'ok');
+      advanceVerb(600);
+    } else {
+      inp0.classList.add('err');
+      streak = 0;
+      document.getElementById('streakVal').textContent = 0;
+      results.push({verb:v, psTyped:typed, ppTyped:'', correct:false, partial:false, skipped:false, pts:0});
+      document.getElementById('dot'+current).className='dot wrong';
+      showFeedback('✗ Answer: '+ans.toUpperCase(), 'bad');
+      advanceVerb(1200);
+    }
+  } else if(currentMode === 'easy') {
+    const typed = inp0.value.trim().toLowerCase();
+    if(!typed) return;
+    const correct = checkAnswer(typed, v.ps);
+    if(correct) {
+      const pts = 15 + Math.floor(timeLeft/15)*2;
+      score += pts; streak++;
+      document.getElementById('scoreVal').textContent  = score;
+      document.getElementById('streakVal').textContent = streak;
+      inp0.classList.add('ok');
+      document.getElementById('dot'+current).className='dot correct';
+      results.push({verb:v, psTyped:typed, ppTyped:v.pp, correct:true, partial:false, skipped:false, pts});
+      showFeedback('✓ +'+pts+' pts', 'ok');
+      advanceVerb(600);
+    } else {
+      inp0.classList.add('err');
+      streak = 0;
+      document.getElementById('streakVal').textContent = 0;
+      results.push({verb:v, psTyped:typed, ppTyped:v.pp, correct:false, partial:false, skipped:false, pts:0});
+      document.getElementById('dot'+current).className='dot wrong';
+      showFeedback('✗ Past simple: '+v.ps.toUpperCase(), 'bad');
+      advanceVerb(1200);
+    }
+  } else {
+    // Medium: both forms
+    const t0 = inp0.value.trim().toLowerCase();
+    const t1 = inp1 ? inp1.value.trim().toLowerCase() : '';
+    if(!t0) { inp0.focus(); return; }
+    if(!t1) { inp1.focus(); return; }
+
+    const ps_ok = checkAnswer(t0, v.ps);
+    const pp_ok = checkAnswer(t1, v.pp);
+
+    if(ps_ok && pp_ok) {
+      const pts = 25 + Math.floor(timeLeft/12)*2;
+      score += pts; streak++;
+      document.getElementById('scoreVal').textContent  = score;
+      document.getElementById('streakVal').textContent = streak;
+      inp0.classList.add('ok'); inp1.classList.add('ok');
+      document.getElementById('dot'+current).className='dot correct';
+      results.push({verb:v, psTyped:t0, ppTyped:t1, correct:true, partial:false, skipped:false, pts});
+      showFeedback('✓ Both correct! +'+pts+' pts', 'ok');
+      advanceVerb(600);
+    } else if(ps_ok || pp_ok) {
+      const pts = 8;
+      score += pts; streak = 0;
+      document.getElementById('scoreVal').textContent  = score;
+      document.getElementById('streakVal').textContent = 0;
+      if(ps_ok) { inp0.classList.add('ok'); inp1.classList.add('err'); }
+      else       { inp0.classList.add('err'); inp1.classList.add('ok'); }
+      document.getElementById('dot'+current).className='dot partial';
+      results.push({verb:v, psTyped:t0, ppTyped:t1, correct:false, partial:true, skipped:false, pts});
+      showFeedback('~ One correct (+'+pts+') · '+v.b.toUpperCase()+' / '+v.ps.toUpperCase()+' / '+v.pp.toUpperCase(), 'info');
+      advanceVerb(1500);
+    } else {
+      streak = 0;
+      document.getElementById('scoreVal').textContent  = score;
+      document.getElementById('streakVal').textContent = 0;
+      inp0.classList.add('err'); inp1.classList.add('err');
+      document.getElementById('dot'+current).className='dot wrong';
+      results.push({verb:v, psTyped:t0, ppTyped:t1, correct:false, partial:false, skipped:false, pts:0});
+      showFeedback('✗ '+v.b.toUpperCase()+' / '+v.ps.toUpperCase()+' / '+v.pp.toUpperCase(), 'bad');
+      advanceVerb(1500);
+    }
+  }
+}
+
+// Accept alternate spellings (e.g. burnt/burned, learnt/learned, dreamt/dreamed)
+function checkAnswer(typed, correct) {
+  const alternatives = { 'burnt':'burned','burned':'burnt','learnt':'learned','learned':'learnt',
+    'dreamt':'dreamed','dreamed':'dreamt','spilt':'spilled','spilled':'spilt',
+    'smelt':'smelled','smelled':'smelt','knelt':'kneeled','kneeled':'knelt',
+    'was':'was','were':'were' };
+  if(typed === correct.toLowerCase()) return true;
+  // Handle was/were
+  if(correct === 'was/were' && (typed==='was'||typed==='were')) return true;
+  // Alternate spellings
+  if(alternatives[typed] === correct.toLowerCase()) return true;
+  return false;
+}
+
+function advanceVerb(delay) {
+  setTimeout(()=>{ current++; loadVerb(); }, delay);
+}
+
+// ── Hint ────────────────────────────────────────────────────────────
+function useHint() {
+  if(hints <= 0){ showFeedback('No hints left!','bad'); return; }
+  if(hintUsed) return;
+  hints--; hintUsed = true;
+  document.getElementById('hintVal').textContent = hints;
+  const v = roundVerbs[current];
+
+  if(currentMode === 'hard') {
+    const s = v.s[currentSentenceIdx];
+    const ans = s.f === 'ps' ? v.ps : v.pp;
+    document.getElementById('inp0').value = ans[0].toUpperCase();
+    showFeedback('Hint: first letter revealed (−3 pts)', 'info');
+    score = Math.max(0, score-3);
+    document.getElementById('scoreVal').textContent = score;
+  } else {
+    const inp0 = document.getElementById('inp0');
+    if(inp0 && !inp0.classList.contains('ok')) {
+      inp0.value = v.ps[0].toUpperCase();
+    }
+    if(currentMode==='medium') {
+      const inp1 = document.getElementById('inp1');
+      if(inp1 && !inp1.classList.contains('ok')) inp1.value = v.pp[0].toUpperCase();
+    }
+    showFeedback('Hint: first letter(s) revealed (−3 pts)', 'info');
+    score = Math.max(0, score-3);
+    document.getElementById('scoreVal').textContent = score;
+  }
+}
+
+// ── Skip ────────────────────────────────────────────────────────────
+function skipVerb() {
+  if(skips <= 0){ showFeedback('No skips left!','bad'); return; }
+  skips--;
+  score = Math.max(0, score-5);
+  document.getElementById('skipsVal').textContent  = skips;
+  document.getElementById('scoreVal').textContent  = score;
+  document.getElementById('dot'+current).className = 'dot skip';
+  const v = roundVerbs[current];
+  results.push({verb:v, psTyped:'', ppTyped:'', correct:false, partial:false, skipped:true, pts:0});
+  streak = 0;
+  document.getElementById('streakVal').textContent = 0;
+  showFeedback('Skipped · '+v.b.toUpperCase()+' / '+v.ps.toUpperCase()+' / '+v.pp.toUpperCase(), 'info');
+  advanceVerb(800);
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById('feedback');
+  el.textContent = msg; el.className = 'feedback '+type;
+}
+
+// ── End round ───────────────────────────────────────────────────────
+function endRound() {
+  clearInterval(timerInterval);
+  document.getElementById('endCard').style.display = 'flex';
+  document.getElementById('endScore').textContent  = score+' pts';
+
+  const perfect  = results.filter(r=>r.correct).length;
+  const partial  = results.filter(r=>r.partial).length;
+  const msg =
+    perfect>=9 ? '🎉 Outstanding! You really know your irregular verbs.' :
+    perfect>=7 ? '👏 Excellent work! Just a few to keep practising.' :
+    perfect>=5 ? 'Good effort — focus on the tricky A/B/C group.' :
+                 'Keep drilling — irregular verbs reward regular practice!';
+  document.getElementById('endTitle').textContent = `${perfect}/${ROUND_SIZE} correct`;
+  document.getElementById('endMsg').textContent   = msg;
+  document.getElementById('endCard').dataset.score = score;
+
+  // Build review grid
+  const grid = document.getElementById('reviewGrid'); grid.innerHTML='';
+  results.forEach(r => {
+    const el = document.createElement('div');
+    const cls = r.correct?'correct':r.partial?'partial':r.skipped?'skip':'wrong';
+    el.className = 'review-item '+cls;
+    const psOk  = checkAnswer((r.psTyped||'').toLowerCase(), r.verb.ps);
+    const ppOk  = r.skipped||r.correct ? r.correct : checkAnswer((r.ppTyped||'').toLowerCase(), r.verb.pp);
+
+    el.innerHTML = `
+      <span class="rv-base">${r.verb.b.toUpperCase()}</span>
+      <span class="rv-form ${(r.skipped||!psOk)?'bad':'ok'}">${r.verb.ps.toUpperCase()}</span>
+      <span class="rv-form ${(r.skipped||!ppOk)?'bad':'ok'}">${r.verb.pp.toUpperCase()}</span>
+      <span class="rv-tag">${r.correct?'✓':r.partial?'~':r.skipped?'skip':'✗'}</span>`;
+    // Clickable — shows example sentence
+    el.addEventListener('click',()=>{
+      const sent = r.verb.s[0];
+      const ans  = sent.f==='ps' ? r.verb.ps : r.verb.pp;
+      const filled = sent.t.replace('___', ans.toUpperCase());
+      showDefinitionModal(r.verb.b + ' / ' + r.verb.ps + ' / ' + r.verb.pp);
+    });
+    grid.appendChild(el);
+  });
+
+  renderLeaderboard('verbsprint_'+currentMode, 'lbBody');
+}
+
+function restartGame() { document.getElementById('endCard').style.display='none'; initRound(); }
+async function doSubmit(){
+  await handleScoreSubmit('verbsprint_'+currentMode, parseInt(document.getElementById('endCard').dataset.score||'0'), 'nameInput', 'submitArea', 'lbBody');
+}
+
+// ── Boot ────────────────────────────────────────────────────────────
+switchLb('easy');
+initRound();
+</script>
+</body>
+</html>
