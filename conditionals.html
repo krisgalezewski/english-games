@@ -83,10 +83,10 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
   border-radius:10px; padding:.85rem 1.1rem;
   font-family:'Playfair Display',serif; font-size:1rem;
   color:var(--text); cursor:grab; user-select:none;
-  transition:all .18s; line-height:1.5;
+  transition:border-color .18s, background .18s, box-shadow .18s; line-height:1.5;
   position:relative;
 }
-.option-card:hover  { border-color:var(--gold); background:var(--gold-dim); transform:translateY(-1px); box-shadow:0 4px 16px rgba(212,175,55,.2); }
+.option-card:hover  { border-color:var(--gold); background:var(--gold-dim); box-shadow:0 4px 16px rgba(212,175,55,.2); }
 .option-card.dragging { opacity:.4; cursor:grabbing; }
 .option-card.selected { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
 .option-card.used     { opacity:.15; pointer-events:none; }
@@ -487,37 +487,37 @@ const ALL_QUESTIONS = [
   { t:'m23',
     if:"If she were more assertive,",
     c:"she would have refused his unreasonable request yesterday.",
-    w:["she would refuse his unreasonable request yesterday.","she will have refused his unreasonable request.","she refused his unreasonable request yesterday."],
+    w:["she would refuse unreasonable requests in general.","she will have refused his unreasonable request.","she refused his unreasonable request yesterday."],
     note:"She is not assertive (present reality) — so she didn't refuse the request yesterday (past result). Her present character explains a past event." },
 
   { t:'m23',
     if:"If he weren't so disorganised,",
     c:"he would have submitted the report on time last week.",
-    w:["he would submit the report on time last week.","he will have submitted the report on time.","he submitted the report on time last week."],
+    w:["he would submit reports on time in general.","he will have submitted the report on time.","he submitted the report on time last week."],
     note:"He is disorganised (present trait) — which caused him to miss the deadline last week (past consequence)." },
 
   { t:'m23',
     if:"If I were a better cook,",
     c:"I would have made something more impressive for the dinner party last night.",
-    w:["I would make something more impressive for the dinner party.","I will have made something more impressive.","I made something more impressive last night."],
+    w:["I would make impressive meals in general.","I will have made something more impressive.","I made something more impressive last night."],
     note:"I'm not a good cook (present state) — so the dinner last night was not impressive. Present ability → past result." },
 
   { t:'m23',
     if:"If they were more careful with money,",
     c:"they would have been able to afford the holiday last summer.",
-    w:["they would be able to afford the holiday last summer.","they will have been able to afford the holiday.","they were able to afford the holiday last summer."],
+    w:["they would be able to afford holidays in general.","they will have been able to afford the holiday.","they were able to afford the holiday last summer."],
     note:"They are careless with money (present characteristic) — so they couldn't afford the holiday (past consequence)." },
 
   { t:'m23',
     if:"If she spoke better English,",
     c:"she would have got the job she applied for last month.",
-    w:["she would get the job she applied for last month.","she will have got the job she applied for.","she got the job she applied for last month."],
+    w:["she would get jobs like this in general.","she will have got the job she applied for.","she got the job she applied for last month."],
     note:"Her present English level is insufficient — which is why she didn't get the job last month." },
 
   { t:'m23',
     if:"If he weren't so stubborn,",
     c:"he would have listened to his doctor's advice last year.",
-    w:["he would listen to his doctor's advice last year.","he will have listened to his doctor's advice.","he listened to his doctor's advice last year."],
+    w:["he would listen to doctors' advice in general.","he will have listened to his doctor's advice.","he listened to his doctor's advice last year."],
     note:"He is stubborn (present personality) — so he ignored medical advice in the past. Mixed 2→3." },
 
   { t:'m23',
@@ -624,19 +624,19 @@ const ALL_QUESTIONS = [
   { t:'invm23',
     if:"Were I more courageous,",
     c:"I would have climbed that mountain yesterday.",
-    w:["I would climb that mountain yesterday.","I will have climbed that mountain yesterday.","I climbed that mountain yesterday."],
+    w:["I would climb mountains in general.","I will have climbed that mountain yesterday.","I climbed that mountain yesterday."],
     note:"'Were I more courageous' (unreal present state) + 'I would have climbed' (past result). Present character explains a past action. Inversion of 2→3 mixed conditional." },
 
   { t:'invm23',
     if:"Were he less impulsive,",
     c:"he would have thought twice before sending that message yesterday.",
-    w:["he would think twice before sending messages.","he will have thought twice about that message.","he thought twice before sending that message yesterday."],
-    note:"'Were he less impulsive' = inverted 'If he were less impulsive'. His present character explains a specific past action (yesterday). Mixed 2→3 inversion." },
+    w:["he would think twice before sending messages in general.","he will have thought twice about that message.","he thought twice before sending that message yesterday."],
+    note:"'Were he less impulsive' = inverted 'If he were less impulsive'. His present character explains a specific past action (yesterday). Mixed 2→3 inversion. Note: 'would think... in general' describes a habitual present pattern, not the specific past event — so it cannot be the answer here." },
 
   { t:'invm23',
     if:"Were she a better communicator,",
     c:"she would have handled the situation very differently last week.",
-    w:["she would handle the situation very differently last week.","she will have handled the situation very differently.","she handled the situation very differently last week."],
+    w:["she would handle situations very differently in general.","she will have handled the situation very differently.","she handled the situation very differently last week."],
     note:"Present personality trait (inverted 2nd conditional form) → past consequence. 'Were she a better communicator' = 'If she were a better communicator'." },
 ];
 
@@ -858,7 +858,7 @@ function loadQuestion(){
     });
     card.addEventListener('dragend',()=>card.classList.remove('dragging'));
     // Tap/click
-    card.addEventListener('click',()=>tapSelect(card,opt));
+    card.addEventListener('click', (e) => tapSelect(e.currentTarget, opt));
     grid.appendChild(card);
   });
 
