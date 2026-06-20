@@ -240,3 +240,62 @@ function freshIndices(game, bank, count) {
   const pool = [...fresh, ...fallback];
   return pool.slice(0, count);
 }
+
+
+// ── True random helpers (not daily-seeded) ────────────────────────
+// Use these when the request is "different every time the game is played"
+// rather than "same all day, changes at midnight".
+function randomIndex(max) {
+  return Math.floor(Math.random() * max);
+}
+
+// Pick N unique random indices, avoiding recently-seen items (10-day rule)
+// where possible, falling back to allow repeats only when the bank is small
+// relative to count.
+function freshRandomIndices(game, bank, count) {
+  const all = bank.map((_, i) => i);
+  // Shuffle
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  const fresh = all.filter(i => !wasSeen(game, i));
+  const seen  = all.filter(i => wasSeen(game, i));
+  const pool  = [...fresh, ...seen];
+  return pool.slice(0, count);
+}
+
+// Single fresh random index (avoids recently seen, falls back if all seen)
+function freshRandomIndex(game, max) {
+  const all = Array.from({length: max}, (_, i) => i);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  for (const idx of all) {
+    if (!wasSeen(game, idx)) return idx;
+  }
+  return all[0]; // everything seen recently — just pick any
+}
+
+// ── Compact end-card pattern (non-blocking, like CollocationCrash/WordChain) ──
+// Renders an inline summary card that does NOT cover the nav bar.
+// Call this instead of building a full-screen overlay end card.
+function renderCompactEndCard(containerEl, opts) {
+  // opts: { title, scoreText, message, reviewItemsHtml, onPlayAgain, onSwitchMode, extraButtonsHtml }
+  containerEl.innerHTML = `
+    <div class="compact-end-card">
+      <div class="eyebrow">${escHtml(opts.title || 'Round complete')}</div>
+      <div class="compact-end-score">${escHtml(opts.scoreText || '')}</div>
+      ${opts.message ? `<p class="compact-end-msg">${escHtml(opts.message)}</p>` : ''}
+      ${opts.reviewItemsHtml ? `<div class="compact-review-grid">${opts.reviewItemsHtml}</div>` : ''}
+      <div class="compact-submit-row">
+        <input class="text-input compact-name-input" placeholder="Your name" maxlength="24"/>
+        <button class="btn-primary compact-submit-btn">Add to leaderboard</button>
+      </div>
+      <div class="compact-end-actions">
+        <button class="btn-ghost compact-play-again">Play again</button>
+        ${opts.extraButtonsHtml || ''}
+      </div>
+    </div>`;
+}

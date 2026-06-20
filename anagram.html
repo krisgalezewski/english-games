@@ -250,12 +250,90 @@ const EASY_WORDS = [
   {w:'URBAN',    cat:'Society',     def:'Relating to a town or city.'},
   {w:'VERSE',    cat:'Literature',  def:'A line or group of lines in a poem or song.'},
   {w:'WORLD',    cat:'Geography',   def:'The Earth together with all its countries and people.'},
+  {w:'JOURNEY',  cat:'Travel',      def:'A trip from one place to another, often a long one.'},
+  {w:'PICTURE',  cat:'Objects',     def:'An image, drawing, or photograph.'},
+  {w:'KITCHEN',  cat:'Buildings',   def:'The room in a house where food is prepared.'},
+  {w:'PENCIL',   cat:'Objects',     def:'A thin tool used for writing or drawing.'},
+  {w:'RABBIT',   cat:'Animals',     def:'A small mammal with long ears that hops.'},
+  {w:'YELLOW',   cat:'Colours',     def:'The colour of a banana or the sun.'},
+  {w:'PURPLE',   cat:'Colours',     def:'A colour made by mixing red and blue.'},
+  {w:'ORANGE',   cat:'Colours',     def:'A colour between red and yellow, also a fruit.'},
+  {w:'SISTER',   cat:'Family',      def:'A female sibling.'},
+  {w:'MOTHER',   cat:'Family',      def:'A female parent.'},
+  {w:'FATHER',   cat:'Family',      def:'A male parent.'},
+  {w:'COUSIN',   cat:'Family',      def:'The child of one\'s aunt or uncle.'},
+  {w:'TICKET',   cat:'Objects',     def:'A piece of paper that allows entry to an event.'},
+  {w:'POCKET',   cat:'Objects',     def:'A small pouch sewn into clothing for holding things.'},
+  {w:'BASKET',   cat:'Objects',     def:'A container woven from strips of material.'},
+  {w:'BUCKET',   cat:'Objects',     def:'A round open container with a handle, used to carry liquids.'},
+  {w:'CARROT',   cat:'Food',        def:'An orange root vegetable.'},
+  {w:'POTATO',   cat:'Food',        def:'A starchy root vegetable, often boiled or fried.'},
+  {w:'TOMATO',   cat:'Food',        def:'A red fruit often eaten as a vegetable.'},
+  {w:'BANANA',   cat:'Food',        def:'A long curved yellow fruit.'},
+  {w:'ORCHID',   cat:'Nature',      def:'A delicate, often colourful flower.'},
+  {w:'JUNGLE',   cat:'Nature',      def:'A dense tropical forest.'},
+  {w:'VOLCANO',  cat:'Nature',      def:'A mountain that can erupt with lava.'},
+  {w:'ISLAND',   cat:'Geography',   def:'A piece of land surrounded by water.'},
+  {w:'VALLEY',   cat:'Geography',   def:'A low area of land between hills.'},
+  {w:'BRANCH',   cat:'Nature',      def:'A part of a tree that grows from the trunk.'},
+  {w:'PUZZLE',   cat:'Objects',     def:'A game or toy that tests problem-solving skills.'},
+  {w:'WHISTLE',  cat:'Objects',     def:'A small device that makes a high-pitched sound when blown.'},
+  {w:'MIRROR',   cat:'Objects',     def:'A surface that reflects an image.'},
+  {w:'WINDOW',   cat:'Buildings',   def:'An opening in a wall, usually fitted with glass.'},
+  {w:'CEILING',  cat:'Buildings',   def:'The upper interior surface of a room.'},
+  {w:'CHIMNEY',  cat:'Buildings',   def:'A vertical structure that allows smoke to escape from a fire.'},
+  {w:'BALCONY',  cat:'Buildings',   def:'A platform projecting from the outside of a building.'},
+  {w:'TUNNEL',   cat:'Places',      def:'An underground passage.'},
+  {w:'HARBOUR',  cat:'Places',      def:'A sheltered area of water where ships can dock.'},
+  {w:'AIRPORT',  cat:'Places',      def:'A place where aircraft take off and land.'},
+  {w:'STATION',  cat:'Places',      def:'A stopping place for trains or buses.'},
+  {w:'COLLEGE',  cat:'Education',   def:'An institution of higher education.'},
+  {w:'STUDENT',  cat:'Education',   def:'A person who is studying at a school or university.'},
+  {w:'TEACHER',  cat:'Professions', def:'A person who helps others learn.'},
+  {w:'DOCTOR',   cat:'Professions', def:'A person trained in medicine who treats patients.'},
+  {w:'DENTIST',  cat:'Professions', def:'A person trained to treat teeth and gums.'},
+  {w:'PAINTER',  cat:'Professions', def:'A person who paints pictures or surfaces.'},
+  {w:'SOLDIER',  cat:'Professions', def:'A member of an army.'},
+  {w:'SAILOR',   cat:'Professions', def:'A person who works on a ship.'},
+  {w:'BAKERY',   cat:'Places',      def:'A shop that sells freshly baked bread and cakes.'},
+  {w:'BUTCHER',  cat:'Professions', def:'A person who sells meat.'},
+  {w:'JOURNAL',  cat:'Objects',     def:'A written record of daily events, or a publication.'},
+  {w:'LETTER',   cat:'Objects',     def:'A written message sent to someone, or a character in an alphabet.'},
+  {w:'STAMP',    cat:'Objects',     def:'A small printed item stuck to mail to show postage is paid.'},
+  {w:'PARCEL',   cat:'Objects',     def:'A package wrapped for posting or carrying.'},
+  {w:'BUTTON',   cat:'Objects',     def:'A small disc used to fasten clothing.'},
+  {w:'ZIPPER',   cat:'Objects',     def:'A fastener with two rows of teeth pulled together by a slider.'},
+  {w:'BLANKET',  cat:'Objects',     def:'A large piece of soft fabric used for warmth.'},
+  {w:'PILLOW',   cat:'Objects',     def:'A soft cushion used to support the head while sleeping.'},
+  {w:'CUSHION',  cat:'Objects',     def:'A soft pad used for sitting or leaning on.'},
+  {w:'MATTRESS', cat:'Objects',     def:'A large flat pad used on a bed for sleeping.'},
+  {w:'CABINET',  cat:'Objects',     def:'A piece of furniture with shelves or drawers for storage.'},
+  {w:'SHELTER',  cat:'Buildings',   def:'A structure that provides protection from weather or danger.'},
+  {w:'CHAPTER',  cat:'Literature',  def:'A main division of a book.'},
+  {w:'AUTHOR',   cat:'Professions', def:'A person who writes books or articles.'},
+  {w:'NOVEL',    cat:'Literature',  def:'A long fictional story in book form.'},
+  {w:'POETRY',   cat:'Literature',  def:'Literary work written in verse.'},
+  {w:'RHYTHM',   cat:'Music',       def:'A regular repeated pattern of sound.'},
+  {w:'GUITAR',   cat:'Music',       def:'A stringed musical instrument played by plucking or strumming.'},
+  {w:'TRUMPET',  cat:'Music',       def:'A brass musical instrument played by blowing.'},
+  {w:'VIOLIN',   cat:'Music',       def:'A stringed instrument played with a bow.'},
+  {w:'CONCERT',  cat:'Music',       def:'A live musical performance.'},
+  {w:'THEATRE',  cat:'Arts',        def:'A building where plays and performances take place.'},
+  {w:'MUSEUM',   cat:'Buildings',   def:'A building that displays historical or artistic objects.'},
+  {w:'GALLERY',  cat:'Buildings',   def:'A room or building used to display art.'},
+  {w:'CINEMA',   cat:'Buildings',   def:'A place where films are shown to the public.'},
+  {w:'CAMERA',   cat:'Objects',     def:'A device used to take photographs or record video.'},
+  {w:'PHOTO',    cat:'Objects',     def:'A picture taken with a camera.'},
+  {w:'SCREEN',   cat:'Technology',  def:'A flat surface on which images are displayed.'},
+  {w:'TABLET',   cat:'Technology',  def:'A small portable computer with a touch screen.'},
+  {w:'LAPTOP',   cat:'Technology',  def:'A small portable computer.'},
+  {w:'PRINTER',  cat:'Technology',  def:'A device that produces paper copies of digital documents.'},
 ];
 
 const HARD_WORDS = [
   {w:'STRENGTH',    cat:'Concepts',    def:'The quality of being physically or mentally powerful.'},
   {w:'QUESTION',    cat:'Language',    def:'A sentence that asks for information or an answer.'},
-  {w:'AUGHTER',    cat:'Family',      def:'A female child in relation to her parents.'},
+  {w:'DAUGHTER',   cat:'Family',      def:'A female child in relation to her parents.'},
   {w:'CALENDAR',    cat:'Time',        def:'A chart showing the days, weeks, and months of a year.'},
   {w:'ELEPHANT',    cat:'Animals',     def:'The largest land animal, known for its trunk and tusks.'},
   {w:'SHOULDER',    cat:'Body',        def:'The joint connecting the arm to the upper body.'},
@@ -303,6 +381,91 @@ const HARD_WORDS = [
   {w:'EXAMINE',     cat:'Verbs',       def:'To inspect or study something carefully and in detail.'},
   {w:'RECENTLY',    cat:'Time',        def:'At a recent time; not long ago.'},
   {w:'ABSOLUTE',    cat:'Adjectives',  def:'Not qualified or diminished in any way; total.'},
+  {w:'NECESSARY',  cat:'Adjectives', def:'Required or essential for a particular purpose.'},
+  {w:'OPPORTUNITY',cat:'Concepts',   def:'A favourable chance or set of circumstances.'},
+  {w:'CONSEQUENCE',cat:'Concepts',   def:'A result or effect of an action.'},
+  {w:'DEVELOPMENT',cat:'Concepts',   def:'The process of growing or improving over time.'},
+  {w:'GOVERNMENT', cat:'Society',    def:'The group of people who govern a country.'},
+  {w:'EXPERIENCE', cat:'Concepts',   def:'Practical knowledge gained through doing something.'},
+  {w:'KNOWLEDGE',  cat:'Concepts',   def:'Facts and information acquired through learning.'},
+  {w:'CONFIDENCE', cat:'Emotions',   def:'A feeling of self-assurance in one\'s own abilities.'},
+  {w:'IMPORTANCE', cat:'Concepts',   def:'The quality of being significant or valuable.'},
+  {w:'DIFFERENCE', cat:'Concepts',   def:'A way in which two things are not the same.'},
+  {w:'INFLUENCE',  cat:'Concepts',   def:'The power to affect someone\'s behaviour or thinking.'},
+  {w:'EVIDENCE',   cat:'Law',        def:'Information used to prove or support a claim.'},
+  {w:'CHALLENGE',  cat:'Concepts',   def:'A difficult task that tests one\'s abilities.'},
+  {w:'STRUCTURE',  cat:'Concepts',   def:'The way parts of something are organised or built.'},
+  {w:'TECHNIQUE',  cat:'Concepts',   def:'A particular way of carrying out a task or skill.'},
+  {w:'STRATEGY',   cat:'Concepts',   def:'A plan designed to achieve a long-term goal.'},
+  {w:'ATTENTION',  cat:'Concepts',   def:'The act of focusing the mind on something.'},
+  {w:'EMOTIONAL',  cat:'Adjectives', def:'Relating to feelings rather than facts or logic.'},
+  {w:'NATIONAL',   cat:'Society',   def:'Relating to an entire nation or country.'},
+  {w:'POLITICAL',  cat:'Society',   def:'Relating to government and public affairs.'},
+  {w:'PRACTICAL',  cat:'Adjectives', def:'Concerned with actual use rather than theory.'},
+  {w:'SCIENTIFIC', cat:'Science',   def:'Relating to science or scientific methods.'},
+  {w:'HISTORICAL', cat:'History',   def:'Relating to history or past events.'},
+  {w:'TECHNICAL',  cat:'Adjectives', def:'Relating to a specific practical or mechanical skill.'},
+  {w:'TRADITION',  cat:'Culture',   def:'A custom or belief passed down through generations.'},
+  {w:'CEREMONY',   cat:'Culture',   def:'A formal event held to mark an important occasion.'},
+  {w:'EQUIPMENT',  cat:'Objects',   def:'Items needed for a particular purpose or activity.'},
+  {w:'INSTRUMENT', cat:'Music',     def:'A tool used to produce music, or for precise tasks.'},
+  {w:'CONTAINER',  cat:'Objects',   def:'An object used to hold or transport things.'},
+  {w:'FURNITURE',  cat:'Objects',   def:'Movable objects such as chairs and tables used in a room.'},
+  {w:'VEHICLE',    cat:'Objects',   def:'A machine used to transport people or goods.'},
+  {w:'AIRCRAFT',   cat:'Objects',   def:'A machine capable of flight, such as a plane.'},
+  {w:'BICYCLE',    cat:'Objects',   def:'A two-wheeled vehicle pedalled by the rider.'},
+  {w:'MOTORWAY',   cat:'Places',    def:'A wide road designed for fast traffic.'},
+  {w:'PASSENGER', cat:'People',     def:'A person travelling in a vehicle other than the driver.'},
+  {w:'DIRECTION',  cat:'Concepts',  def:'The way something is facing or moving.'},
+  {w:'LOCATION',   cat:'Geography', def:'A particular place or position.'},
+  {w:'TERRITORY',  cat:'Geography', def:'An area of land under the control of a ruler or state.'},
+  {w:'BOUNDARY',   cat:'Geography', def:'A line marking the edge of an area.'},
+  {w:'CONTINENT',  cat:'Geography', def:'One of the major land masses on Earth.'},
+  {w:'HEMISPHERE', cat:'Geography', def:'One half of the Earth, divided north-south or east-west.'},
+  {w:'ATMOSPHERE', cat:'Science',   def:'The layer of gases surrounding a planet.'},
+  {w:'TEMPERATURE',cat:'Science',   def:'A measure of how hot or cold something is.'},
+  {w:'CHEMISTRY',  cat:'Science',   def:'The branch of science concerned with substances and reactions.'},
+  {w:'BIOLOGY',    cat:'Science',   def:'The scientific study of living organisms.'},
+  {w:'PHYSICS',    cat:'Science',   def:'The branch of science dealing with matter and energy.'},
+  {w:'EXPERIMENT', cat:'Science',   def:'A scientific test carried out to discover something.'},
+  {w:'LABORATORY', cat:'Science',   def:'A room equipped for scientific experiments.'},
+  {w:'MEDICATION', cat:'Health',    def:'A substance used to treat or prevent illness.'},
+  {w:'SURGEON',    cat:'Professions',def:'A doctor who performs operations.'},
+  {w:'PATIENT',    cat:'Health',    def:'A person receiving medical treatment.'},
+  {w:'DIAGNOSIS',  cat:'Health',    def:'The identification of an illness through examination.'},
+  {w:'TREATMENT',  cat:'Health',    def:'Medical care given to a patient.'},
+  {w:'RECOVERY',   cat:'Health',    def:'The process of returning to a normal state after illness.'},
+  {w:'EXERCISE',   cat:'Health',    def:'Physical activity done to improve fitness.'},
+  {w:'NUTRITION',  cat:'Health',    def:'The process of providing food necessary for health.'},
+  {w:'VITAMIN',    cat:'Health',    def:'A substance essential for normal growth and nutrition.'},
+  {w:'AMBITION',   cat:'Emotions',  def:'A strong desire to achieve something.'},
+  {w:'CURIOSITY',  cat:'Emotions',  def:'A strong desire to learn or know something.'},
+  {w:'GENEROUS',   cat:'Adjectives',def:'Willing to give freely; kind and unselfish.'},
+  {w:'COURAGEOUS', cat:'Adjectives',def:'Showing bravery in the face of danger.'},
+  {w:'AMBITIOUS',  cat:'Adjectives',def:'Having a strong desire for success.'},
+  {w:'SUSPICIOUS', cat:'Adjectives',def:'Feeling that something is wrong or someone cannot be trusted.'},
+  {w:'CONFUSING',  cat:'Adjectives',def:'Difficult to understand; bewildering.'},
+  {w:'EXCELLENT',  cat:'Adjectives',def:'Extremely good; outstanding.'},
+  {w:'TERRIBLE',   cat:'Adjectives',def:'Extremely bad or unpleasant.'},
+  {w:'WONDERFUL',  cat:'Adjectives',def:'Inspiring delight or pleasure; excellent.'},
+  {w:'DANGEROUS',  cat:'Adjectives',def:'Likely to cause harm or injury.'},
+  {w:'EXPENSIVE',  cat:'Adjectives',def:'Costing a lot of money.'},
+  {w:'ENJOYABLE',  cat:'Adjectives',def:'Giving pleasure or satisfaction.'},
+  {w:'POWERFUL',   cat:'Adjectives',def:'Having great strength or influence.'},
+  {w:'PEACEFUL',   cat:'Adjectives',def:'Free from disturbance; calm and quiet.'},
+  {w:'BEAUTIFUL',  cat:'Adjectives',def:'Pleasing to look at; attractive.'},
+  {w:'FANTASTIC',  cat:'Adjectives',def:'Extremely good or impressive.'},
+  {w:'ELEGANT',    cat:'Adjectives',def:'Graceful and stylish in appearance.'},
+  {w:'MYSTERIOUS', cat:'Adjectives',def:'Difficult to understand or explain; strange.'},
+  {w:'ADVENTURE',  cat:'Concepts',  def:'An exciting or unusual experience.'},
+  {w:'DISCOVERY',  cat:'Concepts',  def:'The act of finding something new.'},
+  {w:'CIVILIZATION',cat:'History',  def:'A complex society with cities, government, and culture.'},
+  {w:'INDEPENDENCE',cat:'Concepts', def:'Freedom from control by another country or group.'},
+  {w:'REVOLUTION',  cat:'History',  def:'A major change, often involving the overthrow of government.'},
+  {w:'EMPIRE',      cat:'History',  def:'A group of countries ruled by a single authority.'},
+  {w:'MONARCHY',    cat:'History',  def:'A form of government with a king or queen.'},
+  {w:'ANCESTOR',    cat:'Family',   def:'A person from whom one is descended.'},
+  {w:'GENERATION',  cat:'Family',   def:'A group of people born around the same time.'},
 ];
 
 const ROUND_SIZE = 8;
@@ -325,7 +488,8 @@ function shuffle(arr) {
 }
 
 function initRound() {
-  const indices = freshIndices('anagram_'+diff, wordBank, ROUND_SIZE);
+  roundEnded = false;
+  const indices = freshRandomIndices('anagram_'+diff, wordBank, ROUND_SIZE);
   indices.forEach(i => markSeen('anagram_'+diff, i));
   roundWords = indices.map(i => wordBank[i]);
   current = 0; totalScore = 0; skipsLeft = 3; hintsLeft = 2; results = [];
@@ -334,7 +498,7 @@ function initRound() {
   document.getElementById('hintsVal').textContent = 2;
   document.getElementById('endCard').style.display = 'none';
   buildDots(); loadWord(); startTimer();
-  renderLeaderboard('anagram_'+diff, 'lbBody');
+  switchAnLb(diff); // keep LB tab + table in sync with whichever mode just started
 }
 
 function buildDots() {
@@ -364,9 +528,20 @@ function updateTimerUI() {
   sec.classList.toggle('urgent',u);
 }
 
+let roundEnded = false; // guards against any double-fire of timeOut/endRound
+
 function timeOut() {
-  // Force skip remaining word
-  if(current < ROUND_SIZE) { skipWord(true); }
+  // Defensive guard: if the round has already finished (or the timer
+  // somehow fires again after the round ended), do nothing rather than
+  // risk acting on stale state.
+  if (roundEnded) return;
+  if (current < ROUND_SIZE) {
+    skipWord(true);
+  } else {
+    // Edge case: timer fired exactly as the last word was already
+    // answered/skipped by the player — make sure the round still ends.
+    endRound();
+  }
 }
 
 function loadWord() {
@@ -523,6 +698,8 @@ function skipWord(forced=false) {
 function showFeedback(msg,type){ const el=document.getElementById('feedback'); el.textContent=msg; el.className='feedback '+type; }
 
 function endRound() {
+  if (roundEnded) return; // already ended — never run this twice
+  roundEnded = true;
   clearInterval(timerInterval);
   document.getElementById('qCard').style.display='none';
   document.getElementById('answerRow').innerHTML='';
@@ -557,8 +734,12 @@ document.getElementById('switchBtn').textContent = 'Switch to Hard';
 initRound();
 
 function switchAnLb(d){
-  ['easy','hard'].forEach(x=>document.getElementById('lbAn'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===d));
-  renderLeaderboard('anagram_'+d,'lbBody');
+  // IDs are lbAnE / lbAnH (first-letter-only suffix), not lbAnEasy / lbAnHard
+  const eBtn = document.getElementById('lbAnE');
+  const hBtn = document.getElementById('lbAnH');
+  if (eBtn) eBtn.classList.toggle('active', d === 'easy');
+  if (hBtn) hBtn.classList.toggle('active', d === 'hard');
+  renderLeaderboard('anagram_'+d, 'lbBody');
 }
 </script>
 </body>

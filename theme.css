@@ -306,3 +306,83 @@ body > * { position: relative; z-index: 1; }
   padding-left: .75rem;
   line-height: 1.6;
 }
+
+/* ── Compact end-card (inline, non-blocking) ──────────────────────── */
+.compact-end-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .85rem;
+  animation: fadeIn .35s ease;
+  margin: .5rem 0;
+}
+.compact-end-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--gold);
+}
+.compact-end-msg {
+  color: var(--muted);
+  font-size: .88rem;
+  text-align: center;
+  max-width: 380px;
+  margin: 0;
+}
+.compact-review-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 32vh;
+  overflow-y: auto;
+}
+.compact-submit-row {
+  display: flex;
+  gap: .5rem;
+  width: 100%;
+  max-width: 420px;
+}
+.compact-submit-row .text-input { flex: 1; }
+.compact-end-actions {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Leaderboard heading without pill background ──────────────────── */
+.lb-title-plain {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: .75rem;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* Gold text label with no pill/background — same colour and emoji, just flat */
+.gold-badge-plain {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Space Mono', monospace;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}

@@ -341,6 +341,354 @@ const QUESTIONS = [
   {q:'Synonym of HAPPY',correct:'ELATED',wrong:['GLOOMY','SULLEN','MISERABLE']},
   {q:'Opposite of ANCIENT',correct:'MODERN',wrong:['OLDER','HISTORIC','ANTIQUE']},
   {q:'Opposite of GENEROUS',correct:'STINGY',wrong:['KIND','GIVING','NOBLE']},
+
+  // ── Additional collocations ──
+  {q:'___ a phone call',correct:'MAKE',wrong:['DO','TAKE','HOLD']},
+  {q:'___ a loud noise',correct:'MAKE',wrong:['DO','HAVE','CREATE']},
+  {q:'___ a present',correct:'GIVE',wrong:['MAKE','TAKE','HOLD']},
+  {q:'___ breakfast',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a party',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ exercise',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
+  {q:'___ the dishes',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
+  {q:'___ a seat',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
+  {q:'___ a nap',correct:'TAKE',wrong:['MAKE','DO','HAVE']},
+  {q:'___ a visit',correct:'PAY',wrong:['MAKE','DO','GIVE']},
+  {q:'___ a small fortune',correct:'COST',wrong:['PAY','SPEND','EARN']},
+  {q:'___ money',correct:'SPEND',wrong:['PAY','COST','TAKE']},
+  {q:'___ time',correct:'SPEND',wrong:['PAY','TAKE','GIVE']},
+  {q:'___ a fence',correct:'CLIMB',wrong:['RAISE','LIFT','HOLD']},
+  {q:'___ your bed',correct:'MAKE',wrong:['DO','SET','LAY']},
+  {q:'___ a fortune (inherit)',correct:'INHERIT',wrong:['EARN','SPEND','MAKE']},
+  {q:'___ care of someone',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
+  {q:'___ part in a competition',correct:'TAKE',wrong:['MAKE','DO','HAVE']},
+  {q:'___ an exam',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
+  {q:'___ a deep breath',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
+  {q:'___ a prize',correct:'WIN',wrong:['EARN','MAKE','TAKE']},
+  {q:'___ a battle',correct:'FIGHT',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a wish',correct:'MAKE',wrong:['DO','TAKE','HOLD']},
+  {q:'___ an appointment',correct:'MAKE',wrong:['DO','TAKE','SET']},
+  {q:'___ a discovery',correct:'MAKE',wrong:['DO','FIND','TAKE']},
+  {q:'___ a profit',correct:'MAKE',wrong:['DO','EARN','TAKE']},
+  {q:'___ a loss',correct:'MAKE',wrong:['DO','LOSE','TAKE']},
+  {q:'___ peace',correct:'MAKE',wrong:['DO','HOLD','KEEP']},
+  {q:'___ a date',correct:'GO ON',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a diet',correct:'GO ON',wrong:['MAKE','DO','TAKE']},
+  {q:'___ control',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
+  {q:'___ a chance',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
+  {q:'___ your word',correct:'KEEP',wrong:['MAKE','HOLD','TAKE']},
+  {q:'___ a secret',correct:'KEEP',wrong:['MAKE','HOLD','HAVE']},
+  {q:'___ the law',correct:'BREAK',wrong:['MAKE','DO','HOLD']},
+  {q:'___ the ice (figuratively)',correct:'BREAK',wrong:['MAKE','DO','MELT']},
+  {q:'___ a formal meeting',correct:'HOLD',wrong:['MAKE','DO','HAVE']},
+  {q:'___ an election',correct:'HOLD',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a grudge',correct:'HOLD',wrong:['MAKE','DO','KEEP']},
+  {q:'___ responsibility',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
+  {q:'___ the blame',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
+  {q:'___ offence',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
+  {q:'___ a bath',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a baby (give birth)',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a good time',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ a word with someone',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
+  {q:'___ business',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
+  {q:'___ a favour',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
+  {q:'___ serious damage',correct:'DO',wrong:['MAKE','CAUSE','HAVE']},
+  {q:'___ your homework',correct:'DO',wrong:['MAKE','TAKE','HAVE']},
+
+  // ── Additional phrasal verbs ──
+  {q:'set ___ (start a journey)',correct:'OFF',wrong:['UP','OUT','DOWN']},
+  {q:'set ___ (establish)',correct:'UP',wrong:['OFF','OUT','DOWN']},
+  {q:'bring ___ (raise a child)',correct:'UP',wrong:['ON','OUT','BACK']},
+  {q:'bring ___ (introduce a topic)',correct:'UP',wrong:['ON','OUT','OVER']},
+  {q:'carry ___ (continue)',correct:'ON',wrong:['OUT','OVER','UP']},
+  {q:'carry ___ (execute a plan)',correct:'OUT',wrong:['ON','OVER','UP']},
+  {q:'check ___ (investigate)',correct:'OUT',wrong:['IN','UP','ON']},
+  {q:'check ___ (arrive at hotel)',correct:'IN',wrong:['OUT','UP','ON']},
+  {q:'clean ___ (tidy)',correct:'UP',wrong:['OUT','OFF','DOWN']},
+  {q:'come ___ (after looking)',correct:'ACROSS',wrong:['UP','OVER','INTO']},
+  {q:'cut ___ (interrupt)',correct:'IN',wrong:['OFF','OUT','DOWN']},
+  {q:'cut ___ (reduce)',correct:'DOWN',wrong:['OFF','OUT','IN']},
+  {q:'drop ___ (visit casually)',correct:'BY',wrong:['IN','OUT','OFF']},
+  {q:'drop ___ (quit)',correct:'OUT',wrong:['OFF','BY','DOWN']},
+  {q:'fall ___ (have an argument)',correct:'OUT',wrong:['DOWN','OVER','APART']},
+  {q:'figure ___ (understand)',correct:'OUT',wrong:['UP','IN','ON']},
+  {q:'find ___ (discover)',correct:'OUT',wrong:['UP','IN','ON']},
+  {q:'get ___ (proceed with)',correct:'ON WITH',wrong:['UP WITH','OUT WITH','OVER WITH']},
+  {q:'get ___ (avoid punishment)',correct:'AWAY WITH',wrong:['OFF WITH','OUT WITH','UP WITH']},
+  {q:'give ___ (stop annoying)',correct:'OVER',wrong:['UP','OUT','IN']},
+  {q:'go ___ (continue)',correct:'ON',wrong:['OFF','OUT','OVER']},
+  {q:'go ___ (explode)',correct:'OFF',wrong:['ON','OUT','UP']},
+  {q:'grow ___ (mature)',correct:'UP',wrong:['ON','OUT','OVER']},
+  {q:'hand ___ (submit)',correct:'IN',wrong:['OUT','OVER','DOWN']},
+  {q:'hand ___ (distribute)',correct:'OUT',wrong:['IN','OVER','DOWN']},
+  {q:'hang ___ (wait)',correct:'ON',wrong:['UP','OUT','AROUND']},
+  {q:'hold ___ (delay)',correct:'UP',wrong:['ON','OFF','BACK']},
+  {q:'keep ___ (continue)',correct:'ON',wrong:['UP','OUT','AWAY']},
+  {q:'keep ___ (maintain pace)',correct:'UP',wrong:['ON','OUT','AWAY']},
+  {q:'let ___ (disappoint)',correct:'DOWN',wrong:['OFF','OUT','IN']},
+  {q:'let ___ (release)',correct:'OUT',wrong:['DOWN','OFF','IN']},
+  {q:'look ___ (admire)',correct:'UP TO',wrong:['DOWN ON','OUT FOR','AFTER']},
+  {q:'look ___ (care for)',correct:'AFTER',wrong:['UP TO','OUT FOR','INTO']},
+  {q:'pass ___ (die)',correct:'AWAY',wrong:['OUT','OVER','ON']},
+  {q:'pass ___ (faint)',correct:'OUT',wrong:['AWAY','OVER','ON']},
+  {q:'pick ___ (select)',correct:'OUT',wrong:['UP','ON','OVER']},
+  {q:'pick ___ (collect)',correct:'UP',wrong:['OUT','ON','OVER']},
+  {q:'point ___ (indicate)',correct:'OUT',wrong:['UP','AT','ON']},
+  {q:'pull ___ (manage successfully)',correct:'OFF',wrong:['THROUGH','UP','OUT']},
+  {q:'pull ___ (recover from illness)',correct:'THROUGH',wrong:['OFF','UP','OUT']},
+  {q:'put ___ (tolerate)',correct:'UP WITH',wrong:['OUT WITH','UP FOR','DOWN WITH']},
+  {q:'put ___ (extinguish)',correct:'OUT',wrong:['OFF','DOWN','AWAY']},
+  {q:'run ___ (encounter)',correct:'INTO',wrong:['ACROSS','OVER','UP']},
+  {q:'run ___ (hit with a vehicle)',correct:'OVER',wrong:['INTO','ACROSS','DOWN']},
+  {q:'show ___ (boast)',correct:'OFF',wrong:['UP','OUT','AROUND']},
+  {q:'sort ___ (resolve)',correct:'OUT',wrong:['UP','THROUGH','OVER']},
+  {q:'stand ___ (represent)',correct:'FOR',wrong:['UP FOR','OUT','BY']},
+  {q:'stand ___ (be noticeable)',correct:'OUT',wrong:['UP','FOR','BY']},
+  {q:'stand ___ (support)',correct:'BY',wrong:['UP FOR','OUT','FOR']},
+  {q:'take ___ (resemble a relative)',correct:'AFTER',wrong:['ON','UP','OVER']},
+  {q:'think ___ (consider carefully)',correct:'OVER',wrong:['UP','OUT','THROUGH']},
+  {q:'throw ___ (vomit)',correct:'UP',wrong:['OUT','AWAY','OFF']},
+  {q:'try ___ (test)',correct:'OUT',wrong:['ON','UP','OVER']},
+  {q:'wear ___ (exhaust)',correct:'OUT',wrong:['DOWN','OFF','AWAY']},
+  {q:'work ___ (solve)',correct:'OUT',wrong:['UP','OVER','THROUGH']},
+
+  // ── Additional past simple ──
+  {q:'Past simple of ARISE',correct:'AROSE',wrong:['ARISEN','ARISED','ARISD']},
+  {q:'Past simple of AWAKE',correct:'AWOKE',wrong:['AWOKEN','AWAKED','AWAKD']},
+  {q:'Past simple of BEAR',correct:'BORE',wrong:['BORNE','BEARED','BEARD']},
+  {q:'Past simple of BEAT',correct:'BEAT',wrong:['BEATEN','BEATED','BETT']},
+  {q:'Past simple of BECOME',correct:'BECAME',wrong:['BECOME','BECOMED','BECAMED']},
+  {q:'Past simple of BEGIN',correct:'BEGAN',wrong:['BEGUN','BEGINNED','BEGANED']},
+  {q:'Past simple of BEND',correct:'BENT',wrong:['BENDED','BAND','BOND']},
+  {q:'Past simple of BITE',correct:'BIT',wrong:['BITTEN','BITED','BITTED']},
+  {q:'Past simple of BLOW',correct:'BLEW',wrong:['BLOWN','BLOWED','BLEWED']},
+  {q:'Past simple of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
+  {q:'Past simple of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
+  {q:'Past simple of BURN',correct:'BURNT',wrong:['BURNED','BORN','BRUNT']},
+  {q:'Past simple of COME',correct:'CAME',wrong:['COME','COMED','CAMED']},
+  {q:'Past simple of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
+  {q:'Past simple of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
+  {q:'Past simple of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
+  {q:'Past simple of DO',correct:'DID',wrong:['DONE','DOED','DIDED']},
+  {q:'Past simple of DRAW',correct:'DREW',wrong:['DRAWN','DRAWED','DREWED']},
+  {q:'Past simple of DREAM',correct:'DREAMT',wrong:['DREAMED','DRAMT','DREMT']},
+  {q:'Past simple of DRINK',correct:'DRANK',wrong:['DRUNK','DRINKED','DRANKED']},
+  {q:'Past simple of DRIVE',correct:'DROVE',wrong:['DRIVEN','DRIVED','DROVED']},
+  {q:'Past simple of EAT',correct:'ATE',wrong:['EATEN','EATED','ETE']},
+  {q:'Past simple of FEED',correct:'FED',wrong:['FEEDED','FEDED','FOOD']},
+  {q:'Past simple of FIGHT',correct:'FOUGHT',wrong:['FIGHTED','FOUGHTED','FIGHED']},
+  {q:'Past simple of FIND',correct:'FOUND',wrong:['FINDED','FOUNDED','FAND']},
+  {q:'Past simple of FLY',correct:'FLEW',wrong:['FLOWN','FLYED','FLEWED']},
+  {q:'Past simple of FORBID',correct:'FORBADE',wrong:['FORBIDDEN','FORBIDED','FORBADED']},
+  {q:'Past simple of FORGET',correct:'FORGOT',wrong:['FORGOTTEN','FORGETED','FORGOTED']},
+  {q:'Past simple of FREEZE',correct:'FROZE',wrong:['FROZEN','FREEZED','FROZED']},
+  {q:'Past simple of GET',correct:'GOT',wrong:['GETED','GOTTEN','GETTED']},
+  {q:'Past simple of GO',correct:'WENT',wrong:['GONE','GOED','WENTED']},
+  {q:'Past simple of HANG',correct:'HUNG',wrong:['HANGED','HONG','HENG']},
+  {q:'Past simple of HAVE',correct:'HAD',wrong:['HAVED','HAVD','HAVEED']},
+  {q:'Past simple of HEAR',correct:'HEARD',wrong:['HEARED','HERD','HARD']},
+  {q:'Past simple of HIDE',correct:'HID',wrong:['HIDDEN','HIDED','HIDDED']},
+  {q:'Past simple of HIT',correct:'HIT',wrong:['HITED','HITTED','HET']},
+  {q:'Past simple of HURT',correct:'HURT',wrong:['HURTED','HURTT','HART']},
+  {q:'Past simple of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
+  {q:'Past simple of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
+  {q:'Past simple of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
+  {q:'Past simple of LEARN',correct:'LEARNT',wrong:['LEARNED','LERNT','LEARND']},
+  {q:'Past simple of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
+  {q:'Past simple of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
+  {q:'Past simple of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
+  {q:'Past simple of LIE',correct:'LAY',wrong:['LAIN','LIED','LAYED']},
+  {q:'Past simple of MAKE',correct:'MADE',wrong:['MAKED','MAKD','MOOD']},
+  {q:'Past simple of MEAN',correct:'MEANT',wrong:['MEANED','MENT','MEND']},
+  {q:'Past simple of PAY',correct:'PAID',wrong:['PAYED','PAYD','PEID']},
+  {q:'Past simple of PUT',correct:'PUT',wrong:['PUTED','PUTTED','POT']},
+  {q:'Past simple of READ',correct:'READ',wrong:['READED','RED','REDD']},
+  {q:'Past simple of RIDE',correct:'RODE',wrong:['RIDDEN','RIDED','RODED']},
+  {q:'Past simple of RING',correct:'RANG',wrong:['RUNG','RINGED','RANGED']},
+  {q:'Past simple of SAY',correct:'SAID',wrong:['SAYED','SAYD','SEID']},
+  {q:'Past simple of SEE',correct:'SAW',wrong:['SEEN','SEED','SAWED']},
+  {q:'Past simple of SELL',correct:'SOLD',wrong:['SELLED','SOLED','SELD']},
+  {q:'Past simple of SEND',correct:'SENT',wrong:['SENDED','SENDD','SENTED']},
+  {q:'Past simple of SET',correct:'SET',wrong:['SETED','SETTED','SAT']},
+  {q:'Past simple of SHAKE',correct:'SHOOK',wrong:['SHAKEN','SHAKED','SHOOKED']},
+  {q:'Past simple of SHINE',correct:'SHONE',wrong:['SHINED','SHON','SHEEN']},
+  {q:'Past simple of SHUT',correct:'SHUT',wrong:['SHUTED','SHUTTED','SHOT']},
+  {q:'Past simple of SING',correct:'SANG',wrong:['SUNG','SINGED','SANGED']},
+  {q:'Past simple of SINK',correct:'SANK',wrong:['SUNK','SINKED','SANKED']},
+  {q:'Past simple of SIT',correct:'SAT',wrong:['SITED','SITTED','SETT']},
+  {q:'Past simple of SLEEP',correct:'SLEPT',wrong:['SLEEPED','SLEPED','SLOPED']},
+  {q:'Past simple of SPEND',correct:'SPENT',wrong:['SPENDED','SPENDD','SPENTED']},
+  {q:'Past simple of STAND',correct:'STOOD',wrong:['STANDED','STOODED','STANDD']},
+  {q:'Past simple of STEAL',correct:'STOLE',wrong:['STOLEN','STEALED','STOLED']},
+  {q:'Past simple of STICK',correct:'STUCK',wrong:['STICKED','STUCKED','STACK']},
+  {q:'Past simple of STING',correct:'STUNG',wrong:['STINGED','STANG','STUNGED']},
+  {q:'Past simple of STRIKE',correct:'STRUCK',wrong:['STRIKED','STRACK','STRUCKED']},
+  {q:'Past simple of SWEAR',correct:'SWORE',wrong:['SWORN','SWEARED','SWORED']},
+  {q:'Past simple of SWEEP',correct:'SWEPT',wrong:['SWEEPED','SWEPED','SWOOPED']},
+  {q:'Past simple of SWIM',correct:'SWAM',wrong:['SWUM','SWIMMED','SWAMED']},
+  {q:'Past simple of TEAR',correct:'TORE',wrong:['TORN','TEARED','TORED']},
+  {q:'Past simple of TELL',correct:'TOLD',wrong:['TELLED','TOLED','TALD']},
+  {q:'Past simple of THROW',correct:'THREW',wrong:['THROWN','THROWED','THREWED']},
+  {q:'Past simple of UNDERSTAND',correct:'UNDERSTOOD',wrong:['UNDERSTANDED','UNDERSTOODED','UNDERSTANDD']},
+  {q:'Past simple of WAKE',correct:'WOKE',wrong:['WOKEN','WAKED','WOKED']},
+  {q:'Past simple of WEAR',correct:'WORE',wrong:['WORN','WEARED','WORED']},
+  {q:'Past simple of WIN',correct:'WON',wrong:['WINNED','WINED','WAN']},
+
+  // ── Additional past participle ──
+  {q:'Past participle of ARISE',correct:'ARISEN',wrong:['AROSE','ARISED','ARISEED']},
+  {q:'Past participle of AWAKE',correct:'AWOKEN',wrong:['AWOKE','AWAKED','AWAKEED']},
+  {q:'Past participle of BEAR',correct:'BORNE',wrong:['BORE','BEARED','BEARN']},
+  {q:'Past participle of BEAT',correct:'BEATEN',wrong:['BEAT','BEATED','BEATD']},
+  {q:'Past participle of BECOME',correct:'BECOME',wrong:['BECAME','BECOMED','BECOMEN']},
+  {q:'Past participle of BEGIN',correct:'BEGUN',wrong:['BEGAN','BEGINNED','BEGINED']},
+  {q:'Past participle of BEND',correct:'BENT',wrong:['BENDED','BAND','BOND']},
+  {q:'Past participle of BITE',correct:'BITTEN',wrong:['BIT','BITED','BITTED']},
+  {q:'Past participle of BLOW',correct:'BLOWN',wrong:['BLEW','BLOWED','BLOWED2']},
+  {q:'Past participle of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
+  {q:'Past participle of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
+  {q:'Past participle of BURN',correct:'BURNT',wrong:['BURNED','BORN','BRUNT2']},
+  {q:'Past participle of COME',correct:'COME',wrong:['CAME','COMED','COMEN']},
+  {q:'Past participle of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
+  {q:'Past participle of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
+  {q:'Past participle of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
+  {q:'Past participle of DO',correct:'DONE',wrong:['DID','DOED','DIDED2']},
+  {q:'Past participle of DRAW',correct:'DRAWN',wrong:['DREW','DRAWED','DREWED2']},
+  {q:'Past participle of DREAM',correct:'DREAMT',wrong:['DREAMED','DRAMT','DREMT2']},
+  {q:'Past participle of DRINK',correct:'DRUNK',wrong:['DRANK','DRINKED','DRUNKEN']},
+  {q:'Past participle of DRIVE',correct:'DRIVEN',wrong:['DROVE','DRIVED','DROVED2']},
+  {q:'Past participle of EAT',correct:'EATEN',wrong:['ATE','EATED','ETE2']},
+  {q:'Past participle of FEED',correct:'FED',wrong:['FEEDED','FEDED','FOOD']},
+  {q:'Past participle of FIGHT',correct:'FOUGHT',wrong:['FIGHTED','FOUGHTED','FIGHED']},
+  {q:'Past participle of FIND',correct:'FOUND',wrong:['FINDED','FOUNDED','FAND']},
+  {q:'Past participle of FLY',correct:'FLOWN',wrong:['FLEW','FLYED','FLEWED2']},
+  {q:'Past participle of FORBID',correct:'FORBIDDEN',wrong:['FORBADE','FORBIDED','FORBADED2']},
+  {q:'Past participle of FORGET',correct:'FORGOTTEN',wrong:['FORGOT','FORGETED','FORGOTED2']},
+  {q:'Past participle of FREEZE',correct:'FROZEN',wrong:['FROZE','FREEZED','FROZED2']},
+  {q:'Past participle of GET',correct:'GOT',wrong:['GETED','GOTTEN','GETTED']},
+  {q:'Past participle of GO',correct:'GONE',wrong:['WENT','GOED','WENTED2']},
+  {q:'Past participle of HANG',correct:'HUNG',wrong:['HANGED','HONG','HENG']},
+  {q:'Past participle of HAVE',correct:'HAD',wrong:['HAVED','HAVD','HAVEED']},
+  {q:'Past participle of HEAR',correct:'HEARD',wrong:['HEARED','HERD','HARD']},
+  {q:'Past participle of HIDE',correct:'HIDDEN',wrong:['HID','HIDED','HIDDED2']},
+  {q:'Past participle of HIT',correct:'HIT',wrong:['HITED','HITTED','HET']},
+  {q:'Past participle of HURT',correct:'HURT',wrong:['HURTED','HURTT','HART']},
+  {q:'Past participle of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
+  {q:'Past participle of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
+  {q:'Past participle of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
+  {q:'Past participle of LEARN',correct:'LEARNT',wrong:['LEARNED','LERNT','LEARND']},
+  {q:'Past participle of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
+  {q:'Past participle of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
+  {q:'Past participle of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
+  {q:'Past participle of LIE',correct:'LAIN',wrong:['LAY','LIED','LAYED2']},
+  {q:'Past participle of MAKE',correct:'MADE',wrong:['MAKED','MAKD','MOOD']},
+  {q:'Past participle of MEAN',correct:'MEANT',wrong:['MEANED','MENT','MEND']},
+  {q:'Past participle of PAY',correct:'PAID',wrong:['PAYED','PAYD','PEID']},
+  {q:'Past participle of PUT',correct:'PUT',wrong:['PUTED','PUTTED','POT']},
+  {q:'Past participle of READ',correct:'READ',wrong:['READED','RED','REDD']},
+  {q:'Past participle of RIDE',correct:'RIDDEN',wrong:['RODE','RIDED','RODED2']},
+  {q:'Past participle of RING',correct:'RUNG',wrong:['RANG','RINGED','RANGED2']},
+  {q:'Past participle of SAY',correct:'SAID',wrong:['SAYED','SAYD','SEID']},
+  {q:'Past participle of SEE',correct:'SEEN',wrong:['SAW','SEED','SAWED2']},
+  {q:'Past participle of SELL',correct:'SOLD',wrong:['SELLED','SOLED','SELD']},
+  {q:'Past participle of SEND',correct:'SENT',wrong:['SENDED','SENDD','SENTED']},
+  {q:'Past participle of SET',correct:'SET',wrong:['SETED','SETTED','SAT']},
+  {q:'Past participle of SHAKE',correct:'SHAKEN',wrong:['SHOOK','SHAKED','SHOOKED2']},
+  {q:'Past participle of SHINE',correct:'SHONE',wrong:['SHINED','SHON','SHEEN']},
+  {q:'Past participle of SHUT',correct:'SHUT',wrong:['SHUTED','SHUTTED','SHOT']},
+  {q:'Past participle of SING',correct:'SUNG',wrong:['SANG','SINGED','SANGED2']},
+  {q:'Past participle of SINK',correct:'SUNK',wrong:['SANK','SINKED','SANKED2']},
+  {q:'Past participle of SIT',correct:'SAT',wrong:['SITED','SITTED','SETT']},
+  {q:'Past participle of SLEEP',correct:'SLEPT',wrong:['SLEEPED','SLEPED','SLOPED']},
+  {q:'Past participle of SPEND',correct:'SPENT',wrong:['SPENDED','SPENDD','SPENTED']},
+  {q:'Past participle of STAND',correct:'STOOD',wrong:['STANDED','STOODED','STANDD']},
+  {q:'Past participle of STEAL',correct:'STOLEN',wrong:['STOLE','STEALED','STOLED2']},
+  {q:'Past participle of STICK',correct:'STUCK',wrong:['STICKED','STUCKED','STACK']},
+  {q:'Past participle of STING',correct:'STUNG',wrong:['STINGED','STANG','STUNGED']},
+  {q:'Past participle of STRIKE',correct:'STRUCK',wrong:['STRIKED','STRACK','STRUCKED']},
+  {q:'Past participle of SWEAR',correct:'SWORN',wrong:['SWORE','SWEARED','SWORED2']},
+  {q:'Past participle of SWEEP',correct:'SWEPT',wrong:['SWEEPED','SWEPED','SWOOPED']},
+  {q:'Past participle of SWIM',correct:'SWUM',wrong:['SWAM','SWIMMED','SWAMED2']},
+  {q:'Past participle of TEAR',correct:'TORN',wrong:['TORE','TEARED','TORED2']},
+  {q:'Past participle of TELL',correct:'TOLD',wrong:['TELLED','TOLED','TALD']},
+  {q:'Past participle of THROW',correct:'THROWN',wrong:['THREW','THROWED','THREWED2']},
+  {q:'Past participle of UNDERSTAND',correct:'UNDERSTOOD',wrong:['UNDERSTANDED','UNDERSTOODED','UNDERSTANDD']},
+  {q:'Past participle of WAKE',correct:'WOKEN',wrong:['WOKE','WAKED','WOKED2']},
+  {q:'Past participle of WEAR',correct:'WORN',wrong:['WORE','WEARED','WORED2']},
+  {q:'Past participle of WIN',correct:'WON',wrong:['WINNED','WINED','WAN']},
+
+  // ── Additional spelling ──
+  {q:'Spell: a written agreement',correct:'CONTRACT',wrong:['CONTRAKT','KONTRACT','CONTRACTT']},
+  {q:'Spell: to suggest',correct:'RECOMMEND',wrong:['RECCOMEND','RECOMEND','RECOMMENDD']},
+  {q:'Spell: a doctor for teeth',correct:'DENTIST',wrong:['DENTIST2','DENTHIST','DENTEST']},
+  {q:'Spell: relating to weather',correct:'METEOROLOGICAL',wrong:['METEROLOGICAL','METEOROLOGICLE','METEREOLOGICAL']},
+  {q:'Spell: argument or disagreement',correct:'ARGUMENT',wrong:['ARGUEMENT','ARGUMENTT','ARGUMANT']},
+  {q:'Spell: very large',correct:'ENORMOUS',wrong:['ENORMUS','ENORMOUSE','INORMOUS']},
+  {q:'Spell: a list of things to do',correct:'AGENDA',wrong:['AGENDAH','AGENDER','EGENDA']},
+  {q:'Spell: to make something legal',correct:'LEGITIMATE',wrong:['LEGITAMATE','LEGITIMET','LEGETIMATE']},
+  {q:'Spell: extremely happy',correct:'ECSTATIC',wrong:['EXTATIC','ECSTACTIC','ECTASTIC']},
+  {q:'Spell: a sudden strong feeling',correct:'IMPULSE',wrong:['IMPULS','IMPULES','IMPULSSE']},
+  {q:'Spell: to make smaller',correct:'MINIMISE',wrong:['MINIMIZE2','MINIMASE','MINNIMISE']},
+  {q:'Spell: not able to be seen',correct:'INVISIBLE',wrong:['INVISABLE','INVISIBEL','INVISSIBLE']},
+  {q:'Spell: a feeling of being thankful',correct:'GRATITUDE',wrong:['GRATTITUDE','GRATATUDE','GRADITUDE']},
+  {q:'Spell: to make a mistake',correct:'BLUNDER',wrong:['BLUNDOR','BLONDER','BLUNDDER']},
+  {q:'Spell: a person who studies the past',correct:'HISTORIAN',wrong:['HISTORYAN','HISTOREAN','HISTORIEN']},
+  {q:'Spell: clearly visible or obvious',correct:'CONSPICUOUS',wrong:['CONSPICIOUS','CONSPICUOS','CONSPICOUS']},
+  {q:'Spell: to make worse',correct:'AGGRAVATE',wrong:['AGRAVATE','AGGRIVATE','AGRAVVATE']},
+  {q:'Spell: easily broken',correct:'FRAGILE',wrong:['FRAGGILE','FRAJILE','FRAGIL']},
+  {q:'Spell: a strong wish',correct:'DESIRE',wrong:['DESYRE','DESIER','DESSIRE']},
+  {q:'Spell: showing care for detail',correct:'METICULOUS',wrong:['METICULOS','METICULLOUS','METICOULOUS']},
+  {q:'Spell: a person who travels for fun',correct:'TOURIST',wrong:['TOURRIST','TOURIST2','TOWRIST']},
+  {q:'Spell: a place to learn',correct:'INSTITUTE',wrong:['INSTITUT','INSTUTUTE','INSTUITUTE']},
+  {q:'Spell: relating to feelings',correct:'EMOTIONAL',wrong:['EMOTIONNAL','EMOSHONAL','EMOTONAL']},
+  {q:'Spell: a place where goods are made',correct:'FACTORY',wrong:['FACTERY','FACTRY','FACTOURY']},
+  {q:'Spell: a place to keep money safe',correct:'TREASURY',wrong:['TRESURY','TREASSURY','TREASUREY']},
+  {q:'Spell: a feeling of worry',correct:'ANXIETY',wrong:['ANXIETTY','ANXIETEY','ANXEITY']},
+  {q:'Spell: a sudden burst of laughter',correct:'OUTBURST',wrong:['OUTBERST','OUTBUSRT','OUTBURTS']},
+  {q:'Spell: the study of living things',correct:'BIOLOGY',wrong:['BYOLOGY','BIOLLOGY','BIOLOGEY']},
+  {q:'Spell: relating to the body',correct:'PHYSICAL',wrong:['PHISICAL','PHYSICCAL','FYSICAL']},
+  {q:'Spell: to copy exactly',correct:'REPLICATE',wrong:['REPLICAITE','REPPLICATE','REPLICKATE']},
+  {q:'Spell: relating to numbers',correct:'NUMERICAL',wrong:['NUMERICLE','NUMARICAL','NUMERRICAL']},
+  {q:'Spell: a group of related companies',correct:'CONGLOMERATE',wrong:['CONGLOMORATE','CONGLOMERETE','CONGLOMMERATE']},
+  {q:'Spell: causing surprise',correct:'ASTONISHING',wrong:['ASTONNISHING','ASTONISHEING','ASTONISHIN']},
+  {q:'Spell: to find guilty',correct:'CONVICT',wrong:['CONVIKT','CONVICTT','KONVICT']},
+  {q:'Spell: extremely small',correct:'MINUSCULE',wrong:['MINISCULE','MINUSCLE','MINISKULE']},
+  {q:'Spell: a clear and exact explanation',correct:'PRECISE',wrong:['PRESISE','PRECIES','PRECYSE']},
+  {q:'Spell: a person who breaks the law',correct:'CRIMINAL',wrong:['CRIMMINAL','CRIMENAL','CRIMNAL']},
+  {q:'Spell: relating to the mind',correct:'PSYCHOLOGICAL',wrong:['PSYCOLOGICAL','PSYCHOLODGICAL','SYCHOLOGICAL']},
+  {q:'Spell: a celebration of a birth date',correct:'ANNIVERSARY',wrong:['ANNIVERSSARY','ANIVERSARY','ANNIVERSORY']},
+  {q:'Spell: a building for storing goods',correct:'WAREHOUSE',wrong:['WEARHOUSE','WAREHOUS','WAREHOSE']},
+  {q:'Spell: not easily upset',correct:'UNFLAPPABLE',wrong:['UNFLAPABLE','UNFLAPPABEL','UNFLAPABEL']},
+  {q:'Spell: a feeling of strong dislike',correct:'REPULSION',wrong:['REPULSHUN','REPPULSION','REPULTION']},
+  {q:'Spell: very thorough and complete',correct:'COMPREHENSIVE',wrong:['COMPREHENSSIVE','COMPRIHENSIVE','COMPREHENCIVE']},
+
+  // ── Additional synonyms ──
+  {q:'Synonym of ANGRY',correct:'FURIOUS',wrong:['CALM','SERENE','PLEASED']},
+  {q:'Synonym of TIRED',correct:'EXHAUSTED',wrong:['ENERGETIC','LIVELY','ALERT']},
+  {q:'Synonym of CLEVER',correct:'INTELLIGENT',wrong:['FOOLISH','NAIVE','DULL']},
+  {q:'Synonym of BEAUTIFUL',correct:'GORGEOUS',wrong:['UGLY','PLAIN','HIDEOUS']},
+  {q:'Synonym of STRONG',correct:'POWERFUL',wrong:['WEAK','FRAIL','FEEBLE']},
+  {q:'Synonym of QUIET',correct:'SILENT',wrong:['LOUD','NOISY','BOISTEROUS']},
+  {q:'Synonym of GENEROUS',correct:'CHARITABLE',wrong:['STINGY','SELFISH','MISERLY']},
+  {q:'Synonym of HONEST',correct:'TRUTHFUL',wrong:['DECEITFUL','DISHONEST','LYING']},
+  {q:'Synonym of STRANGE',correct:'PECULIAR',wrong:['NORMAL','ORDINARY','TYPICAL']},
+  {q:'Synonym of EXPENSIVE',correct:'COSTLY',wrong:['CHEAP','AFFORDABLE','INEXPENSIVE']},
+  {q:'Synonym of ANCIENT',correct:'ARCHAIC',wrong:['MODERN','RECENT','CONTEMPORARY']},
+  {q:'Synonym of HUGE',correct:'IMMENSE',wrong:['TINY','MINUTE','PETITE']},
+  {q:'Synonym of FUNNY',correct:'HILARIOUS',wrong:['SERIOUS','SOLEMN','GRAVE']},
+  {q:'Synonym of BORING',correct:'TEDIOUS',wrong:['EXCITING','FASCINATING','THRILLING']},
+  {q:'Synonym of POLITE',correct:'COURTEOUS',wrong:['RUDE','IMPOLITE','DISCOURTEOUS']},
+  {q:'Synonym of NERVOUS',correct:'ANXIOUS',wrong:['CALM','RELAXED','CONFIDENT']},
+  {q:'Synonym of STUBBORN',correct:'OBSTINATE',wrong:['FLEXIBLE','ADAPTABLE','OPEN-MINDED']},
+  {q:'Synonym of LOYAL',correct:'FAITHFUL',wrong:['DISLOYAL','TREACHEROUS','UNFAITHFUL']},
+  {q:'Synonym of CONFUSING',correct:'BAFFLING',wrong:['CLEAR','OBVIOUS','SIMPLE']},
+
+  // ── Additional opposites ──
+  {q:'Opposite of BRAVE',correct:'COWARDLY',wrong:['COURAGEOUS','BOLD','FEARLESS']},
+  {q:'Opposite of HONEST',correct:'DECEITFUL',wrong:['TRUTHFUL','SINCERE','GENUINE']},
+  {q:'Opposite of CONFIDENT',correct:'INSECURE',wrong:['ASSURED','CERTAIN','SELF-ASSURED']},
+  {q:'Opposite of CAUTIOUS',correct:'RECKLESS',wrong:['CAREFUL','PRUDENT','WARY']},
+  {q:'Opposite of FLEXIBLE',correct:'RIGID',wrong:['ADAPTABLE','PLIABLE','VERSATILE']},
+  {q:'Opposite of OPTIMISTIC',correct:'PESSIMISTIC',wrong:['HOPEFUL','POSITIVE','UPBEAT']},
+  {q:'Opposite of GENUINE',correct:'FAKE',wrong:['AUTHENTIC','REAL','SINCERE']},
 ];
 
 // ── Stars ──────────────────────────────────────────────────────────
@@ -733,9 +1081,10 @@ let padA,padB,melo,subBass,fxSynth,fxBell,noiseFX;
 let musicEventId=null,musicStep=0,musicMode='none',currentTrack=0;
 let lastWaveBpm=0;
 
+// All volume levels reduced to 80% of their previous loudness.
 const VOL_STATES=[
-  {label:'🔊 100%',musicVol:0,  muted:false},
-  {label:'🔉  50%',musicVol:-12,muted:false},
+  {label:'🔊 100%',musicVol:-1.94, muted:false},  // was 0dB, now 80% linear gain
+  {label:'🔉  50%',musicVol:-13.94,muted:false},  // was -12dB, same proportional drop
   {label:'🔇  OFF',musicVol:-Infinity,muted:true},
 ];
 let volState=0;
@@ -881,10 +1230,16 @@ const TRACKS=[
   },
 ];
 
+let audioInitInProgress = false; // guards against overlapping init attempts on rapid taps
+
 async function startAudio(){
   if(audioReady) return;
+  if(audioInitInProgress) return; // a previous tap is already setting things up
+  audioInitInProgress = true;
   try {
-    // Mobile-safe: must call Tone.start() inside a user gesture handler
+    // Mobile-safe: must call Tone.start() inside a user gesture handler,
+    // and as close to the very start of that handler as possible — this
+    // gives mobile Safari the best chance of recognising the gesture.
     await Tone.start();
 
     // Extra safety for iOS — ensure context is running
@@ -897,27 +1252,32 @@ async function startAudio(){
     fxSynth = new Tone.Synth({
       oscillator:{type:'sine'},
       envelope:{attack:.001,decay:.15,sustain:.1,release:.2},
-      volume:-10
+      volume:-11.94
     }).toDestination();
 
     fxBell = new Tone.Synth({
       oscillator:{type:'triangle'},
       envelope:{attack:.001,decay:.4,sustain:0,release:.3},
-      volume:-14
+      volume:-15.94
     }).toDestination();
 
     noiseFX = new Tone.NoiseSynth({
       noise:{type:'white'},
       envelope:{attack:.001,decay:.05,sustain:0,release:.01},
-      volume:-20
+      volume:-21.94
     }).toDestination();
 
     // ── Music chain — padA + padB + melo + subBass → reverb → musicGain ──
-    musicGain = new Tone.Gain(1).toDestination();
+    musicGain = new Tone.Gain(0.8).toDestination(); // 80% of previous max volume
 
-    // Long reverb tail — the heart of the ambient sound
+    // Long reverb tail — the heart of the ambient sound. IR generation
+    // can occasionally hang on older/slower mobile devices, so we race
+    // it against a timeout and fall back to proceeding without waiting
+    // further, rather than blocking audio setup entirely.
     const rev = new Tone.Reverb({decay:6, wet:0.7}).connect(musicGain);
-    await rev.generate(); // pre-generate IR (important on mobile)
+    const reverbReady   = rev.generate();
+    const reverbTimeout = new Promise(resolve => setTimeout(resolve, 2500));
+    await Promise.race([reverbReady, reverbTimeout]);
 
     // Subtle delay on melody
     const delay = new Tone.FeedbackDelay('8n.',0.25).connect(rev);
@@ -958,6 +1318,11 @@ async function startAudio(){
     console.log('Audio ready, context state:', ctx.state);
   } catch(e){
     console.warn('Audio init failed:',e);
+    // Allow a future tap to retry from scratch rather than staying
+    // broken for the rest of the session.
+    audioReady = false;
+  } finally {
+    audioInitInProgress = false;
   }
 }
 

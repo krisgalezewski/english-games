@@ -35,6 +35,9 @@ body { overflow:hidden; background:#0a0a14; }
 #topNav a:hover { color:#fff; }
 #topNav .nav-title { font-family:'Playfair Display',serif; font-size:.9rem; font-weight:700; color:var(--gold); }
 #muteBtn { height:32px; padding:0 .65rem; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; cursor:pointer; display:flex; align-items:center; gap:.3rem; font-family:'Space Mono',monospace; letter-spacing:.06em; transition:background .2s; white-space:nowrap; }
+#fullscreenBtn { height:32px; width:32px; padding:0; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+#fullscreenBtn:hover { background:rgba(255,255,255,.15); }
+#fullscreenBtn.visible { display:flex !important; }
 #muteBtn:hover { background:rgba(255,255,255,.15); }
 #pauseBtn { height:32px; padding:0 .65rem; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; cursor:pointer; font-family:'Space Mono',monospace; letter-spacing:.06em; transition:background .2s; display:none; }
 #pauseBtn.visible { display:flex; align-items:center; }
@@ -98,6 +101,7 @@ body { overflow:hidden; background:#0a0a14; }
       <button class="track-btn"        id="track2" onclick="selectTrack(2)">Heroic</button>
     </div>
     <button id="pauseBtn" onclick="togglePause()">⏸ PAUSE</button>
+    <button id="fullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen" style="display:none">⛶</button>
     <button id="muteBtn">🔊 100%</button>
   </div>
 </nav>
@@ -1046,9 +1050,11 @@ let audioReady=false, musicGain=null;
 let meloSynth=null, bassSynth=null, padSynth=null, fxSynth=null, fxBell=null, noiseFX=null;
 let musicEventId=null, musicStep=0, currentTrack=0;
 
+// All volume levels reduced to 80% of their previous loudness
+// (100% now plays at what used to be roughly 80% — quieter, more comfortable).
 const VOL_STATES=[
-  {label:'🔊 100%',vol:0,muted:false},
-  {label:'🔉  50%',vol:-12,muted:false},
+  {label:'🔊 100%',vol:-1.94,muted:false},  // was 0dB, now 80% linear gain
+  {label:'🔉  50%',vol:-13.94,muted:false}, // was -12dB, same proportional drop
   {label:'🔇  OFF',vol:-Infinity,muted:true},
 ];
 let volState=0;
@@ -1205,53 +1211,73 @@ function selectTrack(n){
   if(audioReady&&(state==='playing'||state==='paused')) scheduleMusic(TRACKS[n]);
 }
 
+let audioInitInProgress = false; // guards against overlapping init attempts
+
 async function startAudio(){
-  if(audioReady)return;
+  if(audioReady) return;
+  if(audioInitInProgress) return; // a previous tap is already setting things up
+  audioInitInProgress = true;
+
   try{
+    // On iOS especially, Tone.start() must run as close to the start of the
+    // gesture handler as possible — calling it first, before anything else,
+    // gives mobile Safari the best chance of recognising the gesture.
     await Tone.start();
-    const ctx2=Tone.getContext().rawContext;
-    if(ctx2.state==='suspended')await ctx2.resume();
+    const ctx2 = Tone.getContext().rawContext;
+    if(ctx2.state === 'suspended') await ctx2.resume();
 
-    musicGain=new Tone.Gain(1).toDestination();
+    musicGain = new Tone.Gain(0.8).toDestination(); // 80% of previous max volume
 
-    // Reverb — moderate warmth
-    const rev=new Tone.Reverb({decay:2.5,wet:0.35}).connect(musicGain);
-    await rev.generate();
+    // Reverb — moderate warmth. IR generation can occasionally hang on
+    // older/slower mobile devices, so we race it against a timeout and
+    // fall back to a dry (no-reverb) signal path rather than blocking
+    // audio entirely if it never resolves.
+    const rev = new Tone.Reverb({decay:2.5, wet:0.35}).connect(musicGain);
+    const reverbReady = rev.generate();
+    const reverbTimeout = new Promise(resolve => setTimeout(resolve, 2500));
+    await Promise.race([reverbReady, reverbTimeout]);
 
     // Delay on melody for spaciousness
-    const delay=new Tone.FeedbackDelay('8n.',0.2).connect(rev);
-    delay.wet.value=0.25;
+    const delay = new Tone.FeedbackDelay('8n.', 0.2).connect(rev);
+    delay.wet.value = 0.25;
 
     // Melody — sine with gentle attack (not harsh square)
-    meloSynth=new Tone.Synth({
+    meloSynth = new Tone.Synth({
       oscillator:{type:'triangle'},
       envelope:{attack:.04,decay:.2,sustain:.6,release:.4},
       volume:-10
     }).connect(delay);
 
     // Bass — rounded sawtooth
-    bassSynth=new Tone.Synth({
+    bassSynth = new Tone.Synth({
       oscillator:{type:'sine'},
       envelope:{attack:.05,decay:.3,sustain:.7,release:.5},
       volume:-14
     }).connect(musicGain);
 
     // Pad — lush polyphonic
-    padSynth=new Tone.PolySynth(Tone.Synth,{
+    padSynth = new Tone.PolySynth(Tone.Synth,{
       oscillator:{type:'sine'},
       envelope:{attack:.6,decay:.4,sustain:.8,release:2},
       volume:-18
     }).connect(rev);
 
-    // SFX
-    fxSynth=new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:.001,decay:.15,sustain:.1,release:.1},volume:-8}).toDestination();
-    fxBell=new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.001,decay:.3,sustain:0,release:.2},volume:-12}).toDestination();
-    noiseFX=new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.05,sustain:0,release:.01},volume:-20}).toDestination();
+    // SFX — direct to destination, bypassing the music chain
+    fxSynth  = new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:.001,decay:.15,sustain:.1,release:.1},volume:-9.94}).toDestination();
+    fxBell   = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.001,decay:.3,sustain:0,release:.2},volume:-13.94}).toDestination();
+    noiseFX  = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.05,sustain:0,release:.01},volume:-21.94}).toDestination();
 
-    audioReady=true;
+    audioReady = true;
     Tone.getTransport().start();
     scheduleMusic(MENU_TRACK); // peaceful menu music
-  }catch(e){console.warn('Audio failed:',e);}
+  } catch(e) {
+    console.warn('Audio failed to initialise:', e);
+    // Allow a future tap to retry from scratch rather than staying broken
+    // for the rest of the session.
+    audioReady = false;
+  } finally {
+    audioInitInProgress = false;
+  }
 }
 
 function scheduleMusic(track){
@@ -1324,32 +1350,59 @@ document.getElementById('muteBtn').addEventListener('click',async()=>{
   if(musicGain)musicGain.gain.rampTo(v.vol===-Infinity?0:Math.pow(10,v.vol/20),.1);
 });
 
-// ── Landscape check ───────────────────────────────────────────────
+// ── Landscape check + fullscreen ──────────────────────────────────
+// IMPORTANT: requestFullscreen() requires a direct user gesture (a tap or
+// click) in virtually all mobile browsers — it CANNOT be triggered from an
+// orientationchange or resize event. We therefore show a visible button
+// for the player to tap, which reliably works everywhere. Exiting
+// fullscreen, by contrast, is never gesture-gated, so we can still do that
+// automatically when the player rotates back to portrait.
+
+const isMobileDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+function isInFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function toggleFullscreen(){
+  const el = document.documentElement;
+  if(!isInFullscreen()){
+    if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+  updateFullscreenBtn();
+}
+
+function updateFullscreenBtn(){
+  const btn = document.getElementById('fullscreenBtn');
+  if(!btn) return;
+  btn.textContent = isInFullscreen() ? '⛶' : '⛶';
+  btn.title = isInFullscreen() ? 'Exit fullscreen' : 'Enter fullscreen';
+}
+
+['fullscreenchange','webkitfullscreenchange'].forEach(evt=>{
+  document.addEventListener(evt, updateFullscreenBtn);
+});
+
 function checkOrientation(){
   const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 600;
   document.getElementById('rotatePlease').style.display = portrait ? 'flex' : 'none';
   if(portrait && state==='playing') state='paused_orient';
   if(!portrait && state==='paused_orient') state='playing';
 
-  // Auto fullscreen on landscape mobile, exit on portrait
-  const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  if(isMobile){
-    if(!portrait){
-      // Landscape — request fullscreen
-      const el = document.documentElement;
-      if(!document.fullscreenElement && el.requestFullscreen){
-        el.requestFullscreen().catch(()=>{}); // ignore if blocked
-      } else if(!document.fullscreenElement && el.webkitRequestFullscreen){
-        el.webkitRequestFullscreen(); // iOS Safari
-      }
-    } else {
-      // Portrait — exit fullscreen
-      if(document.fullscreenElement && document.exitFullscreen){
-        document.exitFullscreen().catch(()=>{});
-      } else if(document.webkitFullscreenElement && document.webkitExitFullscreen){
-        document.webkitExitFullscreen();
-      }
-    }
+  // Show the manual fullscreen button only on mobile/touch devices,
+  // and only once the player has rotated to landscape (where it's useful).
+  const fsBtn = document.getElementById('fullscreenBtn');
+  if(fsBtn) fsBtn.classList.toggle('visible', isMobileDevice && !portrait);
+
+  // Exiting fullscreen on returning to portrait is safe to automate —
+  // browsers never block exitFullscreen() the way they block requesting it.
+  if(isMobileDevice && portrait && isInFullscreen()){
+    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
   }
 }
 window.addEventListener('resize', checkOrientation);

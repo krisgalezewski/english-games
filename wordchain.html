@@ -37,6 +37,20 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .pos-letter em { color:var(--gold); font-style:normal; }
 
 .next-letter { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; text-align:center; color:var(--text); }
+.next-letter em, .hard-prompt em { color:var(--gold); font-style:normal; }
+
+/* Flash animation drawing attention back to the unchanged letter/POS
+   requirement after a rejected word, so players don't mistakenly think
+   the game has advanced when it hasn't. */
+@keyframes promptFlash {
+  0%   { background:rgba(239,83,80,0.25); transform:scale(1); }
+  30%  { background:rgba(239,83,80,0.25); transform:scale(1.04); }
+  100% { background:transparent; transform:scale(1); }
+}
+.prompt-flash {
+  animation: promptFlash 0.6s ease-out;
+  border-radius:8px;
+}
 .next-letter em { color:var(--gold); font-style:normal; }
 
 .chain-scroll { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.85rem 1rem; min-height:52px; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
@@ -330,6 +344,19 @@ function pickPOS() {
   currentPOS = PARTS_OF_SPEECH[Math.floor(Math.random() * PARTS_OF_SPEECH.length)];
 }
 
+// Briefly highlights the letter/POS prompt so the player notices the
+// requirement has NOT changed after a rejected word.
+function flashPrompt() {
+  const promptEl = mode === 'easy'
+    ? document.getElementById('easyPrompt')
+    : document.getElementById('hardPrompt');
+  if (!promptEl) return;
+  promptEl.classList.remove('prompt-flash');
+  // Force reflow so the animation can restart even if triggered repeatedly
+  void promptEl.offsetWidth;
+  promptEl.classList.add('prompt-flash');
+}
+
 function renderPrompt() {
   if (mode === 'easy') {
     document.getElementById('easyPrompt').style.display = 'block';
@@ -408,20 +435,28 @@ async function submitWord() {
   if (!word) return;
 
   // ── Validation (each failure costs a life) ─────────────────────
+  // IMPORTANT: on every rejection, currentLetter is unchanged — the player
+  // must try again with a word starting with the SAME letter as before.
+  // We re-render and visually flash the prompt every time so this is
+  // never ambiguous, even after several rejections in a row.
   if (word.length < 3) {
     loseLife('Too short — 3 letters minimum! ❤️ −1');
+    renderPrompt(); flashPrompt();
     return;
   }
   if (word[0] !== currentLetter) {
     loseLife(`Must start with "${currentLetter.toUpperCase()}" ❤️ −1`);
+    renderPrompt(); flashPrompt();
     return;
   }
   if (chain.includes(word)) {
     loseLife('Already used that word! ❤️ −1');
+    renderPrompt(); flashPrompt();
     return;
   }
   if (!wordSet.has(word)) {
-    loseLife('Not a recognised word ❤️ −1');
+    loseLife(`"${word}" not recognised — still need a word starting with "${currentLetter.toUpperCase()}" ❤️ −1`);
+    renderPrompt(); flashPrompt();
     return;
   }
 
