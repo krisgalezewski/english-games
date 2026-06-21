@@ -183,6 +183,25 @@ function showPhrasalModal(phrasalVerb, definition, example) {
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
 }
 
+// For any game with its own verified local definitions (e.g. Anagram).
+// Unlike showPhrasalModal, this does NOT hardcode a part-of-speech label —
+// pass it in (or leave blank) since these are ordinary words, not phrasal verbs.
+function showLocalDefModal(word, definition, example, pos) {
+  document.querySelector('.def-modal-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'def-modal-overlay';
+  overlay.innerHTML = `
+    <div class="def-modal fade-in">
+      <button class="close-btn" onclick="this.closest('.def-modal-overlay').remove()">✕</button>
+      <h3>${escHtml(word)}</h3>
+      ${pos ? `<div class="pos">${escHtml(pos)}</div>` : ''}
+      <div class="definition">${escHtml(definition)}</div>
+      ${example ? `<div class="example">"${escHtml(example)}"</div>` : ''}
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+}
+
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

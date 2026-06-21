@@ -966,6 +966,7 @@ function startRound(){
 }
 
 function startGame(){
+  primeAudioSync(); // synchronous native AudioContext unlock, in case this is the first gesture
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
   round=1; score=0; lives=5; streak=0; bestStreak=0; correctCount=0;
@@ -1212,6 +1213,25 @@ function selectTrack(n){
 }
 
 let audioInitInProgress = false; // guards against overlapping init attempts
+let _nativeCtx = null; // raw AudioContext, created synchronously on first gesture
+
+// Synchronously create/resume a native AudioContext the instant a gesture
+// fires — done separately from Tone.start() because on some strict mobile
+// browsers, Tone.start()'s internal promise chaining can lose the "this is
+// a genuine user gesture" flag by the time it actually calls resume().
+// Creating our own context immediately, in the same call stack as the
+// gesture, is the most reliable unlock pattern across devices.
+function primeAudioSync(){
+  try{
+    if(!_nativeCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) _nativeCtx = new AC();
+    }
+    if(_nativeCtx && _nativeCtx.state === 'suspended'){
+      _nativeCtx.resume();
+    }
+  }catch(e){ console.warn('primeAudioSync failed:', e); }
+}
 
 async function startAudio(){
   if(audioReady) return;
@@ -1343,6 +1363,7 @@ function sfxLevelComplete(){
 
 // ── Volume toggle ─────────────────────────────────────────────────
 document.getElementById('muteBtn').addEventListener('click',async()=>{
+  primeAudioSync();
   await startAudio();
   volState=(volState+1)%VOL_STATES.length;
   const v=VOL_STATES[volState];
@@ -1367,13 +1388,39 @@ function isInFullscreen(){
 function toggleFullscreen(){
   const el = document.documentElement;
   if(!isInFullscreen()){
-    if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    // Some mobile browsers (notably iOS Safari, outside of "Add to Home
+    // Screen" mode) report fullscreenEnabled as false and will never
+    // grant fullscreen for an arbitrary element — this is a real platform
+    // limitation, not a bug, so we tell the player plainly instead of
+    // failing silently.
+    const supported = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    if(supported === false){
+      showFullscreenNotice('Fullscreen isn\'t supported in this browser — try Chrome on Android, or add this page to your Home Screen.');
+      return;
+    }
+    const req = el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen ? Promise.resolve(el.webkitRequestFullscreen()) : Promise.reject(new Error('not supported')));
+    req.then(updateFullscreenBtn).catch(err=>{
+      console.warn('Fullscreen request failed:', err);
+      showFullscreenNotice('Could not enter fullscreen — your browser may have blocked it.');
+    });
   } else {
-    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
-    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    const exit = document.exitFullscreen ? document.exitFullscreen() : (document.webkitExitFullscreen ? Promise.resolve(document.webkitExitFullscreen()) : Promise.resolve());
+    exit.then(updateFullscreenBtn).catch(()=>{});
   }
-  updateFullscreenBtn();
+}
+
+function showFullscreenNotice(msg){
+  let notice = document.getElementById('fsNotice');
+  if(!notice){
+    notice = document.createElement('div');
+    notice.id = 'fsNotice';
+    notice.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,.95);color:#fff;padding:.6rem 1rem;border-radius:8px;font-size:.78rem;max-width:80vw;text-align:center;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.4);';
+    document.body.appendChild(notice);
+  }
+  notice.textContent = msg;
+  notice.style.display = 'block';
+  clearTimeout(notice._hideTimer);
+  notice._hideTimer = setTimeout(()=>{ notice.style.display='none'; }, 3500);
 }
 
 function updateFullscreenBtn(){
@@ -1409,10 +1456,19 @@ window.addEventListener('resize', checkOrientation);
 window.addEventListener('orientationchange', ()=>setTimeout(checkOrientation, 200));
 checkOrientation();
 
-// Start audio on first touch
-['click','pointerdown','touchstart'].forEach(evt=>{
-  document.addEventListener(evt,function h(){startAudio();document.removeEventListener(evt,h);});
+// Start audio on first touch — using {once:true} ensures each listener
+// fires exactly once and cleans itself up.
+// primeAudioSync() runs FIRST and SYNCHRONOUSLY to grab the native
+// AudioContext unlock the instant the gesture is detected; startAudio()
+// then does the full Tone.js setup.
+// IMPORTANT: touchstart must be non-passive on iOS Safari — some WebKit
+// versions only count a gesture as "real" (and allow AudioContext.resume())
+// when the handler is capable of calling preventDefault(), even if it
+// never actually does.
+['click','pointerdown'].forEach(evt=>{
+  document.addEventListener(evt, () => { primeAudioSync(); startAudio(); }, {once:true});
 });
+document.addEventListener('touchstart', () => { primeAudioSync(); startAudio(); }, {once:true, passive:false});
 
 // ── Pause hint detection ──────────────────────────────────────────
 (function(){

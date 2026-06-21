@@ -1013,6 +1013,7 @@ function masterLoop(ts){
 
 // ── Game flow ──────────────────────────────────────────────────────
 function startGame(){
+  primeAudioSync(); // synchronous native AudioContext unlock, in case this is the first gesture
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
   score=0;wave=1;lives=5;streak=0;bestStreak=0;correctCount=0;multiplier=1;
@@ -1231,6 +1232,23 @@ const TRACKS=[
 ];
 
 let audioInitInProgress = false; // guards against overlapping init attempts on rapid taps
+let _nativeCtx = null; // raw AudioContext, created synchronously on first gesture
+
+// Synchronously create/resume a native AudioContext the instant a gesture
+// fires — separate from Tone.start() because on some strict mobile
+// browsers, Tone.start()'s internal promise chaining can lose the "this is
+// a genuine user gesture" flag by the time it actually calls resume().
+function primeAudioSync(){
+  try{
+    if(!_nativeCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) _nativeCtx = new AC();
+    }
+    if(_nativeCtx && _nativeCtx.state === 'suspended'){
+      _nativeCtx.resume();
+    }
+  }catch(e){ console.warn('primeAudioSync failed:', e); }
+}
 
 async function startAudio(){
   if(audioReady) return;
@@ -1435,6 +1453,7 @@ function sfxWaveUp(){
 }
 
 document.getElementById('muteBtn').addEventListener('click',async()=>{
+  primeAudioSync();
   await startAudio();
   volState=(volState+1)%VOL_STATES.length;
   applyVolume();
@@ -1485,16 +1504,21 @@ requestAnimationFrame(masterLoop);
   }
 })();
 
-// Mobile audio fix: use a non-passive touchstart so we can call
-// Tone.start() synchronously inside the gesture handler (required by iOS)
+// Mobile audio fix: primeAudioSync() runs FIRST and SYNCHRONOUSLY to grab
+// the native AudioContext unlock the instant the gesture is detected;
+// startAudio() then does the full Tone.js setup.
+// touchstart must be non-passive on iOS Safari — some WebKit versions only
+// count a gesture as "real" when the handler is capable of calling
+// preventDefault(), even if it never actually does.
 ['click','pointerdown'].forEach(evt=>{
   document.addEventListener(evt, function handler(){
+    primeAudioSync();
     startAudio();
     document.removeEventListener(evt, handler);
   });
 });
-// iOS Safari specifically requires touchstart
 document.addEventListener('touchstart', function iosHandler(){
+  primeAudioSync();
   startAudio();
   document.removeEventListener('touchstart', iosHandler);
 }, {passive:false});

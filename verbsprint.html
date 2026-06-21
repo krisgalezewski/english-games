@@ -124,13 +124,12 @@ main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 .feedback.bad  { color:var(--wrong); }
 .feedback.info { color:var(--gold); }
 
-/* End card */
+/* End card — inline, non-blocking (matches CollocationCrash/WordChain style) */
 .end-card {
-  position:fixed; inset:0; z-index:200;
-  background:rgba(13,13,13,.97); backdrop-filter:blur(8px);
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
   display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:1rem; padding:2rem 1.5rem;
-  overflow-y:auto; animation:fadeIn .4s ease;
+  gap:1rem; padding:2rem 1.5rem; width:100%;
+  animation:fadeIn .4s ease;
 }
 .end-score { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:900; color:var(--gold); }
 .review-grid  { display:flex; flex-direction:column; gap:.35rem; width:100%; max-width:460px; max-height:38vh; overflow-y:auto; }

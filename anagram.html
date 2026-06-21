@@ -233,13 +233,13 @@ const EASY_WORDS = [
   {w:'CLOUD',    cat:'Weather',     def:'A visible mass of water droplets floating in the sky.'},
   {w:'DREAM',    cat:'Emotions',    def:'A series of images experienced during sleep.'},
   {w:'EAGLE',    cat:'Animals',     def:'A large bird of prey with keen eyesight.'},
-  {w:'FLAME',    cat:'Nature',      def:'The glowing gas produced when something burns.'},
+  {w:'FLAME',    cat:'Nature',      def:'The hot glowing light produced by something on fire.'},
   {w:'GLOBE',    cat:'Geography',   def:'A spherical model of the Earth.'},
   {w:'HONEY',    cat:'Food',        def:'A sweet sticky substance made by bees.'},
   {w:'JUDGE',    cat:'Law',         def:'A person who presides over a court of law.'},
   {w:'KNIFE',    cat:'Objects',     def:'A tool with a blade used for cutting.'},
-  {w:'LEMON',    cat:'Food',        def:'A sour yellow citrus fruit used in cooking.'},
   {w:'MARCH',    cat:'Time',        def:'The third month of the year.'},
+  {w:'SUNSET',   cat:'Nature',      def:'The time of day when the sun goes down below the horizon.'},
   {w:'NURSE',    cat:'Professions', def:'A person trained to care for sick or injured people.'},
   {w:'OLIVE',    cat:'Food',        def:'A small bitter fruit used in cooking and for oil.'},
   {w:'PEARL',    cat:'Materials',   def:'A hard shiny object formed inside an oyster.'},
@@ -361,7 +361,7 @@ const HARD_WORDS = [
   {w:'DISTANCE',    cat:'Concepts',    def:'The length of space between two points.'},
   {w:'ENORMOUS',    cat:'Adjectives',  def:'Very large in size or quantity.'},
   {w:'FREQUENT',    cat:'Adjectives',  def:'Happening or occurring often.'},
-  {w:'GRATEFUL',    cat:'Emotions',    def:'Feeling warmly appreciative of kindness received.'},
+  {w:'GENEROSITY',  cat:'Emotions',    def:'The quality of being willing to give freely without expecting anything in return.'},
   {w:'HORRIBLE',    cat:'Adjectives',  def:'Causing horror or disgust; very unpleasant.'},
   {w:'INNOCENT',    cat:'Adjectives',  def:'Not guilty of a crime or wrongdoing.'},
   {w:'JEALOUSY',    cat:'Emotions',    def:'The feeling of being envious of someone\'s achievements.'},
@@ -719,7 +719,7 @@ function endRound() {
   results.forEach(r=>{
     const el=document.createElement('div'); el.className='review-item';
     el.innerHTML=`<span class="review-word">${r.w}</span><span class="review-status ${r.status==='correct'?'ok':r.status==='skip'||r.status==='time'?'skip':'bad'}">${r.status==='correct'?'+'+r.pts+' pts':r.status==='skip'?'skipped':'time out'}</span>`;
-    el.addEventListener('click',()=>showDefinitionModal(r.w));
+    el.addEventListener('click',()=>showLocalDefModal(r.w, r.def, '', ''));
     rg.appendChild(el);
   });
 }
