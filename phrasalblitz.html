@@ -1049,7 +1049,7 @@ function startGame() {
 function buildMode1() {
   const correctParticles = new Set(currentVerb.pairs.map(p => p.p));
   const distractors = ALL_PARTICLES.filter(p => !correctParticles.has(p));
-  const shown = dailyShuffle([...correctParticles, ...distractors.slice(0, Math.min(12, distractors.length))]);
+  const shown = shuffle([...correctParticles, ...distractors.slice(0, Math.min(12, distractors.length))]);
   const grid = document.getElementById('m1grid'); grid.innerHTML = '';
   shown.forEach(p => {
     const btn = document.createElement('button');
@@ -1083,7 +1083,7 @@ function buildMode2() {
   );
   // Distractor verbs (those that DON'T use this particle)
   const distractorVerbs = VERBS.filter(v => !correctVerbs.has(v.verb)).map(v => v.verb);
-  const shown = dailyShuffle([...correctVerbs, ...distractorVerbs.slice(0, Math.min(10, distractorVerbs.length))]);
+  const shown = shuffle([...correctVerbs, ...distractorVerbs.slice(0, Math.min(10, distractorVerbs.length))]);
   const grid = document.getElementById('m2grid'); grid.innerHTML = '';
   shown.forEach(v => {
     const btn = document.createElement('button');
@@ -1245,6 +1245,17 @@ function updateRing() {
 function endGame() {
   document.getElementById('phase-game').style.display = 'none';
   document.getElementById('phase-result').style.display = 'flex';
+
+  // Reset the submit form — prevents a stale "Score submitted!" message
+  // from a previous mode/round persisting and hiding the input/button.
+  const submitAreaEl = document.getElementById('submitArea');
+  if (submitAreaEl) {
+    submitAreaEl.innerHTML = `
+      <div class="submit-row">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" type="button" onclick="doSubmit()">Add to leaderboard</button>
+      </div>`;
+  }
 
   // Calculate total possible answers based on mode
   let total;

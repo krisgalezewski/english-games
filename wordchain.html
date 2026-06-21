@@ -396,7 +396,7 @@ function beginGame() {
 }
 
 function startChain() {
-  const si = freshDailyIndex('wordchain', STARTERS.length);
+  const si = freshRandomIndex('wordchain', STARTERS.length);
   markSeen('wordchain', si);
   const starter = STARTERS[si];
   chain = [starter]; totalScore = 0; longestWord = starter;

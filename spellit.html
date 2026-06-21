@@ -659,7 +659,7 @@ function setDiff(d) {
 }
 
 function initRound() {
-  const indices = freshIndices('spellit_'+diff, wordBank, ROUND_SIZE);
+  const indices = freshRandomIndices('spellit_'+diff, wordBank, ROUND_SIZE);
   indices.forEach(i => markSeen('spellit_'+diff, i));
   roundWords = indices.map(i => wordBank[i]);
   current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = [];
@@ -821,6 +821,8 @@ function switchLb_spellit(d) {
   });
   renderLeaderboard('spellit_'+d, 'lbBody');
 }
+
+switchLb_spellit('easy'); // render the leaderboard immediately on page load
 </script>
 </body>
 </html>

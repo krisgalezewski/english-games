@@ -143,6 +143,18 @@ body { overflow:hidden; background:#0a0a14; }
     <strong>ROUNDS 1–5</strong> — Prefixes &nbsp;·&nbsp; <strong>6–8</strong> — Suffixes &nbsp;·&nbsp; <strong>9–10</strong> — Mixed<br>
     <strong>LIVES</strong> — 5 hearts &nbsp;·&nbsp; <strong>PAUSE</strong> — <span class="key tip-kb">Space</span><span class="tip-mobile">double-tap</span><br><strong>SHIELDS & LIVES</strong> — catch the floating 🛡️ and ❤️ powerups!
   </div>
+
+  <div style="width:100%;max-width:340px;margin-top:.5rem">
+    <div class="lb-wrap">
+      <h2 style="font-size:1rem;margin-bottom:.5rem">🏆 Leaderboard</h2>
+      <div class="diff-tabs" style="margin-bottom:.5rem">
+        <button class="diff-tab active" id="startLbDiffE" onclick="switchStartLb('easy')">Easy</button>
+        <button class="diff-tab"        id="startLbDiffH" onclick="switchStartLb('hard')">Hard</button>
+      </div>
+      <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="startLbBody"></tbody></table>
+    </div>
+  </div>
 </div>
 
 <!-- END SCREEN -->
@@ -1025,6 +1037,7 @@ function togglePause(){
 function showMainMenu(){
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
+  switchStartLb(difficulty); // refresh leaderboard in case a score was just submitted
   // Switch to menu music
   if(audioReady){ scheduleMusic(MENU_TRACK); Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,1); }
 }
@@ -1200,6 +1213,13 @@ function setDifficulty(d){
   difficulty = d;
   document.getElementById('diffE').classList.toggle('active', d==='easy');
   document.getElementById('diffH').classList.toggle('active', d==='hard');
+  switchStartLb(d);
+}
+
+function switchStartLb(d){
+  document.getElementById('startLbDiffE').classList.toggle('active', d==='easy');
+  document.getElementById('startLbDiffH').classList.toggle('active', d==='hard');
+  renderLeaderboard('affixrunner_'+d, 'startLbBody');
 }
 
 function selectTrack(n){
@@ -1213,22 +1233,17 @@ function selectTrack(n){
 }
 
 let audioInitInProgress = false; // guards against overlapping init attempts
-let _nativeCtx = null; // raw AudioContext, created synchronously on first gesture
-
-// Synchronously create/resume a native AudioContext the instant a gesture
-// fires — done separately from Tone.start() because on some strict mobile
-// browsers, Tone.start()'s internal promise chaining can lose the "this is
-// a genuine user gesture" flag by the time it actually calls resume().
-// Creating our own context immediately, in the same call stack as the
-// gesture, is the most reliable unlock pattern across devices.
+// Synchronously resume Tone.js's own AudioContext the instant a gesture
+// fires. IMPORTANT: this must operate on Tone's context, not a separately
+// created native AudioContext — creating our own context here would
+// unlock a context Tone.js never uses, leaving its real internal context
+// suspended and silent on strict mobile browsers (this was the actual
+// cause of "no sound on mobile" — calling resume() on the wrong object).
 function primeAudioSync(){
   try{
-    if(!_nativeCtx){
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(AC) _nativeCtx = new AC();
-    }
-    if(_nativeCtx && _nativeCtx.state === 'suspended'){
-      _nativeCtx.resume();
+    if (typeof Tone !== 'undefined' && Tone.getContext) {
+      const ctx = Tone.getContext().rawContext;
+      if (ctx && ctx.state === 'suspended') ctx.resume();
     }
   }catch(e){ console.warn('primeAudioSync failed:', e); }
 }
@@ -1479,6 +1494,7 @@ document.addEventListener('touchstart', () => { primeAudioSync(); startAudio(); 
 
 // ── Boot ──────────────────────────────────────────────────────────
 document.getElementById('hiScore').textContent='Best: '+bestScore;
+switchStartLb('easy'); // render the leaderboard immediately on page load
 lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 </script>

@@ -199,6 +199,13 @@ body {
     <strong>LIVES</strong> — 5 planes · wrong word = lose one<br>
     <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span>
   </div>
+  <div class="lb-wrap">
+    <h3>🏆 LEADERBOARD</h3>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
+      <tbody id="startLbBody"><tr><td colspan="3" style="color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- End screen -->
@@ -1065,6 +1072,7 @@ function endGame(){
 function showStart(){
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
+  renderLeaderboard('englishace', 'startLbBody');
 }
 
 document.getElementById('submitBtn').addEventListener('click',async()=>{
@@ -1232,20 +1240,17 @@ const TRACKS=[
 ];
 
 let audioInitInProgress = false; // guards against overlapping init attempts on rapid taps
-let _nativeCtx = null; // raw AudioContext, created synchronously on first gesture
-
-// Synchronously create/resume a native AudioContext the instant a gesture
-// fires — separate from Tone.start() because on some strict mobile
-// browsers, Tone.start()'s internal promise chaining can lose the "this is
-// a genuine user gesture" flag by the time it actually calls resume().
+// Synchronously resume Tone.js's own AudioContext the instant a gesture
+// fires. IMPORTANT: this must operate on Tone's context, not a separately
+// created native AudioContext — creating our own context here would
+// unlock a context Tone.js never uses, leaving its real internal context
+// suspended and silent on strict mobile browsers (this was the actual
+// cause of "no sound on mobile" — calling resume() on the wrong object).
 function primeAudioSync(){
   try{
-    if(!_nativeCtx){
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(AC) _nativeCtx = new AC();
-    }
-    if(_nativeCtx && _nativeCtx.state === 'suspended'){
-      _nativeCtx.resume();
+    if (typeof Tone !== 'undefined' && Tone.getContext) {
+      const ctx = Tone.getContext().rawContext;
+      if (ctx && ctx.state === 'suspended') ctx.resume();
     }
   }catch(e){ console.warn('primeAudioSync failed:', e); }
 }
@@ -1483,6 +1488,7 @@ window.addEventListener('keydown',e=>{
 
 // ── Boot ───────────────────────────────────────────────────────────
 document.getElementById('startHi').textContent='BEST: '+bestScore;
+renderLeaderboard('englishace', 'startLbBody'); // render the leaderboard immediately on page load
 lastTime=performance.now();
 requestAnimationFrame(masterLoop);
 

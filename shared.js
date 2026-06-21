@@ -42,6 +42,19 @@ function dailyShuffle(arr) {
   return a;
 }
 
+// True random shuffle — produces a different order every single call,
+// unlike dailyShuffle which is seeded by date and stays fixed all day.
+// Use this for anything that should look different every time the player
+// plays, even within the same day (e.g. answer option ordering).
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Leaderboard renderer ──────────────────────────────────────────
 async function renderLeaderboard(game, tbodyId) {
   const tbody = document.getElementById(tbodyId);

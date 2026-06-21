@@ -1026,7 +1026,7 @@ function shuffle(arr) {
 
 function initRound() {
   // Pick questions ensuring each correct answer is UNIQUE in the round
-  const baseIndices = freshIndices('collocationcrash_'+diff, qBank, qBank.length);
+  const baseIndices = freshRandomIndices('collocationcrash_'+diff, qBank, qBank.length);
   const usedCorrect = new Set();
   const picked = [];
   for (const idx of baseIndices) {
@@ -1142,6 +1142,8 @@ function switchLb_collocationcrash(d) {
   });
   renderLeaderboard('collocationcrash_'+d, 'lbBody');
 }
+
+switchLb_collocationcrash('easy'); // render the leaderboard immediately on page load
 </script>
 </body>
 </html>

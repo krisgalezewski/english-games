@@ -774,6 +774,8 @@ function switchAnLb(d){
   if (hBtn) hBtn.classList.toggle('active', d === 'hard');
   renderLeaderboard('anagram_'+d, 'lbBody');
 }
+
+switchAnLb('easy'); // render the leaderboard immediately on page load, not only on tab click
 </script>
 </body>
 </html>
