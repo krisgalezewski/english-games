@@ -88,6 +88,8 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 
 .rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
 .rules-box strong { color:var(--text); }
+.cs-term { color:var(--gold); text-decoration:underline; text-decoration-style:dotted; cursor:pointer; }
+.cs-term:hover { color:var(--text); }
 
 .bonus-pop { position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900; color:var(--gold); pointer-events:none; z-index:99; animation:bpop .75s ease forwards; }
 @keyframes bpop { 0%{opacity:1;transform:translate(-50%,-50%)} 100%{opacity:0;transform:translate(-50%,-120%)} }
@@ -449,9 +451,52 @@ const MODES = {
 const RULES_TEXT = {
   easy:      '<strong>Minimal pairs</strong> — single words at natural speed (slow down if you need to). Type exactly what you hear. <strong>2 replays</strong> per item, 10 items per round.',
   medium:    '<strong>Tricky spelling</strong> — words with silent letters and irregular spelling. Type exactly what you hear, spelled correctly. <strong>2 replays</strong> per item, 10 items per round.',
-  connected: '<strong>Connected speech</strong> — short phrases spoken at natural speed, so you\'ll hear them sounding joined-up and blended together. Type the <em>real, correctly-spelled English words</em> you recognise — not the way it sounds. For example, if it sounds like <strong>"thi sorange"</strong>, you type <strong>"this orange"</strong>. Capitals don\'t matter, and you don\'t need a full stop. The summary will show which feature each phrase demonstrated: weak forms, assimilation, elision, gemination, catenation or intrusion. <strong>2 replays</strong> per item.',
+  connected: '<strong>Connected speech</strong> — short phrases spoken at natural speed, so you\'ll hear them sounding joined-up and blended together. Type the <em>real, correctly-spelled English words</em> you recognise — not the way it sounds. For example, if it sounds like <strong>"thi sorange"</strong>, you type <strong>"this orange"</strong>. Capitals don\'t matter, and you don\'t need a full stop. The summary will show which feature each phrase demonstrated: <span class="cs-term" onclick="showCsTerm(\'weak_form\')">weak forms</span>, <span class="cs-term" onclick="showCsTerm(\'assimilation\')">assimilation</span>, <span class="cs-term" onclick="showCsTerm(\'elision\')">elision</span>, <span class="cs-term" onclick="showCsTerm(\'gemination\')">gemination</span>, <span class="cs-term" onclick="showCsTerm(\'catenation\')">catenation</span> or <span class="cs-term" onclick="showCsTerm(\'intrusion\')">intrusion</span>. <strong>2 replays</strong> per item.',
   expert:    '<strong>Full sentences</strong> — natural-speed sentences with normal stress and linking. Type the sentence exactly. A missing full stop at the end is fine. Only <strong>1 replay</strong> — closer to real listening exam conditions.',
 };
+
+// Glossary for the connected-speech feature names shown in the Hard mode
+// rules text and on each review-grid item's aspect badge — tapping a term
+// opens a brief explanation with examples, sourced from the same material
+// the phrase bank itself was built from.
+const CS_GLOSSARY = {
+  weak_form: {
+    label: 'Weak forms',
+    explanation: 'Small grammatical words — conjunctions, pronouns, prepositions, auxiliaries and articles — lose their full vowel sound and shrink to a quick, unstressed "uh" sound (or disappear almost entirely) in natural speech. English fits its stressed words into a steady rhythm, so the unstressed little words get squeezed.',
+    examples: ['"Fish and chips" sounds like "fish n chips."', '"A cup of tea" sounds like "a cup uv tea."'],
+  },
+  assimilation: {
+    label: 'Assimilation',
+    explanation: 'When one word ends in a consonant sound and the next begins with a different one, the first sound often changes to become more like the second, so the two are easier to say together. This very commonly happens with /t/ or /d/ followed by /j/ ("you"), which blend into a "ch" or "j" sound.',
+    examples: ['"Don\'t you think so?" sounds like "donchu think so?"', '"In Bath" sounds like "im Bath" — the /n/ shifts to /m/ before the /b/.'],
+  },
+  elision: {
+    label: 'Elision',
+    explanation: 'A sound — usually a /t/ or /d/ — disappears completely when it sits between two other consonant sounds, because it would otherwise be very awkward to pronounce. The word isn\'t shortened in writing, just in how it\'s actually said.',
+    examples: ['"Next door" sounds like "nexdoor."', '"Most common" sounds like "moscommon."'],
+  },
+  gemination: {
+    label: 'Gemination',
+    explanation: 'When one word ends with the same consonant sound that begins the next word, speakers usually merge the two into a single, slightly longer sound rather than pronouncing it twice.',
+    examples: ['"Social life" sounds like "socialife."', '"Some more" sounds like "somore."'],
+  },
+  catenation: {
+    label: 'Catenation (linking)',
+    explanation: 'When a word ending in a consonant sound is followed by a word starting with a vowel sound, the consonant "moves across" and attaches to the next word, so the boundary between the two words becomes much harder to hear.',
+    examples: ['"Pick it up" sounds like "pi ki tup."', '"This afternoon" sounds like "thi safternoon."'],
+  },
+  intrusion: {
+    label: 'Intrusion',
+    explanation: 'When one word ends in a vowel sound and the next also begins with a vowel sound, speakers often insert a tiny extra consonant sound — /r/, /w/ or /y/ — to bridge the gap smoothly, even though that sound isn\'t written anywhere.',
+    examples: ['"Law and order" sounds like "law rand order."', '"Do it" sounds like "do wit."'],
+  },
+};
+
+function showCsTerm(key) {
+  const term = CS_GLOSSARY[key];
+  if (!term) return;
+  showLocalDefModal(term.label, term.explanation, term.examples.join('\n'), 'connected speech feature');
+}
 
 const ROUND_SIZE = 10;
 

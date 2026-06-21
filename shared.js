@@ -203,13 +203,18 @@ function showLocalDefModal(word, definition, example, pos) {
   document.querySelector('.def-modal-overlay')?.remove();
   const overlay = document.createElement('div');
   overlay.className = 'def-modal-overlay';
+  let exampleHtml = '';
+  if (example) {
+    const lines = String(example).split('\n').filter(l => l.trim());
+    exampleHtml = lines.map(l => `<div class="example">"${escHtml(l)}"</div>`).join('');
+  }
   overlay.innerHTML = `
     <div class="def-modal fade-in">
       <button class="close-btn" onclick="this.closest('.def-modal-overlay').remove()">✕</button>
       <h3>${escHtml(word)}</h3>
       ${pos ? `<div class="pos">${escHtml(pos)}</div>` : ''}
       <div class="definition">${escHtml(definition)}</div>
-      ${example ? `<div class="example">"${escHtml(example)}"</div>` : ''}
+      ${exampleHtml}
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });

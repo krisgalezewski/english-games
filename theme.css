@@ -305,7 +305,9 @@ body > * { position: relative; z-index: 1; }
   border-left: 2px solid var(--gold);
   padding-left: .75rem;
   line-height: 1.6;
+  margin-bottom: .5rem;
 }
+.def-modal .example:last-child { margin-bottom: 0; }
 
 /* ── Compact end-card (inline, non-blocking) ──────────────────────── */
 .compact-end-card {
