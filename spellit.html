@@ -10,6 +10,9 @@
 <style>
 main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 .hud { display:flex; align-items:center; justify-content:space-between; width:100%; gap:.5rem; flex-wrap:wrap; }
 .hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.45rem .9rem; text-align:center; min-width:64px; }
 .hud-pill .val { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--gold); }
@@ -77,33 +80,48 @@ main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 </nav>
 
 <main>
-  <div class="hud">
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
     <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy</button>
-      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard</button>
+      <button class="diff-tab active" id="tabE" onclick="previewDiff('easy')">Easy</button>
+      <button class="diff-tab"        id="tabH" onclick="previewDiff('hard')">Hard</button>
     </div>
-    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-    <div class="hud-pill"><div class="val" id="streakVal">🔥0</div><div class="lbl">Streak</div></div>
-    <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+    <div class="rules-box" style="font-size:.8rem">
+      <span id="rulesText">Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).</span>
+    </div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
   </div>
 
-  <div class="dots" id="dots"></div>
+  <!-- Game UI -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div class="hud">
+      <div class="diff-tabs">
+        <button class="diff-tab active" id="tabEGame" onclick="setDiff('easy')">Easy</button>
+        <button class="diff-tab"        id="tabHGame" onclick="setDiff('hard')">Hard</button>
+      </div>
+      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+      <div class="hud-pill"><div class="val" id="streakVal">🔥0</div><div class="lbl">Streak</div></div>
+      <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+    </div>
 
-  <div class="q-card" id="qCard">
-    <div class="q-meta" id="qMeta">Word 1 of 8</div>
-    <div class="definition" id="defText"></div>
-    <div class="letter-hint" id="letterHint"></div>
-    <div class="spell-wrap">
-      <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="TYPE HERE" maxlength="22"/>
-      <button class="btn-primary" onclick="checkSpelling()">✓</button>
+    <div class="dots" id="dots"></div>
+
+    <div class="q-card" id="qCard">
+      <div class="q-meta" id="qMeta">Word 1 of 8</div>
+      <div class="definition" id="defText"></div>
+      <div class="letter-hint" id="letterHint"></div>
+      <div class="spell-wrap">
+        <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="TYPE HERE" maxlength="22"/>
+        <button class="btn-primary" onclick="checkSpelling()">✓</button>
+      </div>
+      <div class="hint-box" id="hintBox">Hint not revealed yet</div>
+      <div class="hint-row">
+        <button class="btn-ghost" id="hint1Btn" onclick="showHint1()">💡 Hint (−3 pts)</button>
+        <button class="btn-ghost" id="hint2Btn" onclick="showHint2()">🔍 Extra hint (−5 pts, once only)</button>
+        <button class="btn-ghost" id="skipBtn"  onclick="skipWord()">⏭ Skip (−8 pts)</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
     </div>
-    <div class="hint-box" id="hintBox">Hint not revealed yet</div>
-    <div class="hint-row">
-      <button class="btn-ghost" id="hint1Btn" onclick="showHint1()">💡 Hint (−3 pts)</button>
-      <button class="btn-ghost" id="hint2Btn" onclick="showHint2()">🔍 Extra hint (−5 pts, once only)</button>
-      <button class="btn-ghost" id="skipBtn"  onclick="skipWord()">⏭ Skip (−8 pts)</button>
-    </div>
-    <div class="feedback" id="feedback"></div>
   </div>
 
   <div class="end-card" id="endCard" style="display:none">
@@ -611,11 +629,32 @@ let roundWords = [], current = 0, score = 0, streak = 0, skipsLeft = 3, extraHin
 let attempts = 0, h1Shown = false, h2Shown = false;
 let results = []; // {word, status: 'correct'|'wrong'|'skip', pts}
 
-function setDiff(d) {
+const RULES_BY_DIFF_SPELLIT = {
+  easy: 'Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).',
+  hard: 'Same as Easy, but with longer and trickier words. Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round.',
+};
+
+function previewDiff(d) {
   diff = d;
   wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
   document.getElementById('tabE').classList.toggle('active', d==='easy');
   document.getElementById('tabH').classList.toggle('active', d==='hard');
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_DIFF_SPELLIT[d];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  initRound();
+}
+
+function setDiff(d) {
+  diff = d;
+  wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
+  document.getElementById('tabEGame').classList.toggle('active', d==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', d==='hard');
+  document.getElementById('gameUI').style.display = 'flex';
   restartGame();
 }
 
@@ -747,7 +786,7 @@ function advanceWord() {
 }
 
 function endRound() {
-  document.getElementById('qCard').style.display  = 'none';
+  document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('endScore').textContent  = score + ' pts';
   const maxPts = ROUND_SIZE * 15;
@@ -767,14 +806,14 @@ function endRound() {
   });
 }
 
-function restartGame() { initRound(); }
+function restartGame() { document.getElementById('gameUI').style.display = 'flex'; initRound(); }
 
 async function doSubmit() {
   const area = document.getElementById('endCard');
   await handleScoreSubmit('spellit_' + diff, parseInt(area.dataset.score), 'nameInput', 'submitArea', 'lbBody');
 }
 
-initRound();
+previewDiff('easy');
 
 function switchLb_spellit(d) {
   ['easy','hard'].forEach(x => {

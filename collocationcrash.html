@@ -10,6 +10,9 @@
 <style>
 main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 .top-bar { display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:.5rem; }
 .progress-wrap { flex:1; height:4px; background:var(--border2); border-radius:99px; overflow:hidden; min-width:80px; }
 .progress-fill { height:100%; background:var(--gold); border-radius:99px; transition:width .4s; }
@@ -74,29 +77,44 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 </nav>
 
 <main>
-  <div class="top-bar">
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
     <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy</button>
-      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard</button>
+      <button class="diff-tab active" id="tabE" onclick="previewDiff('easy')">Easy</button>
+      <button class="diff-tab"        id="tabH" onclick="previewDiff('hard')">Hard</button>
     </div>
-    <div style="display:flex;align-items:center;gap:.6rem;flex:1;margin-left:.75rem">
-      <div class="progress-wrap"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
-      <div class="q-counter" id="qCounter">1/10</div>
+    <div class="rules-box" style="font-size:.8rem">
+      <span id="rulesText">Which verb goes with the noun shown? Choose the correct collocation from the options. <strong>10 questions</strong> per round, <strong>10 points</strong> each.</span>
     </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.4rem .85rem;text-align:center">
-      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold)" id="scoreVal">0</div>
-      <div style="font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Score</div>
-    </div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
   </div>
 
-  <div class="q-card" id="qCard">
-    <div class="q-instruction" id="qInstruction">Which verb goes with…</div>
-    <div class="q-noun" id="qNoun"></div>
-    <div class="q-pattern" id="qPattern"></div>
-    <div class="opts-grid" id="optsGrid"></div>
-    <div class="feedback" id="feedback"></div>
-    <div class="explanation" id="explanation"></div>
-    <button class="btn-ghost" id="nextBtn" style="display:none" onclick="nextQ()">Next →</button>
+  <!-- Game UI -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div class="top-bar">
+      <div class="diff-tabs">
+        <button class="diff-tab active" id="tabEGame" onclick="setDiff('easy')">Easy</button>
+        <button class="diff-tab"        id="tabHGame" onclick="setDiff('hard')">Hard</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem;flex:1;margin-left:.75rem">
+        <div class="progress-wrap"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+        <div class="q-counter" id="qCounter">1/10</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.4rem .85rem;text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold)" id="scoreVal">0</div>
+        <div style="font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Score</div>
+      </div>
+    </div>
+
+    <div class="q-card" id="qCard">
+      <div class="q-instruction" id="qInstruction">Which verb goes with…</div>
+      <div class="q-noun" id="qNoun"></div>
+      <div class="q-pattern" id="qPattern"></div>
+      <div class="opts-grid" id="optsGrid"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn-ghost" id="nextBtn" style="display:none" onclick="nextQ()">Next →</button>
+    </div>
   </div>
 
   <div class="end-card" id="endCard" style="display:none">
@@ -970,10 +988,30 @@ const ROUND_SIZE = 10;
 let diff = 'easy', qBank = EASY_QS;
 let roundQs = [], current = 0, score = 0, roundResults = [];
 
-function setDiff(d) {
+const RULES_BY_DIFF_CC = {
+  easy: 'Which verb goes with the noun shown? Choose the correct collocation from the options. <strong>10 questions</strong> per round, <strong>10 points</strong> each.',
+  hard: 'Same as Easy, but with trickier and less common collocations. Choose the correct verb for each noun shown. <strong>10 questions</strong> per round.',
+};
+
+function previewDiff(d) {
   diff = d; qBank = d === 'easy' ? EASY_QS : HARD_QS;
   document.getElementById('tabE').classList.toggle('active', d==='easy');
   document.getElementById('tabH').classList.toggle('active', d==='hard');
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_DIFF_CC[d];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  initRound();
+}
+
+function setDiff(d) {
+  diff = d; qBank = d === 'easy' ? EASY_QS : HARD_QS;
+  document.getElementById('tabEGame').classList.toggle('active', d==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', d==='hard');
+  document.getElementById('gameUI').style.display = 'flex';
   restartGame();
 }
 
@@ -1064,7 +1102,7 @@ function answer(chosen, btn, q) {
 function nextQ() { current++; loadQ(); }
 
 function endRound() {
-  document.getElementById('qCard').style.display  = 'none';
+  document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('progFill').style.width  = '100%';
   const max = roundQs.length * 10;
@@ -1089,14 +1127,14 @@ function endRound() {
   });
 }
 
-function restartGame() { initRound(); }
+function restartGame() { document.getElementById('gameUI').style.display = 'flex'; initRound(); }
 
 async function doSubmit() {
   const area = document.getElementById('endCard');
   await handleScoreSubmit('collocationcrash_' + diff, parseInt(area.dataset.score), 'nameInput', 'submitArea', 'lbBody');
 }
 
-initRound();
+previewDiff('easy');
 
 function switchLb_collocationcrash(d) {
   ['easy','hard'].forEach(x => {

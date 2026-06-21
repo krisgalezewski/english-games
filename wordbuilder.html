@@ -10,6 +10,9 @@
 <style>
 main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 .stats-row { display:flex; gap:.5rem; width:100%; }
 .stat-box  { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.5rem .5rem; text-align:center; }
 .stat-box .val { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--gold); }
@@ -129,52 +132,64 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 </nav>
 
 <main>
-  <!-- Difficulty + round info -->
-  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
-    <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy (reuse letters)</button>
-      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard (each letter once)</button>
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div style="display:flex;align-items:center;justify-content:center;width:100%;flex-wrap:wrap;gap:.5rem">
+      <div class="diff-tabs">
+        <button class="diff-tab active" id="tabE" onclick="previewDiff('easy')">Easy (reuse letters)</button>
+        <button class="diff-tab"        id="tabH" onclick="previewDiff('hard')">Hard (each letter once)</button>
+      </div>
     </div>
+    <div class="rules-box" style="font-size:.8rem" id="rulesBox">
+      <span id="rulesText">Build as many words as you can from the letters shown — letters can be reused. 5 rounds, 90 seconds each. Longer words score more points.</span>
+    </div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" id="startBtn" onclick="beginGame()" disabled>Loading… ⏳</button>
+  </div>
+
+  <!-- Difficulty + round info -->
+  <div id="roundInfoBar" style="display:none;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
     <div class="eyebrow" id="roundLabel">Round 1 of 5</div>
   </div>
 
   <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-box"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-    <div class="stat-box"><div class="val" id="wordsVal">0</div><div class="lbl">Words</div></div>
-    <div class="stat-box"><div class="val" id="bestVal">—</div><div class="lbl">Longest</div></div>
-  </div>
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div class="stats-row">
+      <div class="stat-box"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+      <div class="stat-box"><div class="val" id="wordsVal">0</div><div class="lbl">Words</div></div>
+      <div class="stat-box"><div class="val" id="bestVal">—</div><div class="lbl">Longest</div></div>
+    </div>
 
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-    <div class="timer-row"><span>Time</span><span class="timer-sec" id="timerSec">90s</span></div>
-  </div>
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-row"><span>Time</span><span class="timer-sec" id="timerSec">90s</span></div>
+    </div>
 
-  <!-- Instruction -->
-  <div class="rack-label">Make as many words as you can from these letters</div>
+    <!-- Instruction -->
+    <div class="rack-label">Make as many words as you can from these letters</div>
 
-  <!-- Letter rack -->
-  <div class="rack" id="rack"></div>
+    <!-- Letter rack -->
+    <div class="rack" id="rack"></div>
 
-  <!-- Current word being built -->
-  <!-- word-display only contains word-tile divs; placeholder is separate -->
-  <p class="word-placeholder" id="wordPlaceholder" style="text-align:center">Tap letters to build a word</p>
-  <div class="word-display" id="wordDisplay"></div>
+    <!-- Current word being built -->
+    <!-- word-display only contains word-tile divs; placeholder is separate -->
+    <p class="word-placeholder" id="wordPlaceholder" style="text-align:center">Tap letters to build a word</p>
+    <div class="word-display" id="wordDisplay"></div>
 
-  <!-- Actions -->
-  <div class="action-row">
-    <button class="btn-primary" onclick="submitWord()">Submit ✓</button>
-    <button class="btn-ghost"   onclick="clearWord()">✕ Clear</button>
-    <button class="btn-ghost"   onclick="shuffleRack()">🔀 Shuffle</button>
-  </div>
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-primary" onclick="submitWord()">Submit ✓</button>
+      <button class="btn-ghost"   onclick="clearWord()">✕ Clear</button>
+      <button class="btn-ghost"   onclick="shuffleRack()">🔀 Shuffle</button>
+    </div>
 
-  <div class="feedback" id="feedback"></div>
+    <div class="feedback" id="feedback"></div>
 
-  <!-- Found words -->
-  <div class="found-section">
-    <h3>Words found (<span id="foundCount">0</span>)</h3>
-    <div class="found-chips" id="foundChips"></div>
+    <!-- Found words -->
+    <div class="found-section">
+      <h3>Words found (<span id="foundCount">0</span>)</h3>
+      <div class="found-chips" id="foundChips"></div>
+    </div>
   </div>
 
   <!-- End card — inline, non-blocking summary -->
@@ -329,10 +344,27 @@ let timerInterval = null, timeLeft = 90;
 const ROUNDS_PER_GAME = 5;
 const ROUND_TIME = 90;
 
-function setDiff(d) {
+const RULES_BY_DIFF = {
+  easy: 'Build as many words as you can from the letters shown — letters can be <strong>reused</strong> as many times as they appear available. 5 rounds, 90 seconds each. Longer words score more points.',
+  hard: 'Build as many words as you can from the letters shown — <strong>each letter can only be used once</strong> per word. 5 rounds, 90 seconds each. Longer words score more points.',
+};
+
+function previewDiff(d) {
   diff = d; rackBank = d==='easy' ? RACKS_EASY : RACKS_HARD;
   document.getElementById('tabE').classList.toggle('active', d==='easy');
   document.getElementById('tabH').classList.toggle('active', d==='hard');
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_DIFF[d];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('roundInfoBar').style.display = 'flex';
+  restartGame();
+}
+
+function setDiff(d) {
+  diff = d; rackBank = d==='easy' ? RACKS_EASY : RACKS_HARD;
   document.getElementById('switchBtn').textContent = d==='easy' ? 'Switch to Hard (no letter reuse)' : 'Switch to Easy (reuse letters)';
   restartGame();
 }
@@ -342,6 +374,7 @@ function restartGame() {
   document.getElementById('scoreVal').textContent = 0;
   document.getElementById('bestVal').textContent  = '—';
   document.getElementById('endCard').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
   nextRound();
   switchWbLb(diff); // keep LB tab + table in sync with whichever mode just started
 }
@@ -353,6 +386,7 @@ let usedRackIdxThisGame = [];
 function nextRound() {
   if(roundNum >= ROUNDS_PER_GAME){ finalEnd(); return; }
   document.getElementById('endCard').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
 
   // Pick a genuinely random rack, avoiding both the 10-day "seen" list
   // and any rack already used earlier in this same game.
@@ -572,6 +606,7 @@ function showFeedback(msg,type){ const el=document.getElementById('feedback'); e
 function endRound() {
   clearInterval(timerInterval);
   clearWord();
+  document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display='flex';
   document.getElementById('endScore').textContent = totalScore+' pts';
   document.getElementById('endMsg').textContent =
@@ -620,8 +655,11 @@ async function doSubmit(){
 }
 
 // Init
-document.getElementById('switchBtn').textContent = 'Switch to Hard (no letter reuse)';
-loadDict().then(()=>restartGame());
+loadDict().then(() => {
+  const startBtn = document.getElementById('startBtn');
+  startBtn.disabled = false;
+  startBtn.textContent = 'Start playing →';
+});
 
 function switchWbLb(d){
   // IDs are lbWbE and lbWbH

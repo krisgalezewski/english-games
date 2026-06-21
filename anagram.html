@@ -10,6 +10,9 @@
 <style>
 main { max-width:540px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 .hud { display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:.5rem; }
 .hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.45rem .9rem; text-align:center; min-width:60px; }
 .hud-pill .val { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--gold); }
@@ -111,56 +114,71 @@ main { max-width:540px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 </nav>
 
 <main>
-  <!-- Difficulty tabs -->
-  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
     <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="setDiff('easy')">Easy</button>
-      <button class="diff-tab"        id="tabH" onclick="setDiff('hard')">Hard</button>
+      <button class="diff-tab active" id="tabE" onclick="previewDiff('easy')">Easy</button>
+      <button class="diff-tab"        id="tabH" onclick="previewDiff('hard')">Hard</button>
     </div>
-    <div class="dots" id="dots"></div>
+    <div class="rules-box" style="font-size:.8rem">
+      <span id="rulesText">Read the definition, then unscramble the letters to spell the word. <strong>8 words</strong> per round, <strong>90 seconds</strong> on the clock. <strong>3 skips</strong> (−10 pts) and <strong>2 hints</strong> (−5 pts each) available.</span>
+    </div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
   </div>
 
-  <!-- HUD -->
-  <div class="hud">
-    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-    <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
-    <div class="hud-pill"><div class="val" id="hintsVal">2</div><div class="lbl">Hints</div></div>
+  <!-- Game UI -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <!-- Difficulty tabs -->
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+      <div class="diff-tabs">
+        <button class="diff-tab active" id="tabEGame" onclick="setDiff('easy')">Easy</button>
+        <button class="diff-tab"        id="tabHGame" onclick="setDiff('hard')">Hard</button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+      <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+      <div class="hud-pill"><div class="val" id="hintsVal">2</div><div class="lbl">Hints</div></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-nums"><span>Time</span><span class="timer-sec" id="timerSec">90s</span><span id="timerBonus" style="color:var(--correct);opacity:0;transition:opacity .3s"></span></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="def-card" id="qCard">
+      <div class="cat" id="qCat">Category</div>
+      <div class="definition" id="qDef">Loading…</div>
+      <div class="letter-count" id="qCount"></div>
+    </div>
+
+    <!-- Answer tiles (tap to remove) -->
+    <div class="answer-row" id="answerRow"></div>
+
+    <!-- Hint strip (letter-by-letter reveal) -->
+    <div class="hint-strip" id="hintStripWrap" style="display:none">
+      <div class="hint-strip-label">Letter hints</div>
+      <div style="display:flex;gap:.3rem;justify-content:center;flex-wrap:wrap" id="hintStrip"></div>
+    </div>
+
+    <!-- Letter bank (tap to place) -->
+    <div class="bank-row" id="bankRow"></div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-primary" onclick="checkAnswer()">Check ✓</button>
+      <button class="btn-ghost"   onclick="showHint()">💡 Hint (−5)</button>
+      <button class="btn-ghost"   onclick="skipWord()">⏭ Skip (−10)</button>
+      <button class="btn-ghost"   onclick="clearAnswer()">✕ Clear</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
   </div>
-
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-    <div class="timer-nums"><span>Time</span><span class="timer-sec" id="timerSec">90s</span><span id="timerBonus" style="color:var(--correct);opacity:0;transition:opacity .3s"></span></div>
-  </div>
-
-  <!-- Question card -->
-  <div class="def-card" id="qCard">
-    <div class="cat" id="qCat">Category</div>
-    <div class="definition" id="qDef">Loading…</div>
-    <div class="letter-count" id="qCount"></div>
-  </div>
-
-  <!-- Answer tiles (tap to remove) -->
-  <div class="answer-row" id="answerRow"></div>
-
-  <!-- Hint strip (letter-by-letter reveal) -->
-  <div class="hint-strip" id="hintStripWrap" style="display:none">
-    <div class="hint-strip-label">Letter hints</div>
-    <div style="display:flex;gap:.3rem;justify-content:center;flex-wrap:wrap" id="hintStrip"></div>
-  </div>
-
-  <!-- Letter bank (tap to place) -->
-  <div class="bank-row" id="bankRow"></div>
-
-  <!-- Actions -->
-  <div class="action-row">
-    <button class="btn-primary" onclick="checkAnswer()">Check ✓</button>
-    <button class="btn-ghost"   onclick="showHint()">💡 Hint (−5)</button>
-    <button class="btn-ghost"   onclick="skipWord()">⏭ Skip (−10)</button>
-    <button class="btn-ghost"   onclick="clearAnswer()">✕ Clear</button>
-  </div>
-
-  <div class="feedback" id="feedback"></div>
 
   <!-- End card -->
   <div class="end-card" id="endCard" style="display:none">
@@ -475,11 +493,31 @@ let roundWords = [], current = 0, totalScore = 0, skipsLeft = 3, hintsLeft = 2;
 let currentLetters = [], placedIndices = [], timerInterval = null, timeLeft = START_TIME;
 let results = [];
 
-function setDiff(d) {
+const RULES_BY_DIFF = {
+  easy: 'Read the definition, then unscramble the letters to spell the word. <strong>8 words</strong> per round, <strong>90 seconds</strong> on the clock. <strong>3 skips</strong> (−10 pts) and <strong>2 hints</strong> (−5 pts each) available.',
+  hard: 'Same as Easy, but with longer, trickier words and definitions. Read the definition, then unscramble the letters to spell the word. <strong>8 words</strong> per round, <strong>90 seconds</strong> on the clock.',
+};
+
+function previewDiff(d) {
   diff = d; wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
   document.getElementById('tabE').classList.toggle('active', d==='easy');
   document.getElementById('tabH').classList.toggle('active', d==='hard');
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_DIFF[d];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  initRound();
+}
+
+function setDiff(d) {
+  diff = d; wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
+  document.getElementById('tabEGame').classList.toggle('active', d==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', d==='hard');
   document.getElementById('switchBtn').textContent = d==='easy' ? 'Switch to Hard' : 'Switch to Easy';
+  document.getElementById('gameUI').style.display = 'flex';
   restartGame();
 }
 
@@ -701,11 +739,7 @@ function endRound() {
   if (roundEnded) return; // already ended — never run this twice
   roundEnded = true;
   clearInterval(timerInterval);
-  document.getElementById('qCard').style.display='none';
-  document.getElementById('answerRow').innerHTML='';
-  document.getElementById('bankRow').innerHTML='';
-  document.getElementById('hintStrip').innerHTML='';
-  document.getElementById('action-row') && (document.querySelector('.action-row').style.display='none');
+  document.getElementById('gameUI').style.display='none';
   document.getElementById('endCard').style.display='flex';
 
   document.getElementById('endScore').textContent = totalScore+' pts';
@@ -724,14 +758,13 @@ function endRound() {
   });
 }
 
-function restartGame(){ document.querySelector('.action-row').style.display=''; initRound(); }
+function restartGame(){ document.getElementById('gameUI').style.display='flex'; initRound(); }
 async function doSubmit(){
   await handleScoreSubmit('anagram_'+diff,parseInt(document.getElementById('endCard').dataset.score),'nameInput','submitArea','lbBody');
 }
 
 // Init
 document.getElementById('switchBtn').textContent = 'Switch to Hard';
-initRound();
 
 function switchAnLb(d){
   // IDs are lbAnE / lbAnH (first-letter-only suffix), not lbAnEasy / lbAnHard

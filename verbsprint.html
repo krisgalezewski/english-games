@@ -10,6 +10,9 @@
 <style>
 main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1rem; box-sizing:border-box; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 /* ── Mobile layout fixes ──────────────────────────────────────────
    On narrow phones (≤480px) the verb card's side padding and the
    input row's fixed-width label were leaving almost no room for the
@@ -161,54 +164,70 @@ main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 </nav>
 
 <main>
-  <!-- Difficulty tabs -->
-  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
     <div class="diff-tabs">
-      <button class="diff-tab active" id="tabA" onclick="setMode('easy')">Easy</button>
-      <button class="diff-tab"        id="tabB" onclick="setMode('medium')">Medium</button>
-      <button class="diff-tab"        id="tabC" onclick="setMode('hard')">Hard</button>
+      <button class="diff-tab active" id="tabA" onclick="previewMode('easy')">Easy</button>
+      <button class="diff-tab"        id="tabB" onclick="previewMode('medium')">Medium</button>
+      <button class="diff-tab"        id="tabC" onclick="previewMode('hard')">Hard</button>
     </div>
-    <div class="dots" id="dots"></div>
-  </div>
-
-  <!-- HUD -->
-  <div class="hud">
-    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-    <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
-    <div class="hud-pill"><div class="val" id="hintVal">1</div><div class="lbl">Hint</div></div>
-    <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
-  </div>
-
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-    <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">90s</span></div>
-  </div>
-
-  <!-- Verb card -->
-  <div class="verb-card" id="verbCard">
-    <!-- Easy/Medium: base form -->
-    <div id="baseView">
-      <div class="base-verb" id="baseVerb">—<span class="group-tag" id="groupTag"></span></div>
+    <div class="rules-box" style="font-size:.8rem">
+      <span id="rulesText">Type the correct irregular verb form before time runs out. <strong>Easy:</strong> past simple only. <strong>Medium:</strong> past simple + past participle. <strong>Hard:</strong> fill the blank in a full sentence.</span>
     </div>
-    <!-- Hard: sentence with blank -->
-    <div id="sentenceView" style="display:none">
-      <div class="sentence-display" id="sentenceDisplay"></div>
-      <div class="form-hint" id="formHint"></div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
+  </div>
+
+  <!-- Game UI -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <!-- Difficulty tabs -->
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+      <div class="diff-tabs">
+        <button class="diff-tab active" id="tabAGame" onclick="setMode('easy')">Easy</button>
+        <button class="diff-tab"        id="tabBGame" onclick="setMode('medium')">Medium</button>
+        <button class="diff-tab"        id="tabCGame" onclick="setMode('hard')">Hard</button>
+      </div>
+      <div class="dots" id="dots"></div>
     </div>
 
-    <!-- Input grid (changes based on mode) -->
-    <div class="input-grid" id="inputGrid"></div>
-  </div>
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+      <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+      <div class="hud-pill"><div class="val" id="hintVal">1</div><div class="lbl">Hint</div></div>
+      <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+    </div>
 
-  <!-- Actions -->
-  <div class="action-row">
-    <button class="btn-primary" id="submitBtn" onclick="submitAnswer()">Check ✓</button>
-    <button class="btn-ghost"   id="hintBtn"   onclick="useHint()">💡 Hint</button>
-    <button class="btn-ghost"   id="skipBtn"   onclick="skipVerb()">⏭ Skip (−5)</button>
-  </div>
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+      <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">90s</span></div>
+    </div>
 
-  <div class="feedback" id="feedback"></div>
+    <!-- Verb card -->
+    <div class="verb-card" id="verbCard">
+      <!-- Easy/Medium: base form -->
+      <div id="baseView">
+        <div class="base-verb" id="baseVerb">—<span class="group-tag" id="groupTag"></span></div>
+      </div>
+      <!-- Hard: sentence with blank -->
+      <div id="sentenceView" style="display:none">
+        <div class="sentence-display" id="sentenceDisplay"></div>
+        <div class="form-hint" id="formHint"></div>
+      </div>
+
+      <!-- Input grid (changes based on mode) -->
+      <div class="input-grid" id="inputGrid"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-primary" id="submitBtn" onclick="submitAnswer()">Check ✓</button>
+      <button class="btn-ghost"   id="hintBtn"   onclick="useHint()">💡 Hint</button>
+      <button class="btn-ghost"   id="skipBtn"   onclick="skipVerb()">⏭ Skip (−5)</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
 
   <!-- End card -->
   <div class="end-card" id="endCard" style="display:none">
@@ -1016,11 +1035,34 @@ let results = []; // {verb, psTyped, ppTyped, correct, partial, skipped}
 let hintUsed = false;
 
 // ── Mode switch ─────────────────────────────────────────────────────
-function setMode(m) {
+const RULES_BY_MODE = {
+  easy:   'Type the correct irregular verb form before time runs out. <strong>Easy:</strong> past simple only, shown alongside the base form.',
+  medium: 'Type the correct irregular verb form before time runs out. <strong>Medium:</strong> both past simple and past participle for each verb.',
+  hard:   'Type the correct irregular verb form before time runs out. <strong>Hard:</strong> fill the missing form to complete a full sentence.',
+};
+
+function previewMode(m) {
   currentMode = m;
   ['easy','medium','hard'].forEach(x => {
     document.getElementById('tab'+{easy:'A',medium:'B',hard:'C'}[x]).classList.toggle('active', x===m);
   });
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_MODE[m];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  switchLb(currentMode);
+  initRound();
+}
+
+function setMode(m) {
+  currentMode = m;
+  ['easy','medium','hard'].forEach(x => {
+    document.getElementById('tab'+{easy:'A',medium:'B',hard:'C'}[x]+'Game').classList.toggle('active', x===m);
+  });
+  document.getElementById('gameUI').style.display = 'flex';
   switchLb(m);
   restartGame();
 }
@@ -1339,6 +1381,7 @@ function showFeedback(msg, type) {
 // ── End round ───────────────────────────────────────────────────────
 function endRound() {
   clearInterval(timerInterval);
+  document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('endScore').textContent  = score+' pts';
 
@@ -1417,7 +1460,7 @@ function endRound() {
   renderLeaderboard('verbsprint_'+currentMode, 'lbBody');
 }
 
-function restartGame() { document.getElementById('endCard').style.display='none'; initRound(); }
+function restartGame() { document.getElementById('endCard').style.display='none'; document.getElementById('gameUI').style.display='flex'; initRound(); }
 async function doSubmit(){
   await handleScoreSubmit('verbsprint_'+currentMode, parseInt(document.getElementById('endCard').dataset.score||'0'), 'nameInput', 'submitArea', 'lbBody');
 }
@@ -1453,7 +1496,6 @@ document.getElementById('endCard').addEventListener('click', (e) => {
 
 // ── Boot ────────────────────────────────────────────────────────────
 switchLb('easy');
-initRound();
 </script>
 </body>
 </html>

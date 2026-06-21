@@ -10,6 +10,9 @@
 <style>
 main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1.1rem; }
 
+.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
+.rules-box strong { color:var(--text); }
+
 /* Timer */
 .timer-wrap { width:100%; }
 .timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
@@ -136,57 +139,74 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 </nav>
 
 <main>
-  <!-- Difficulty tabs -->
-  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+  <!-- Start screen — shown before the player has chosen to begin -->
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
     <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
-      <button class="diff-tab active" id="tabA" onclick="setDiff('beginner')">Beginner</button>
-      <button class="diff-tab"        id="tabB" onclick="setDiff('intermediate')">Intermediate</button>
-      <button class="diff-tab"        id="tabC" onclick="setDiff('advanced')">Advanced</button>
-      <button class="diff-tab"        id="tabD" onclick="setDiff('expert')">Expert</button>
+      <button class="diff-tab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
+      <button class="diff-tab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
+      <button class="diff-tab"        id="tabC" onclick="previewDiff('advanced')">Advanced</button>
+      <button class="diff-tab"        id="tabD" onclick="previewDiff('expert')">Expert</button>
     </div>
-    <div class="dots" id="dots"></div>
-  </div>
-
-  <!-- HUD -->
-  <div class="hud">
-    <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-    <div class="hud-pill"><div class="val" id="correctVal">0</div><div class="lbl">Correct</div></div>
-    <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
-  </div>
-
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%;background:var(--gold)"></div></div>
-    <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">120s</span></div>
-  </div>
-
-  <!-- IF clause card -->
-  <div class="if-card" id="ifCard">
-    <div>
-      <div class="if-label" id="taskLabel">Complete the conditional sentence</div>
-      <div id="typeBadge"></div>
+    <div class="rules-box" style="font-size:.8rem">
+      <span id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong>Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
     </div>
-    <div class="if-text" id="ifText">Loading…</div>
+    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
   </div>
 
-  <!-- Drop zone -->
-  <div class="drop-zone" id="dropZone">
-    <span class="drop-hint" id="dropHint">Drag your answer here · or tap to select</span>
-    <span class="dropped-text" id="droppedText" style="display:none"></span>
-  </div>
+  <!-- Game UI -->
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <!-- Difficulty tabs -->
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
+      <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
+        <button class="diff-tab active" id="tabAGame" onclick="setDiff('beginner')">Beginner</button>
+        <button class="diff-tab"        id="tabBGame" onclick="setDiff('intermediate')">Intermediate</button>
+        <button class="diff-tab"        id="tabCGame" onclick="setDiff('advanced')">Advanced</button>
+        <button class="diff-tab"        id="tabDGame" onclick="setDiff('expert')">Expert</button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
 
-  <!-- Options -->
-  <div class="options-area">
-    <div class="options-label" id="optionsLabel">Choose the correct THEN clause — drag or tap</div>
-    <div class="options-grid" id="optionsGrid"></div>
-  </div>
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+      <div class="hud-pill"><div class="val" id="correctVal">0</div><div class="lbl">Correct</div></div>
+      <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+    </div>
 
-  <!-- Feedback panel (shown after answer) -->
-  <div class="feedback-panel" id="feedbackPanel">
-    <div id="fbType" class="fb-type"></div>
-    <div id="fbRule" class="fb-rule"></div>
-    <div id="fbWrong" class="fb-wrong" style="display:none"></div>
-    <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%;background:var(--gold)"></div></div>
+      <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">120s</span></div>
+    </div>
+
+    <!-- IF clause card -->
+    <div class="if-card" id="ifCard">
+      <div>
+        <div class="if-label" id="taskLabel">Complete the conditional sentence</div>
+        <div id="typeBadge"></div>
+      </div>
+      <div class="if-text" id="ifText">Loading…</div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-hint" id="dropHint">Drag your answer here · or tap to select</span>
+      <span class="dropped-text" id="droppedText" style="display:none"></span>
+    </div>
+
+    <!-- Options -->
+    <div class="options-area">
+      <div class="options-label" id="optionsLabel">Choose the correct THEN clause — drag or tap</div>
+      <div class="options-grid" id="optionsGrid"></div>
+    </div>
+
+    <!-- Feedback panel (shown after answer) -->
+    <div class="feedback-panel" id="feedbackPanel">
+      <div id="fbType" class="fb-type"></div>
+      <div id="fbRule" class="fb-rule"></div>
+      <div id="fbWrong" class="fb-wrong" style="display:none"></div>
+      <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    </div>
   </div>
 
   <!-- End card -->
@@ -1662,11 +1682,35 @@ let answered = false;
 
 // ── Diff switch ─────────────────────────────────────────────────────
 const DIFF_IDS = {beginner:'A',intermediate:'B',advanced:'C',expert:'D'};
-function setDiff(d) {
+const RULES_BY_DIFF = {
+  beginner:     'Drag (or tap) the correct clause to complete each conditional sentence. <strong>Beginner:</strong> zero, first and second conditionals, clearly labelled.',
+  intermediate: 'Drag (or tap) the correct clause to complete each conditional sentence. <strong>Intermediate:</strong> zero, first, second and third conditionals.',
+  advanced:     'Drag (or tap) the correct clause to complete each conditional sentence. <strong>Advanced:</strong> all six types, including mixed conditionals — no labels given.',
+  expert:       'Drag (or tap) the correct clause to complete each conditional sentence. <strong>Expert:</strong> all types plus inversion and conditional questions — fast pace, no labels.',
+};
+
+function previewDiff(d) {
   currentDiff = d;
   Object.keys(DIFF_IDS).forEach(x=>{
     const t=document.getElementById('tab'+DIFF_IDS[x]);if(t)t.classList.toggle('active',x===d);
   });
+  const rulesText = document.getElementById('rulesText');
+  if (rulesText) rulesText.innerHTML = RULES_BY_DIFF[d];
+}
+
+function beginGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  switchLb(currentDiff);
+  initRound();
+}
+
+function setDiff(d) {
+  currentDiff = d;
+  Object.keys(DIFF_IDS).forEach(x=>{
+    const t=document.getElementById('tab'+DIFF_IDS[x]+'Game');if(t)t.classList.toggle('active',x===d);
+  });
+  document.getElementById('gameUI').style.display = 'flex';
   switchLb(d);
   restartGame();
 }
@@ -1995,6 +2039,7 @@ function autoEndRound(){
 function endRound(){
   clearInterval(timerInterval);
   const total=roundQs.length;
+  document.getElementById('gameUI').style.display='none';
   document.getElementById('endCard').style.display='flex';
   document.getElementById('endScore').textContent=score+' pts';
 
@@ -2038,7 +2083,7 @@ function endRound(){
   renderLeaderboard('conditionals_'+currentDiff,'lbBody');
 }
 
-function restartGame(){ document.getElementById('endCard').style.display='none'; initRound(); }
+function restartGame(){ document.getElementById('endCard').style.display='none'; document.getElementById('gameUI').style.display='flex'; initRound(); }
 async function doSubmit(){
   await handleScoreSubmit('conditionals_'+currentDiff,
     parseInt(document.getElementById('endCard').dataset.score||'0'),
@@ -2057,7 +2102,6 @@ document.getElementById('endCard').addEventListener('click', (e) => {
 });
 
 switchLb('beginner');
-initRound();
 </script>
 </body>
 </html>
