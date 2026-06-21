@@ -263,126 +263,156 @@ const EASY_WORDS = ["ship","sheep","cat","cut","bad","bed","full","fool","thin",
 const MEDIUM_WORDS = ["knife","island","autumn","listen","climb","receipt","Wednesday","scissors","knight","castle","calm","half","could","should","would","walk","talk","answer","sword","honest","hour","heir","write","wrist","wrap","knee","comb","thumb","bomb","plumber","subtle","muscle","yacht","ghost","gnome","gnaw","rhyme","rhythm","psychology","pneumonia","colleague","necessary","occasion","embarrass","definitely","separate","business","beautiful","library","February","restaurant","vegetable","temperature","government","environment","comfortable","interesting","chocolate","favourite","knowledge","foreign","receive","believe","achieve","weird","neighbour","friend","guard","guide","guess","guitar","tongue","plague","vague","league"];
 
 const CONNECTED_SPEECH = [
-  {spoken:'Fish and chips is my favourite meal.', correct:'Fish and chips is my favourite meal.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'We need bread and butter for breakfast.', correct:'We need bread and butter for breakfast.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'He asked for a cup of tea.', correct:'He asked for a cup of tea.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I\'d like a piece of cake, please.', correct:'I\'d like a piece of cake, please.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'She\'s waiting for the bus.', correct:'She\'s waiting for the bus.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'This gift is for you and your sister.', correct:'This gift is for you and your sister.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I want to go home now.', correct:'I want to go home now.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'We\'re going to be late.', correct:'We\'re going to be late.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'He used to live in Spain.', correct:'He used to live in Spain.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I have to finish this today.', correct:'I have to finish this today.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'She can speak three languages.', correct:'She can speak three languages.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'We can meet on Friday.', correct:'We can meet on Friday.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I was hoping you would come.', correct:'I was hoping you would come.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'They were happy with the result.', correct:'They were happy with the result.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I think that movie was great.', correct:'I think that movie was great.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'He said that he would help.', correct:'He said that he would help.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'Salt and pepper are on the table.', correct:'Salt and pepper are on the table.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'It\'s a black and white photo.', correct:'It\'s a black and white photo.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'There\'s a man at the door.', correct:'There\'s a man at the door.', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'Can you pass the salt and pepper?', correct:'Can you pass the salt and pepper?', aspect:'Weak form', aspectKey:'weak_form'},
-  {spoken:'I left my umbrella in Bath last summer.', correct:'I left my umbrella in Bath last summer.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'We stayed there until last year.', correct:'We stayed there until last year.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Did you see what happened?', correct:'Did you see what happened?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'I gave that money to charity.', correct:'I gave that money to charity.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Did you enjoy the concert?', correct:'Did you enjoy the concert?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'He\'s got ten pounds in his pocket.', correct:'He\'s got ten pounds in his pocket.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Don\'t you think it\'s a good idea?', correct:'Don\'t you think it\'s a good idea?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Would you mind opening the window?', correct:'Would you mind opening the window?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'I can\'t believe that movie won an award.', correct:'I can\'t believe that movie won an award.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'She\'s been to Bangkok twice this year.', correct:'She\'s been to Bangkok twice this year.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Pass me that pen, please.', correct:'Pass me that pen, please.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Could you tell me what time it is?', correct:'Could you tell me what time it is?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'I haven\'t seen you in ten years.', correct:'I haven\'t seen you in ten years.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Won\'t you join us for dinner?', correct:'Won\'t you join us for dinner?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'We ran ten miles this morning.', correct:'We ran ten miles this morning.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'He\'s got a ten-pound note in his wallet.', correct:'He\'s got a ten-pound note in his wallet.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'I need that map of the city.', correct:'I need that map of the city.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'She put the pen back in the drawer.', correct:'She put the pen back in the drawer.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'That party was the best one yet.', correct:'That party was the best one yet.', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'Could you turn ten pages back, please?', correct:'Could you turn ten pages back, please?', aspect:'Assimilation', aspectKey:'assimilation'},
-  {spoken:'He played left back for the school team.', correct:'He played left back for the school team.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'Please stand by until further notice.', correct:'Please stand by until further notice.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'We must finish next week at the latest.', correct:'We must finish next week at the latest.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'She kept quiet during the whole meeting.', correct:'She kept quiet during the whole meeting.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'It\'s the first time I\'ve tried sushi.', correct:'It\'s the first time I\'ve tried sushi.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'He\'s the best student in the whole class.', correct:'He\'s the best student in the whole class.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'I can\'t stand that kind of music.', correct:'I can\'t stand that kind of music.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'The next train leaves in ten minutes.', correct:'The next train leaves in ten minutes.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'We just missed the last bus home.', correct:'We just missed the last bus home.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'That\'s the strict policy at this school.', correct:'That\'s the strict policy at this school.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'Could you hand me the next file?', correct:'Could you hand me the next file?', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'It was the worst storm in years.', correct:'It was the worst storm in years.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'I sent the package last week.', correct:'I sent the package last week.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'He grasped the rope and climbed up.', correct:'He grasped the rope and climbed up.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'She\'s the only friend I trust completely.', correct:'She\'s the only friend I trust completely.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'We need a sandwich for the journey.', correct:'We need a sandwich for the journey.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'He often visits his grandparents on weekends.', correct:'He often visits his grandparents on weekends.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'The exact time doesn\'t matter much.', correct:'The exact time doesn\'t matter much.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'That\'s the strangest thing I\'ve heard all day.', correct:'That\'s the strangest thing I\'ve heard all day.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'Most people don\'t notice the difference.', correct:'Most people don\'t notice the difference.', aspect:'Elision', aspectKey:'elision'},
-  {spoken:'The Prime Minister will speak this evening.', correct:'The Prime Minister will speak this evening.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'Can I get some more coffee, please?', correct:'Can I get some more coffee, please?', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'She works part time at the bakery.', correct:'She works part time at the bakery.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'He\'s the team manager this season.', correct:'He\'s the team manager this season.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'I\'d like some milk, please.', correct:'I\'d like some milk, please.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'We need some more time to decide.', correct:'We need some more time to decide.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'That\'s a big game for both teams.', correct:'That\'s a big game for both teams.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'He gave good guidance to the new staff.', correct:'He gave good guidance to the new staff.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'She felt completely calm before the exam.', correct:'She felt completely calm before the exam.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'This box is too heavy to lift.', correct:'This box is too heavy to lift.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'He took two tickets for the show.', correct:'He took two tickets for the show.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'We watched the whole match together.', correct:'We watched the whole match together.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'I like looking at old photographs.', correct:'I like looking at old photographs.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'Could you call later this evening?', correct:'Could you call later this evening?', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'She made many mistakes on her first try.', correct:'She made many mistakes on her first try.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'He\'s got ten things to do today.', correct:'He\'s got ten things to do today.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'It was a rare rainy day in summer.', correct:'It was a rare rainy day in summer.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'We need new news on the project.', correct:'We need new news on the project.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'He felt nervous before the interview.', correct:'He felt nervous before the interview.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'The cat caught a mouse this morning.', correct:'The cat caught a mouse this morning.', aspect:'Gemination', aspectKey:'gemination'},
-  {spoken:'Could you pick it up for me, please?', correct:'Could you pick it up for me, please?', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'What is it that you\'re looking for?', correct:'What is it that you\'re looking for?', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'I\'d like an orange juice, please.', correct:'I\'d like an orange juice, please.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'She put it on the table by the door.', correct:'She put it on the table by the door.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'He took it apart to see how it worked.', correct:'He took it apart to see how it worked.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'It\'s an honour to be here today.', correct:'It\'s an honour to be here today.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'We need an answer by tomorrow morning.', correct:'We need an answer by tomorrow morning.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'I left it open for some fresh air.', correct:'I left it open for some fresh air.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'Turn it off before you leave the room.', correct:'Turn it off before you leave the room.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'She gave it away to a friend.', correct:'She gave it away to a friend.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'Can I have a look at it?', correct:'Can I have a look at it?', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'He walked in and sat down quietly.', correct:'He walked in and sat down quietly.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'We made it across the river safely.', correct:'We made it across the river safely.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'I\'ll think it over and let you know.', correct:'I\'ll think it over and let you know.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'She picked up an apple from the bowl.', correct:'She picked up an apple from the bowl.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'He turned around and smiled at us.', correct:'He turned around and smiled at us.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'We checked in early for our flight.', correct:'We checked in early for our flight.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'I called him up to say hello.', correct:'I called him up to say hello.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'Look at the time, it\'s getting late.', correct:'Look at the time, it\'s getting late.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'He set up an account this morning.', correct:'He set up an account this morning.', aspect:'Catenation (linking)', aspectKey:'catenation'},
-  {spoken:'The media are always quick to report news.', correct:'The media are always quick to report news.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'Law and order are important in society.', correct:'Law and order are important in society.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'I agree with everything you said.', correct:'I agree with everything you said.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'They are coming to visit us tomorrow.', correct:'They are coming to visit us tomorrow.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'I want to eat something before we leave.', correct:'I want to eat something before we leave.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'Please do it as soon as you can.', correct:'Please do it as soon as you can.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'She always speaks her mind.', correct:'She always speaks her mind.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'The idea of travelling alone excites her.', correct:'The idea of travelling alone excites her.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'There are several options to consider.', correct:'There are several options to consider.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'We are very excited about the trip.', correct:'We are very excited about the trip.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'I usually eat breakfast at seven.', correct:'I usually eat breakfast at seven.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'He always answers honestly.', correct:'He always answers honestly.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'Australia is a beautiful country.', correct:'Australia is a beautiful country.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'I want everyone to feel welcome here.', correct:'I want everyone to feel welcome here.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'Maria and I are old friends.', correct:'Maria and I are old friends.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'The area around the lake is lovely.', correct:'The area around the lake is lovely.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'There is an easier way to do this.', correct:'There is an easier way to do this.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'I saw an old photo of the area.', correct:'I saw an old photo of the area.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'Please go and ask her directly.', correct:'Please go and ask her directly.', aspect:'Intrusion', aspectKey:'intrusion'},
-  {spoken:'We are about to begin the meeting.', correct:'We are about to begin the meeting.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'I want this orange.', correct:'I want thi sorange.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'This afternoon.', correct:'Thi safternoon.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Cats or dogs?', correct:'Ca tsor dogs?', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'I want that orange.', correct:'I want tha dorange.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Pick it up.', correct:'Pi ki tup.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Turn it off.', correct:'Tur ni toff.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Get it open.', correct:'Ge ti topen.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Take it easy.', correct:'Ta ki teasy.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Put it away.', correct:'Pu ti taway.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Look at it.', correct:'Loo ka tit.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'That is it.', correct:'Tha ti sit.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Bring it over.', correct:'Brin gi tover.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Check it out.', correct:'Chec ki tout.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Switch it on.', correct:'Swit chi ton.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Hand it in.', correct:'Han di tin.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Send it over.', correct:'Sen di tover.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Find it online.', correct:'Fin di tonline.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Leave it open.', correct:'Lea vi topen.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Make it easy.', correct:'Ma ki teasy.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Keep it up.', correct:'Kee pi tup.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'That apple is mine.', correct:'Tha tapple is mine.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Pass me that egg.', correct:'Pass me tha tegg.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Stop at eight.', correct:'Sto pa teight.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Wait until eleven.', correct:'Wai tuntil eleven.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Switch off everything.', correct:'Swit choff everything.', aspect:'Catenation', aspectKey:'catenation'},
+  {spoken:'Law and order.', correct:'Law rand order.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'I saw a movie.', correct:'I saw ra movie.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Tuna oil.', correct:'Tuna roil.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'The media are to blame.', correct:'The media rare to blame.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Victoria and Albert.', correct:'Victoria rand Albert.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Africa and Asia.', correct:'Africa rand Asia.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Extra ice, please.', correct:'Extra rice, please.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'My idea is simple.', correct:'My idea ris simple.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Soda and lime.', correct:'Soda rand lime.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'The area around here.', correct:'The area raround here.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Do it now.', correct:'Do wit now.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Go out tonight.', correct:'Go wout tonight.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'True or false?', correct:'True wor false?', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'How are you?', correct:'How ware you?', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Who is it?', correct:'Who wis it?', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Go and see.', correct:'Go wand see.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'I want to eat.', correct:'I want to weat.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Please do it.', correct:'Please do wit.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'So odd.', correct:'So wodd.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Too easy for me.', correct:'Too weasy for me.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'I agree.', correct:'I jagree.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'They are here.', correct:'They jare here.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'He asked a question.', correct:'He jasked a question.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'She answered quickly.', correct:'She janswered quickly.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Tea or coffee?', correct:'Tea jor coffee?', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'I always try.', correct:'I jalways try.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'We arrived early.', correct:'We jarrived early.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'My aunt is here.', correct:'My jaunt is here.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'He is in Italy.', correct:'He jis in Italy.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Three or four.', correct:'Three jor four.', aspect:'Intrusion', aspectKey:'intrusion'},
+  {spoken:'Next door.', correct:'Nexdoor.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Most common.', correct:'Moscommon.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Used to live here.', correct:'Useto live here.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'I must go now.', correct:'I mus go now.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Stand by me.', correct:'Stan by me.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Send back the form.', correct:'Sen back the form.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Old friends.', correct:'Ol friends.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Last chance.', correct:'Las chance.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Best friend.', correct:'Bes friend.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Hold tight.', correct:'Hol tight.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'First class.', correct:'Firs class.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Just go.', correct:'Jus go.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Kept calling.', correct:'Kep calling.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'West side.', correct:'Wes side.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Soft drink.', correct:'Sof drink.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Round the corner.', correct:'Roun the corner.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Find some time.', correct:'Fin some time.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Land mine.', correct:'Lan mine.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Grand piano.', correct:'Gran piano.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Blind man.', correct:'Blin man.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Mashed potato.', correct:'Mash potato.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Locked door.', correct:'Lock door.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Asked twice.', correct:'Ask twice.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Helped both.', correct:'Help both.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Looked good.', correct:'Look good.', aspect:'Elision', aspectKey:'elision'},
+  {spoken:'Don\'t you think so?', correct:'Donchu think so?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Meet you later.', correct:'Meechu later.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Did you see that?', correct:'Dijou see that?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Would you mind?', correct:'Wujou mind?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Could you help?', correct:'Cujou help?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'What you doing?', correct:'Whachu doing?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Won\'t you join us?', correct:'Wonchu join us?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Last year was great.', correct:'Lash year was great.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Did you call me?', correct:'Dijou call me?', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Bet you can\'t.', correct:'Bechu can\'t.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Get your coat.', correct:'Gechur coat.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Not yet.', correct:'Noch yet.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'That money is mine.', correct:'Thap money is mine.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'In Bath last summer.', correct:'Im Bath last summer.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Ten boys came.', correct:'Tem boys came.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Ten pounds left.', correct:'Tem pounds left.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Ten men arrived.', correct:'Tem men arrived.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Green bus stop.', correct:'Greem bus stop.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'One more please.', correct:'Wom more please.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Sun cream helps.', correct:'Sung cream helps.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Good girl.', correct:'Goog girl.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Light blue colour.', correct:'Lighp blue colour.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'That guy left.', correct:'Thak guy left.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Hot coffee please.', correct:'Hok coffee please.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Bright colour.', correct:'Brighk colour.', aspect:'Assimilation', aspectKey:'assimilation'},
+  {spoken:'Social life.', correct:'Socialife.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Pet turtle.', correct:'Peturtle.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'I want to go.', correct:'I wanto go.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Big game.', correct:'Bigame.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Some more.', correct:'Somore.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Black coat.', correct:'Blacoat.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Stop pretending.', correct:'Stopretending.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Good day.', correct:'Gooday.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Bad dog.', correct:'Badog.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Quick kick.', correct:'Quickick.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Cheap perfume.', correct:'Cheaperfume.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Top priority.', correct:'Topriority.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Half full.', correct:'Halfull.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Fish shop.', correct:'Fishop.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Wish she would.', correct:'Wishe would.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'This city.', correct:'Thicity.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Less safe.', correct:'Lessafe.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'That time.', correct:'Thatime.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Big gap.', correct:'Bigap.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Sit there.', correct:'Sithere.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'White teeth.', correct:'Whiteeth.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Cold day.', correct:'Colday.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Wet towel.', correct:'Wetowel.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Made do.', correct:'Mado.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Will leave.', correct:'Willeave.', aspect:'Gemination', aspectKey:'gemination'},
+  {spoken:'Fish and chips.', correct:'Fish n chips.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'A chair and a table.', correct:'A chair n a table.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Salt and pepper.', correct:'Salt n pepper.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'A loaf of bread.', correct:'A loaf uv bread.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'A cup of coffee.', correct:'A cup uv coffee.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'A can of coke.', correct:'A can uv coke.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'That\'s the last of it.', correct:'That\'s the las uv it.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Have you finished?', correct:'Av you finished?', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Yes, I have.', correct:'Yes, I av.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'You should have told me.', correct:'You should uv told me.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'She can speak Spanish.', correct:'She kn speak Spanish.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'We can meet later.', correct:'We kn meet later.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'I was going home.', correct:'I wuz going home.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'They were happy.', correct:'They wuh happy.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Bread and butter.', correct:'Bread n butter.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Black and white.', correct:'Black n white.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Sooner or later.', correct:'Sooner r later.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Wait for me.', correct:'Wait fr me.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'It\'s for you.', correct:'It\'s fr you.', aspect:'Weak form', aspectKey:'weak_form'},
+  {spoken:'Going to be late.', correct:'Gunna be late.', aspect:'Weak form', aspectKey:'weak_form'},
 ];
 
 const FULL_SENTENCES = [
@@ -419,7 +449,7 @@ const MODES = {
 const RULES_TEXT = {
   easy:      '<strong>Minimal pairs</strong> — single words at natural speed (slow down if you need to). Type exactly what you hear. <strong>2 replays</strong> per item, 10 items per round.',
   medium:    '<strong>Tricky spelling</strong> — words with silent letters and irregular spelling. Type exactly what you hear, spelled correctly. <strong>2 replays</strong> per item, 10 items per round.',
-  connected: '<strong>Connected speech</strong> — natural standard sentences spoken at normal speed, showing how real English actually sounds: weak forms, assimilation, elision, gemination, catenation and intrusion. Type the sentence in full, standard spelling. <strong>2 replays</strong> per item — the summary will show which feature each sentence demonstrated.',
+  connected: '<strong>Connected speech</strong> — short phrases spoken at natural speed. Type what you actually <em>hear</em>, written the way it sounds — not the standard spelling. For example "I want this orange" sounds like <strong>"I want thi sorange"</strong>. The summary will show which feature each phrase demonstrated: weak forms, assimilation, elision, gemination, catenation or intrusion. <strong>2 replays</strong> per item.',
   expert:    '<strong>Full sentences</strong> — natural-speed sentences with normal stress and linking. Type the sentence exactly. A missing full stop at the end is fine. Only <strong>1 replay</strong> — closer to real listening exam conditions.',
 };
 
@@ -435,26 +465,53 @@ let timeLeft = 20, timerInterval = null;
 let speechRate = 1.0;
 let roundEnded = false;
 
-// ── Voice selection — prefer a British female voice ───────────────────
+// ── Voice selection — prefer the best-quality British female voice ────
+// Different platforms expose very different voice lists. The previous
+// version picked the FIRST en-GB match it found, which on some devices
+// is actually the lowest-quality robotic default voice, even when a
+// much better one (marked "Enhanced"/"Premium"/"Natural") is available
+// on the same device. This version scores every voice and picks the
+// best-ranked one instead of just the first match.
 let chosenVoice = null;
+
+function scoreVoice(v) {
+  let score = 0;
+  const name = v.name || '';
+  const lang = v.lang || '';
+
+  // Language match matters most
+  if (/en-GB|en_GB/i.test(lang)) score += 100;
+  else if (/^en/i.test(lang)) score += 40;
+  else return -1; // not English at all — never usable here
+
+  // Quality signals — these suffixes/words reliably indicate a much
+  // better voice engine on the platforms that use them.
+  if (/enhanced|premium|neural|natural|wavenet|studio/i.test(name)) score += 50;
+  // Known good named voices (iOS: Kate/Serena/Stephanie are usually the
+  // higher-quality British options; Android: "Google UK English Female"
+  // is the standard decent default where no Enhanced voice exists).
+  if (/\b(kate|serena|stephanie|martha)\b/i.test(name)) score += 30;
+  if (/google uk english female/i.test(name)) score += 20;
+  // Generic "female" naming as a weaker positive signal
+  if (/female|woman|amy|joanna|salli|kimberly|susan|hazel|libby|emma|fiona|moira|tessa|samantha|victoria|allison|ava|zira|catherine|olivia|sonia|martha/i.test(name)) score += 15;
+  // Explicit "male" should never outrank an unspecified voice when we
+  // want a female voice specifically — only used as a tie-breaker
+  // penalty, since some platforms don't label gender at all.
+  if (/\bmale\b/i.test(name) && !/female/i.test(name)) score -= 25;
+  // Some platforms expose very low-quality "compact" or legacy voices
+  if (/compact|legacy/i.test(name)) score -= 20;
+
+  return score;
+}
+
 function pickVoice() {
   const voices = speechSynthesis.getVoices();
   if (!voices.length) return null;
-  // Priority 1: en-GB + likely-female name patterns
-  const femaleNamePatterns = /female|woman|samantha|kate|serena|fiona|moira|tessa|emma|amy|joanna|salli|kimberly|susan|hazel|libby/i;
-  let pick = voices.find(v => /en-GB|en_GB/i.test(v.lang) && femaleNamePatterns.test(v.name));
-  if (pick) return pick;
-  // Priority 2: any en-GB voice (many platforms default British voices to female, e.g. "Google UK English Female")
-  pick = voices.find(v => /en-GB|en_GB/i.test(v.lang) && /female/i.test(v.name));
-  if (pick) return pick;
-  pick = voices.find(v => /en-GB|en_GB/i.test(v.lang));
-  if (pick) return pick;
-  // Priority 3: any English female voice as fallback
-  pick = voices.find(v => /^en/i.test(v.lang) && femaleNamePatterns.test(v.name));
-  if (pick) return pick;
-  // Priority 4: any English voice at all
-  pick = voices.find(v => /^en/i.test(v.lang));
-  return pick || voices[0];
+  const scored = voices
+    .map(v => ({ v, s: scoreVoice(v) }))
+    .filter(x => x.s >= 0)
+    .sort((a, b) => b.s - a.s);
+  return scored.length ? scored[0].v : voices[0];
 }
 
 function initVoice() {
@@ -478,7 +535,12 @@ function speak(text, rate, onEnd) {
   if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
   speechSynthesis.cancel(); // stop any overlapping utterance
   const utter = new SpeechSynthesisUtterance(text);
-  if (chosenVoice) utter.voice = chosenVoice;
+  if (chosenVoice) {
+    utter.voice = chosenVoice;
+    utter.lang = chosenVoice.lang || 'en-GB';
+  } else {
+    utter.lang = 'en-GB';
+  }
   utter.rate = rate || 1.0;
   utter.pitch = 1.0;
   const btn = document.getElementById('playBtn');
