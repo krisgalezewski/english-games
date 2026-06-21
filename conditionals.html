@@ -2083,7 +2083,7 @@ function endRound(){
     grid.appendChild(el);
   });
 
-  renderLeaderboard('conditionals_'+currentDiff,'lbBody');
+  switchLb(currentDiff); // keep the leaderboard tab + table in sync with whichever level was just played
 }
 
 function restartGame(){ document.getElementById('endCard').style.display='none'; document.getElementById('gameUI').style.display='flex'; initRound(); }

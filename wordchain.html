@@ -561,6 +561,7 @@ function endGame(reason) {
     'Practice makes perfect!';
   document.getElementById('endCard').dataset.score = totalScore;
   document.getElementById('endCard').dataset.mode  = mode;
+  switchLb(mode); // keep the leaderboard tab + table in sync with whichever mode was just played
 }
 
 function replayMode() {

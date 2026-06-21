@@ -750,6 +750,7 @@ function endRound() {
     totalScore>=max*.8?'🎉 Outstanding!':totalScore>=max*.5?'👏 Well done!':'Keep practising — unscramble those letters!';
   document.getElementById('endCard').dataset.score = totalScore;
   document.getElementById('switchBtn').textContent = diff==='easy'?'Switch to Hard':'Switch to Easy';
+  switchAnLb(diff); // keep the leaderboard tab + table in sync with whichever mode was just played
 
   const rg=document.getElementById('reviewGrid'); rg.innerHTML='';
   results.forEach(r=>{

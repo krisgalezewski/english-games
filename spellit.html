@@ -807,6 +807,7 @@ function endRound() {
   document.getElementById('endCard').dataset.score = score;
   const sl = document.getElementById('switchLabel');
   if(sl) sl.textContent = diff==='easy' ? 'Hard' : 'Easy';
+  switchLb_spellit(diff); // keep the leaderboard tab + table in sync with whichever mode was just played
 
   // Words review
   const rev = document.getElementById('wordsReview'); rev.innerHTML = '';

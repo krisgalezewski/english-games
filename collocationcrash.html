@@ -1113,6 +1113,7 @@ function endRound() {
   document.getElementById('endCard').dataset.score = score;
   const ccsl = document.getElementById('ccSwitchLabel');
   if(ccsl) ccsl.textContent = diff==='easy' ? 'Hard' : 'Easy';
+  switchLb_collocationcrash(diff); // keep the leaderboard tab + table in sync with whichever mode was just played
 
   const rg = document.getElementById('reviewGrid'); rg.innerHTML = '';
   roundResults.forEach(({q, chosen}) => {

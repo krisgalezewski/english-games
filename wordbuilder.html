@@ -623,6 +623,7 @@ function endRound() {
     found.size>=8?'🎉 Incredible word builder!':found.size>=5?'👏 Great vocabulary!':found.size>=3?'Good start — keep building!':'Try to find more words!';
   document.getElementById('endCard').dataset.score = totalScore;
   document.getElementById('switchBtn').textContent = diff==='easy'?'Switch to Hard':'Switch to Easy';
+  switchWbLb(diff); // keep the leaderboard tab + table in sync with whichever mode was just played
 
   // Build the combined found + missed results grid (matches CollocationCrash style)
   const missed = currentRack.words.filter(w=>!found.has(w.toLowerCase()));
