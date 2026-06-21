@@ -388,3 +388,27 @@ body > * { position: relative; z-index: 1; }
   text-transform: uppercase;
   color: var(--gold);
 }
+
+/* ── Mobile fixes ──────────────────────────────────────────────────
+   Any text input under 16px triggers iOS Safari's automatic zoom-on-
+   focus behaviour, which can shove buttons off-screen and make name
+   entry on the leaderboard feel broken. Force a safe minimum on small
+   viewports without changing how things look on desktop. */
+@media (max-width: 600px) {
+  .text-input,
+  .submit-row input,
+  .compact-submit-row .text-input,
+  input.dictation-input,
+  .spell-input {
+    font-size: 16px !important;
+  }
+
+  /* Slightly larger tap targets on mobile — desktop padding is fine
+     as-is, but on a touchscreen these buttons sit just under the
+     platform-recommended minimum (44px on iOS, 48px on Android). */
+  .btn-primary, .btn-secondary, .btn-ghost {
+    padding-top: .85rem;
+    padding-bottom: .85rem;
+    min-height: 44px;
+  }
+}

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Irregular Verb Sprint — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
@@ -1053,6 +1053,9 @@ function previewMode(m) {
 function beginGame() {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
+  ['easy','medium','hard'].forEach(x => {
+    document.getElementById('tab'+{easy:'A',medium:'B',hard:'C'}[x]+'Game').classList.toggle('active', x===currentMode);
+  });
   switchLb(currentMode);
   initRound();
 }

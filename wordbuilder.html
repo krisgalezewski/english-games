@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Word Builder — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
@@ -153,6 +153,12 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 
   <!-- Stats -->
   <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <!-- Difficulty selector — visible and switchable during play -->
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="tabEGame" onclick="setDiff('easy')">Easy (reuse letters)</button>
+      <button class="diff-tab"        id="tabHGame" onclick="setDiff('hard')">Hard (each letter once)</button>
+    </div>
+
     <div class="stats-row">
       <div class="stat-box"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
       <div class="stat-box"><div class="val" id="wordsVal">0</div><div class="lbl">Words</div></div>
@@ -360,11 +366,15 @@ function previewDiff(d) {
 function beginGame() {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('roundInfoBar').style.display = 'flex';
+  document.getElementById('tabEGame').classList.toggle('active', diff==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', diff==='hard');
   restartGame();
 }
 
 function setDiff(d) {
   diff = d; rackBank = d==='easy' ? RACKS_EASY : RACKS_HARD;
+  document.getElementById('tabEGame').classList.toggle('active', d==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', d==='hard');
   document.getElementById('switchBtn').textContent = d==='easy' ? 'Switch to Hard (no letter reuse)' : 'Switch to Easy (reuse letters)';
   restartGame();
 }

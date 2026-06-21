@@ -119,6 +119,7 @@ main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
         <button class="btn-ghost" id="hint1Btn" onclick="showHint1()">💡 Hint (−3 pts)</button>
         <button class="btn-ghost" id="hint2Btn" onclick="showHint2()">🔍 Extra hint (−5 pts, once only)</button>
         <button class="btn-ghost" id="skipBtn"  onclick="skipWord()">⏭ Skip (−8 pts)</button>
+        <button class="btn-ghost" id="endGameBtn" onclick="confirmEndGame()" style="display:none">🏁 End game</button>
       </div>
       <div class="feedback" id="feedback"></div>
     </div>
@@ -625,7 +626,7 @@ const HARD_WORDS = [
 
 const ROUND_SIZE = 8;
 let diff = 'easy', wordBank = EASY_WORDS;
-let roundWords = [], current = 0, score = 0, streak = 0, skipsLeft = 3, extraHintUsed = false;
+let roundWords = [], current = 0, score = 0, streak = 0, skipsLeft = 3, extraHintUsed = false, roundEnded = false;
 let attempts = 0, h1Shown = false, h2Shown = false;
 let results = []; // {word, status: 'correct'|'wrong'|'skip', pts}
 
@@ -646,6 +647,8 @@ function previewDiff(d) {
 function beginGame() {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
+  document.getElementById('tabEGame').classList.toggle('active', diff==='easy');
+  document.getElementById('tabHGame').classList.toggle('active', diff==='hard');
   initRound();
 }
 
@@ -662,7 +665,7 @@ function initRound() {
   const indices = freshRandomIndices('spellit_'+diff, wordBank, ROUND_SIZE);
   indices.forEach(i => markSeen('spellit_'+diff, i));
   roundWords = indices.map(i => wordBank[i]);
-  current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = [];
+  current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = []; roundEnded = false;
   document.getElementById('scoreVal').textContent  = 0;
   document.getElementById('streakVal').textContent = '🔥0';
   document.getElementById('skipsVal').textContent  = 3;
@@ -694,6 +697,7 @@ function loadWord() {
   document.getElementById('hint1Btn').style.display = 'inline-block';
   document.getElementById('hint2Btn').style.display = extraHintUsed ? 'none' : 'inline-block';
   document.getElementById('skipBtn').style.display  = skipsLeft > 0 ? 'inline-block' : 'none';
+  document.getElementById('endGameBtn').style.display = skipsLeft > 0 ? 'none' : 'inline-block';
   document.getElementById('hint1Btn').disabled = false;
   attempts = 0; h1Shown = false; h2Shown = false;
   setTimeout(() => document.getElementById('spellInput').focus(), 80);
@@ -717,6 +721,12 @@ function showHint2() {
   h.textContent = roundWords[current].hint2;
   h.classList.add('revealed');
   document.getElementById('hint2Btn').style.display = 'none';
+}
+
+function confirmEndGame() {
+  const remaining = ROUND_SIZE - current;
+  const ok = confirm(`End the round now? You still have ${remaining} word${remaining === 1 ? '' : 's'} left, but you can finish here and see your score.`);
+  if (ok) endRound();
 }
 
 function skipWord() {
@@ -780,12 +790,15 @@ function checkSpelling() {
 }
 
 function advanceWord() {
+  if (roundEnded) return;
   current++;
   if (current >= ROUND_SIZE) { endRound(); return; }
   loadWord();
 }
 
 function endRound() {
+  if (roundEnded) return;
+  roundEnded = true;
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('endScore').textContent  = score + ' pts';

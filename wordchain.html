@@ -142,6 +142,12 @@ main { max-width:560px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   <!-- Game UI -->
   <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:.9rem;width:100%">
 
+    <!-- Mode selector — visible and switchable during play -->
+    <div class="diff-tabs">
+      <button class="diff-tab active" id="wcTabEasyGame" onclick="setMode('easy')">🔗 Classic</button>
+      <button class="diff-tab"        id="wcTabHardGame" onclick="setMode('hard')">🧠 Part of Speech</button>
+    </div>
+
     <!-- Stats -->
     <div class="stats-row">
       <div class="stat-box"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
@@ -392,6 +398,16 @@ function beginGame() {
   document.getElementById('endCard').style.display = 'none';
   document.getElementById('gameUI').style.display  = 'flex';
   document.getElementById('feedback').textContent  = '';
+  document.getElementById('wcTabEasyGame').classList.toggle('active', mode==='easy');
+  document.getElementById('wcTabHardGame').classList.toggle('active', mode==='hard');
+  startChain();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('wcTabEasyGame').classList.toggle('active', m==='easy');
+  document.getElementById('wcTabHardGame').classList.toggle('active', m==='hard');
+  switchLb(m);
   startChain();
 }
 

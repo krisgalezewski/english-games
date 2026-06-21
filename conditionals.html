@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Conditional Constructor — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
@@ -1701,6 +1701,9 @@ function previewDiff(d) {
 function beginGame() {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
+  Object.keys(DIFF_IDS).forEach(x=>{
+    const t=document.getElementById('tab'+DIFF_IDS[x]+'Game');if(t)t.classList.toggle('active',x===currentDiff);
+  });
   switchLb(currentDiff);
   initRound();
 }
