@@ -546,6 +546,17 @@ function endGame(reason) {
   gameOver = true;
   clearInterval(timerInterval);
   document.getElementById('gameUI').style.display  = 'none';
+
+  // Reset submit form so a stale "Score submitted!" from a previous game
+  // never blocks the player from submitting the next game's score.
+  const submitAreaEl = document.getElementById('submitArea');
+  if (submitAreaEl) {
+    submitAreaEl.innerHTML = `
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>`;
+  }
   document.getElementById('endCard').style.display = 'flex';
 
   const wordCount = chain.length - 1;

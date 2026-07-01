@@ -1104,6 +1104,16 @@ function answer(chosen, btn, q) {
 function nextQ() { current++; loadQ(); }
 
 function endRound() {
+  // Reset submit form so a stale "Score submitted!" from a previous round
+  // never blocks the player from submitting the next round's score.
+  const submitAreaEl = document.getElementById('submitArea');
+  if (submitAreaEl) {
+    submitAreaEl.innerHTML = `
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>`;
+  }
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('progFill').style.width  = '100%';
