@@ -86,6 +86,27 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 /* found list */
 .found-area { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; }
 .found-area h3 { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+
+/* Extra Time button — pops in at last 10 seconds with a pulsing glow */
+.btn-extra-time {
+  background: var(--gold);
+  color: #0d0d0d;
+  border: none;
+  border-radius: 8px;
+  padding: .75rem 2rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .02em;
+  animation: extraTimePulse 0.8s ease-in-out infinite alternate;
+  box-shadow: 0 0 0 0 rgba(212,175,55,0.7);
+}
+.btn-extra-time:disabled { opacity:.4; cursor:default; animation:none; }
+@keyframes extraTimePulse {
+  from { box-shadow: 0 0 8px 2px rgba(212,175,55,0.5); transform: scale(1); }
+  to   { box-shadow: 0 0 22px 6px rgba(212,175,55,0.9); transform: scale(1.04); }
+}
 .found-chips { display:flex; flex-wrap:wrap; gap:.4rem; }
 .found-chip { background:var(--gold-dim); border:1px solid rgba(212,175,55,.3); color:var(--gold); border-radius:99px; padding:.22rem .75rem; font-size:.8rem; font-weight:600; cursor:pointer; transition:background .15s; }
 .found-chip:hover { background:rgba(212,175,55,.28); }
@@ -209,6 +230,14 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <h3>Phrasal verbs found</h3>
     <div class="found-chips" id="foundChips"></div>
   </div>
+
+  <!-- Extra Time button — hidden until last 10 seconds of the game,
+       then pops in with a pulsing animation to make it unmissable. -->
+  <div id="extraTimeWrap" style="display:none;width:100%;text-align:center;margin-top:.25rem">
+    <button id="extraTimeBtn" class="btn-extra-time" onclick="useExtraTime()">
+      ⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(−20 pts)</span>
+    </button>
+  </div>
 </div>
 
 <!-- RESULT -->
@@ -264,34 +293,45 @@ const VERBS = [
     {p:'over',    def:'To stop doing something (informal).',    ex:'Give over moaning about the weather!'},
   ]},
   { verb:'take', pairs:[
-    {p:'up',    def:'To start a new hobby or activity.',    ex:'She took up painting last year.'},
-    {p:'off',    def:'To leave the ground, or to remove.',    ex:'The plane took off at noon.'},
-    {p:'on',    def:'To accept work or responsibility.',    ex:'She took on a new project.'},
-    {p:'back',    def:'To return something or retract a statement.',    ex:'I take back what I said.'},
-    {p:'over',    def:'To assume control of something.',    ex:'She took over the company.'},
-    {p:'out',    def:'To remove, or to go on a date.',    ex:'He took out his wallet.'},
-    {p:'in',    def:'To understand or to deceive.',    ex:'I couldn\'t take in all the information.'},
-    {p:'away',    def:'To remove something from a place.',    ex:'Take away your things.'},
+    {p:'up',     def:'To start a new hobby or activity.',                              ex:'She took up painting last year.'},
+    {p:'off',    def:'To leave the ground, or to remove.',                             ex:'The plane took off at noon.'},
+    {p:'on',     def:'To accept work or responsibility.',                              ex:'She took on a new project.'},
+    {p:'back',   def:'To return something or retract a statement.',                    ex:'I take back what I said.'},
+    {p:'over',   def:'To assume control of something.',                                ex:'She took over the company.'},
+    {p:'out',    def:'To remove, or to go on a date.',                                 ex:'He took out his wallet.'},
+    {p:'in',     def:'To understand or to deceive.',                                   ex:'I couldn\'t take in all the information.'},
+    {p:'away',   def:'To remove something from a place.',                              ex:'Take away your things.'},
+    {p:'after',  def:'To resemble a parent or relative in appearance or behaviour.',   ex:'She takes after her grandmother — same eyes, same smile.'},
+    {p:'apart',  def:'To dismantle into pieces.',                                      ex:'He took apart the old clock to see how it worked.'},
+    {p:'down',   def:'To remove something from a wall, or to write notes.',            ex:'Can you take down this address?'},
   ]},
   { verb:'come', pairs:[
-    {p:'up',    def:'To arise or be mentioned.',    ex:'An interesting idea came up in the meeting.'},
-    {p:'out',    def:'To emerge or be published.',    ex:'Her new book came out last month.'},
-    {p:'back',    def:'To return.',    ex:'He came back from holiday yesterday.'},
-    {p:'in',    def:'To enter.',    ex:'Please come in and sit down.'},
-    {p:'down',    def:'To decrease or to travel south.',    ex:'Prices have come down recently.'},
-    {p:'over',    def:'To visit someone\'s home.',    ex:'Why don\'t you come over for dinner?'},
-    {p:'across',    def:'To find or encounter something by chance.',    ex:'I came across an old photo.'},
-    {p:'through',    def:'To survive a difficult experience.',    ex:'She came through the operation well.'},
+    {p:'up',      def:'To arise or be mentioned.',                                ex:'An interesting idea came up in the meeting.'},
+    {p:'out',     def:'To emerge or be published.',                               ex:'Her new book came out last month.'},
+    {p:'back',    def:'To return.',                                               ex:'He came back from holiday yesterday.'},
+    {p:'in',      def:'To enter.',                                                ex:'Please come in and sit down.'},
+    {p:'down',    def:'To decrease or to travel south.',                          ex:'Prices have come down recently.'},
+    {p:'over',    def:'To visit someone\'s home.',                                ex:'Why don\'t you come over for dinner?'},
+    {p:'across',  def:'To find or encounter something by chance.',                ex:'I came across an old photo.'},
+    {p:'through', def:'To survive a difficult experience.',                       ex:'She came through the operation well.'},
+    {p:'apart',   def:'To break into pieces, or to begin to fail.',              ex:'The book just came apart in my hands.'},
+    {p:'along',   def:'To make progress, or to arrive.',                          ex:'How is your project coming along?'},
+    {p:'forward', def:'To volunteer information or help.',                        ex:'A witness came forward with new evidence.'},
+    {p:'off',     def:'To succeed, or to fall from a surface.',                  ex:'The plan didn\'t come off as expected.'},
+    {p:'around',  def:'To recover consciousness, or to change one\'s opinion.',  ex:'She came around to our way of thinking.'},
+    {p:'into',    def:'To inherit money or property.',                            ex:'She came into a large fortune when her aunt died.'},
   ]},
   { verb:'look', pairs:[
-    {p:'up',      def:'To search for information in a reference.',          ex:'Look up the word in a dictionary.'},
-    {p:'out',     def:'To be careful or watch for danger.',                 ex:"Look out - there's ice on the road!"},
-    {p:'after',   def:'To take care of someone or something.',              ex:'Can you look after my cat this weekend?'},
-    {p:'into',    def:'To investigate something.',                          ex:'The police are looking into the matter.'},
-    {p:'back',    def:'To reflect on past events.',                         ex:'Looking back, I made the right decision.'},
-    {p:'over',    def:'To review or check something.',                      ex:'Please look over my essay before submitting.'},
-    {p:'forward', def:'To anticipate something with pleasure.',             ex:"I'm looking forward to the weekend."},
-    {p:'up to',   def:'To admire or respect someone greatly.',              ex:'She always looked up to her older sister.'},
+    {p:'up',       def:'To search for information in a reference.',          ex:'Look up the word in a dictionary.'},
+    {p:'out',      def:'To be careful or watch for danger.',                 ex:"Look out - there's ice on the road!"},
+    {p:'after',    def:'To take care of someone or something.',              ex:'Can you look after my cat this weekend?'},
+    {p:'into',     def:'To investigate something.',                          ex:'The police are looking into the matter.'},
+    {p:'back',     def:'To reflect on past events.',                         ex:'Looking back, I made the right decision.'},
+    {p:'over',     def:'To review or check something.',                      ex:'Please look over my essay before submitting.'},
+    {p:'forward',  def:'To anticipate something with pleasure.',             ex:"I'm looking forward to the weekend."},
+    {p:'up to',    def:'To admire or respect someone greatly.',              ex:'She always looked up to her older sister.'},
+    {p:'on',       def:'To watch without taking part.',                      ex:'We looked on helplessly as the fire spread.'},
+    {p:'down on',  def:'To consider someone inferior or unimportant.',       ex:'She never looks down on people who struggle.'},
   ]},
   { verb:'turn', pairs:[
     {p:'up',     def:'To arrive, or to increase volume or heat.',           ex:'He turned up an hour late.'},
@@ -307,81 +347,100 @@ const VERBS = [
     {p:'around', def:'To reverse a bad situation, or to rotate to face the other way.',ex:'The new manager turned the company around.'},
   ]},
   { verb:'break', pairs:[
-    {p:'up',    def:'To end a relationship, or to split apart.',    ex:'They broke up after two years.'},
-    {p:'down',    def:'To stop working, or to lose emotional control.',    ex:'The car broke down on the motorway.'},
-    {p:'in',    def:'To enter by force, or to make something comfortable.',    ex:'Thieves broke in last night.'},
-    {p:'out',    def:'To escape, or to start suddenly.',    ex:'Fire broke out in the kitchen.'},
-    {p:'through',    def:'To overcome an obstacle.',    ex:'Scientists broke through with a new treatment.'},
-    {p:'off',    def:'To stop abruptly or detach.',    ex:'She broke off the engagement.'},
-    {p:'away',    def:'To escape from a group or situation.',    ex:'He broke away from the crowd.'},
+    {p:'up',      def:'To end a relationship, or to split apart.',                    ex:'They broke up after two years.'},
+    {p:'down',    def:'To stop working, or to lose emotional control.',               ex:'The car broke down on the motorway.'},
+    {p:'in',      def:'To enter by force, or to make something comfortable.',        ex:'Thieves broke in last night.'},
+    {p:'out',     def:'To escape, or to start suddenly.',                             ex:'Fire broke out in the kitchen.'},
+    {p:'through', def:'To overcome an obstacle.',                                     ex:'Scientists broke through with a new treatment.'},
+    {p:'off',     def:'To stop abruptly or detach.',                                  ex:'She broke off the engagement.'},
+    {p:'away',    def:'To escape from a group or situation.',                         ex:'He broke away from the crowd.'},
+    {p:'into',    def:'To enter a building illegally, or to start a new activity.',  ex:'The burglars broke into the house overnight.'},
   ]},
   { verb:'put', pairs:[
-    {p:'off',    def:'To postpone or to discourage.',    ex:'Don\'t put off until tomorrow what you can do today.'},
-    {p:'on',    def:'To wear, or to start something.',    ex:'Put on your coat — it\'s cold.'},
-    {p:'out',    def:'To extinguish, or to cause inconvenience.',    ex:'Put out the fire quickly!'},
-    {p:'up',    def:'To accommodate someone, or to tolerate.',    ex:'Can you put me up for the night?'},
-    {p:'back',    def:'To return something to its place.',    ex:'Put the book back on the shelf.'},
-    {p:'down',    def:'To insult someone, or to euthanise an animal.',    ex:'Stop putting me down in front of others.'},
-    {p:'away',    def:'To tidy things away.',    ex:'Put away your toys.'},
-    {p:'through',    def:'To connect a phone call, or to make someone experience something.',    ex:'I\'ll put you through to the manager.'},
+    {p:'off',      def:'To postpone or to discourage.',                              ex:'Don\'t put off until tomorrow what you can do today.'},
+    {p:'on',       def:'To wear, or to start something.',                            ex:'Put on your coat — it\'s cold.'},
+    {p:'out',      def:'To extinguish, or to cause inconvenience.',                  ex:'Put out the fire quickly!'},
+    {p:'up',       def:'To accommodate someone, or to tolerate.',                    ex:'Can you put me up for the night?'},
+    {p:'back',     def:'To return something to its place.',                          ex:'Put the book back on the shelf.'},
+    {p:'down',     def:'To insult someone, or to euthanise an animal.',             ex:'Stop putting me down in front of others.'},
+    {p:'away',     def:'To tidy things away.',                                       ex:'Put away your toys.'},
+    {p:'through',  def:'To connect a phone call, or to make someone experience something.', ex:'I\'ll put you through to the manager.'},
+    {p:'forward',  def:'To suggest an idea or proposal.',                            ex:'She put forward an interesting suggestion.'},
+    {p:'together', def:'To assemble or combine things.',                             ex:'He put together a team of experts.'},
   ]},
   { verb:'get', pairs:[
-    {p:'up',    def:'To rise from bed.',    ex:'I get up at 7am every day.'},
-    {p:'on',    def:'To board transport, or to make progress.',    ex:'Get on the bus quickly!'},
-    {p:'out',    def:'To leave or escape.',    ex:'Get out of here!'},
-    {p:'over',    def:'To recover from something.',    ex:'She got over the flu in a week.'},
-    {p:'back',    def:'To return or to receive something back.',    ex:'I got back home at midnight.'},
-    {p:'into',    def:'To enter or to become interested in.',    ex:'She got into yoga last year.'},
-    {p:'through',    def:'To survive or to contact someone.',    ex:'I can\'t get through to him by phone.'},
-    {p:'away',    def:'To escape or go on holiday.',    ex:'We need to get away for a few days.'},
+    {p:'up',          def:'To rise from bed.',                                          ex:'I get up at 7am every day.'},
+    {p:'on',          def:'To board transport, or to make progress.',                   ex:'Get on the bus quickly!'},
+    {p:'out',         def:'To leave or escape.',                                        ex:'Get out of here!'},
+    {p:'over',        def:'To recover from something.',                                 ex:'She got over the flu in a week.'},
+    {p:'back',        def:'To return or to receive something back.',                    ex:'I got back home at midnight.'},
+    {p:'into',        def:'To enter or to become interested in.',                       ex:'She got into yoga last year.'},
+    {p:'through',     def:'To survive or to contact someone.',                          ex:'I can\'t get through to him by phone.'},
+    {p:'away',        def:'To escape or go on holiday.',                                ex:'We need to get away for a few days.'},
+    {p:'along',       def:'To have a good relationship with someone.',                  ex:'Do you get along with your colleagues?'},
+    {p:'around',      def:'To find time for something, or to move about freely.',       ex:'I never seem to get around to cleaning the windows.'},
+    {p:'off',         def:'To leave a bus or train, or to escape punishment.',          ex:'He got off with just a warning.'},
+    {p:'ahead',       def:'To make progress or be successful.',                         ex:'You have to work hard to get ahead in this industry.'},
+    {p:'down',        def:'To make someone feel depressed.',                            ex:'The bad weather is really getting me down.'},
   ]},
   { verb:'run', pairs:[
-    {p:'out',    def:'To have no more of something.',    ex:'We\'ve run out of milk.'},
-    {p:'away',    def:'To flee or escape.',    ex:'He ran away from home at sixteen.'},
-    {p:'into',    def:'To meet someone by chance, or to collide with.',    ex:'I ran into my old teacher at the supermarket.'},
-    {p:'over',    def:'To hit with a vehicle, or to review quickly.',    ex:'He was nearly run over by a cyclist.'},
-    {p:'through',    def:'To rehearse or review something.',    ex:'Let\'s run through the plan one more time.'},
-    {p:'off',    def:'To leave quickly, or to print copies.',    ex:'She ran off without saying goodbye.'},
-    {p:'up',    def:'To accumulate a debt or bill.',    ex:'He ran up a huge credit card bill.'},
-    {p:'down',    def:'To criticise, or to lose power (battery).',    ex:'Don\'t run down your colleagues in public.'},
+    {p:'out',     def:'To have no more of something.',                              ex:'We\'ve run out of milk.'},
+    {p:'away',    def:'To flee or escape.',                                         ex:'He ran away from home at sixteen.'},
+    {p:'into',    def:'To meet someone by chance, or to collide with.',            ex:'I ran into my old teacher at the supermarket.'},
+    {p:'over',    def:'To hit with a vehicle, or to review quickly.',              ex:'He was nearly run over by a cyclist.'},
+    {p:'through', def:'To rehearse or review something.',                           ex:'Let\'s run through the plan one more time.'},
+    {p:'off',     def:'To leave quickly, or to print copies.',                     ex:'She ran off without saying goodbye.'},
+    {p:'up',      def:'To accumulate a debt or bill.',                              ex:'He ran up a huge credit card bill.'},
+    {p:'down',    def:'To criticise, or to lose power (battery).',                 ex:'Don\'t run down your colleagues in public.'},
+    {p:'back',    def:'To return quickly to a place.',                              ex:'I\'ll run back to the office and grab it.'},
   ]},
   { verb:'set', pairs:[
-    {p:'up',    def:'To prepare or establish something.',    ex:'They set up a new company last year.'},
-    {p:'off',    def:'To begin a journey, or to cause something to start.',    ex:'We set off early to avoid the traffic.'},
-    {p:'out',    def:'To begin a journey, or to arrange items.',    ex:'She set out the chairs for the meeting.'},
-    {p:'back',    def:'To delay progress.',    ex:'The rain set us back by two hours.'},
-    {p:'in',    def:'To begin and seem likely to continue.',    ex:'Panic set in when the lights went out.'},
-    {p:'aside',    def:'To save or reserve for a purpose.',    ex:'Set aside some time for revision each day.'},
-    {p:'down',    def:'To write something, or to land an aircraft.',    ex:'Set down your ideas before you forget them.'},
+    {p:'up',     def:'To prepare or establish something.',                    ex:'They set up a new company last year.'},
+    {p:'off',    def:'To begin a journey, or to cause something to start.',  ex:'We set off early to avoid the traffic.'},
+    {p:'out',    def:'To begin a journey, or to arrange items.',             ex:'She set out the chairs for the meeting.'},
+    {p:'back',   def:'To delay progress.',                                   ex:'The rain set us back by two hours.'},
+    {p:'in',     def:'To begin and seem likely to continue.',                ex:'Panic set in when the lights went out.'},
+    {p:'aside',  def:'To save or reserve for a purpose.',                    ex:'Set aside some time for revision each day.'},
+    {p:'down',   def:'To write something, or to land an aircraft.',          ex:'Set down your ideas before you forget them.'},
+    {p:'about',  def:'To start doing something with energy.',                ex:'She set about cleaning the whole house.'},
+    {p:'on',     def:'To attack someone.',                                   ex:'The dog was set on him by its owner.'},
   ]},
   { verb:'go', pairs:[
-    {p:'on',    def:'To continue, or to happen.',    ex:'What\'s going on here?'},
-    {p:'off',    def:'To explode, or to ring, or to go bad.',    ex:'The alarm went off at 6am.'},
-    {p:'out',    def:'To leave the house, or for a light to stop working.',    ex:'The lights went out during the storm.'},
-    {p:'back',    def:'To return.',    ex:'I\'m going back to Poland next month.'},
-    {p:'through',    def:'To experience something difficult, or to examine.',    ex:'She went through a tough time last year.'},
-    {p:'over',    def:'To review or check something.',    ex:'Let\'s go over the rules one more time.'},
-    {p:'up',    def:'To increase, or to be constructed.',    ex:'Prices keep going up.'},
-    {p:'down',    def:'To decrease, or to be well received.',    ex:'The speech went down well with the audience.'},
-    {p:'ahead',    def:'To proceed with something.',    ex:'The project went ahead despite the objections.'},
+    {p:'on',         def:'To continue, or to happen.',                                  ex:'What\'s going on here?'},
+    {p:'off',        def:'To explode, or to ring, or to go bad.',                       ex:'The alarm went off at 6am.'},
+    {p:'out',        def:'To leave the house, or for a light to stop working.',         ex:'The lights went out during the storm.'},
+    {p:'back',       def:'To return.',                                                  ex:'I\'m going back to Poland next month.'},
+    {p:'through',    def:'To experience something difficult, or to examine.',           ex:'She went through a tough time last year.'},
+    {p:'over',       def:'To review or check something.',                               ex:'Let\'s go over the rules one more time.'},
+    {p:'up',         def:'To increase, or to be constructed.',                          ex:'Prices keep going up.'},
+    {p:'down',       def:'To decrease, or to be well received.',                        ex:'The speech went down well with the audience.'},
+    {p:'ahead',      def:'To proceed with something.',                                  ex:'The project went ahead despite the objections.'},
+    {p:'along with', def:'To agree with or support.',                                   ex:'I\'ll go along with whatever you decide.'},
+    {p:'without',    def:'To manage despite not having something.',                     ex:'We\'ll have to go without heating for now.'},
+    {p:'for',        def:'To choose, or to attack, or to apply to.',                    ex:'She went for the more expensive option.'},
+    {p:'into',       def:'To investigate or explain in detail.',                        ex:'Let\'s not go into the details right now.'},
+    {p:'around',     def:'To circulate, or to be enough for everyone.',                 ex:'Is there enough food to go around?'},
   ]},
   { verb:'bring', pairs:[
-    {p:'up',    def:'To raise a child, or to mention a topic.',    ex:'She was brought up in Warsaw.'},
-    {p:'out',    def:'To reveal or produce something.',    ex:'Stress can bring out the worst in people.'},
-    {p:'back',    def:'To return something, or to remind of the past.',    ex:'That song brings back so many memories.'},
-    {p:'in',    def:'To earn money, or to introduce something new.',    ex:'The new policy brought in stricter rules.'},
-    {p:'about',    def:'To cause something to happen.',    ex:'What brought about the change in policy?'},
-    {p:'down',    def:'To reduce, or to cause someone to feel sad.',    ex:'The bad news really brought him down.'},
-    {p:'forward',    def:'To move to an earlier time or date.',    ex:'They\'ve brought the meeting forward to Monday.'},
-    {p:'together',    def:'To unite or assemble people.',    ex:'The tragedy brought the community together.'},
+    {p:'up',       def:'To raise a child, or to mention a topic.',             ex:'She was brought up in Warsaw.'},
+    {p:'out',      def:'To reveal or produce something.',                      ex:'Stress can bring out the worst in people.'},
+    {p:'back',     def:'To return something, or to remind of the past.',       ex:'That song brings back so many memories.'},
+    {p:'in',       def:'To earn money, or to introduce something new.',        ex:'The new policy brought in stricter rules.'},
+    {p:'about',    def:'To cause something to happen.',                        ex:'What brought about the change in policy?'},
+    {p:'down',     def:'To reduce, or to cause someone to feel sad.',          ex:'The bad news really brought him down.'},
+    {p:'forward',  def:'To move to an earlier time or date.',                  ex:'They\'ve brought the meeting forward to Monday.'},
+    {p:'together', def:'To unite or assemble people.',                         ex:'The tragedy brought the community together.'},
+    {p:'off',      def:'To succeed in doing something difficult.',             ex:'It was a tough negotiation but they brought it off.'},
   ]},
   { verb:'hold', pairs:[
-    {p:'on',    def:'To wait, or to grip tightly.',    ex:'Hold on — I need to check something.'},
-    {p:'back',    def:'To restrain or suppress.',    ex:'She held back her tears during the speech.'},
-    {p:'up',    def:'To delay, or to rob at gunpoint.',    ex:'Traffic held us up for an hour.'},
-    {p:'out',    def:'To last or to resist.',    ex:'How long can they hold out against the pressure?'},
-    {p:'off',    def:'To delay or to keep at a distance.',    ex:'Hold off making a decision until you have more information.'},
-    {p:'down',    def:'To keep a job, or to suppress.',    ex:'She\'s managed to hold down two jobs at once.'},
+    {p:'on',      def:'To wait, or to grip tightly.',                                  ex:'Hold on — I need to check something.'},
+    {p:'back',    def:'To restrain or suppress.',                                      ex:'She held back her tears during the speech.'},
+    {p:'up',      def:'To delay, or to rob at gunpoint.',                              ex:'Traffic held us up for an hour.'},
+    {p:'out',     def:'To last or to resist.',                                         ex:'How long can they hold out against the pressure?'},
+    {p:'off',     def:'To delay or to keep at a distance.',                            ex:'Hold off making a decision until you have more information.'},
+    {p:'down',    def:'To keep a job, or to suppress.',                                ex:'She\'s managed to hold down two jobs at once.'},
+    {p:'against', def:'To resent someone for a past action.',                          ex:'I hope you don\'t hold that mistake against me.'},
+    {p:'over',    def:'To postpone to a later time.',                                  ex:'The vote was held over until next week.'},
   ]},
   { verb:'work', pairs:[
     {p:'out',    def:'To exercise, or to calculate, or to succeed.',    ex:'I can\'t work out what he means.'},
@@ -391,10 +450,11 @@ const VERBS = [
     {p:'off',    def:'To get rid of something through effort.',    ex:'He worked off his stress by going for a run.'},
   ]},
   { verb:'pick', pairs:[
-    {p:'up',    def:'To collect someone, or to learn something casually.',    ex:'Can you pick me up from the station?'},
-    {p:'out',    def:'To choose or select.',    ex:'She picked out the blue dress.'},
-    {p:'on',    def:'To bully or criticise repeatedly.',    ex:'Stop picking on your little sister.'},
-    {p:'up on',    def:'To notice or detect something subtle.',    ex:'She quickly picked up on the tension in the room.'},
+    {p:'up',      def:'To collect someone, or to learn something casually.',    ex:'Can you pick me up from the station?'},
+    {p:'out',     def:'To choose or select.',                                   ex:'She picked out the blue dress.'},
+    {p:'on',      def:'To bully or criticise repeatedly.',                      ex:'Stop picking on your little sister.'},
+    {p:'up on',   def:'To notice or detect something subtle.',                  ex:'She quickly picked up on the tension in the room.'},
+    {p:'apart',   def:'To criticise in detail, or to dismantle.',               ex:'The examiner picked apart every argument in the essay.'},
   ]},
   { verb:'carry', pairs:[
     {p:'on',    def:'To continue.',    ex:'Carry on — I did not mean to interrupt.'},
@@ -403,19 +463,24 @@ const VERBS = [
     {p:'away',    def:'To become very excited or lose control.',    ex:'Don\'t get carried away — it\'s just a game.'},
   ]},
   { verb:'fall', pairs:[
-    {p:'out',    def:'To argue and stop being friends.',    ex:'They fell out over money.'},
-    {p:'down',    def:'To fail to meet expectations.',    ex:'The plan fell down when funding dried up.'},
-    {p:'behind',    def:'To fail to keep up.',    ex:'Don\'t fall behind with your homework.'},
-    {p:'through',    def:'To fail to happen.',    ex:'The deal fell through at the last minute.'},
-    {p:'apart',    def:'To break into pieces, or to lose emotional control.',    ex:'The whole plan fell apart when he resigned.'},
-    {p:'back on',    def:'To use as a last resort.',    ex:'We can always fall back on plan B.'},
+    {p:'out',     def:'To argue and stop being friends.',                             ex:'They fell out over money.'},
+    {p:'down',    def:'To fail to meet expectations.',                                ex:'The plan fell down when funding dried up.'},
+    {p:'behind',  def:'To fail to keep up.',                                          ex:'Don\'t fall behind with your homework.'},
+    {p:'through', def:'To fail to happen.',                                           ex:'The deal fell through at the last minute.'},
+    {p:'apart',   def:'To break into pieces, or to lose emotional control.',         ex:'The whole plan fell apart when he resigned.'},
+    {p:'back on', def:'To use as a last resort.',                                     ex:'We can always fall back on plan B.'},
+    {p:'for',     def:'To be deceived by something, or to fall in love with.',       ex:'I can\'t believe you fell for that old trick.'},
+    {p:'in with', def:'To join a group of people, especially one with bad habits.',  ex:'He fell in with the wrong crowd at school.'},
+    {p:'over',    def:'To trip and fall to the ground.',                              ex:'She fell over on the icy path.'},
   ]},
   { verb:'make', pairs:[
-    {p:'up',    def:'To invent a story, or to reconcile after an argument.',    ex:'He made up an excuse for being late.'},
-    {p:'out',    def:'To understand, or to see or hear with difficulty.',    ex:'I could barely make out what she was saying.'},
-    {p:'off',    def:'To leave hurriedly.',    ex:'The thieves made off before the police arrived.'},
-    {p:'do',    def:'To manage with what is available.',    ex:'We\'ll have to make do with what we have.'},
-    {p:'for',    def:'To move towards, or to compensate.',    ex:'We made for the nearest exit.'},
+    {p:'up',   def:'To invent a story, or to reconcile after an argument.',  ex:'He made up an excuse for being late.'},
+    {p:'out',  def:'To understand, or to see or hear with difficulty.',      ex:'I could barely make out what she was saying.'},
+    {p:'off',  def:'To leave hurriedly.',                                    ex:'The thieves made off before the police arrived.'},
+    {p:'do',   def:'To manage with what is available.',                      ex:'We\'ll have to make do with what we have.'},
+    {p:'for',  def:'To move towards, or to compensate.',                     ex:'We made for the nearest exit.'},
+    {p:'of',   def:'To understand or have an opinion of.',                   ex:'What do you make of her behaviour?'},
+    {p:'over', def:'To transfer ownership, or to redesign something.',       ex:'She made over her entire wardrobe.'},
   ]},
   { verb:'call', pairs:[
     {p:'off',    def:'To cancel.',    ex:'The match was called off due to rain.'},
@@ -427,36 +492,43 @@ const VERBS = [
     {p:'in',    def:'To report by phone, or to visit briefly.',    ex:'She called in sick this morning.'},
   ]},
   { verb:'keep', pairs:[
-    {p:'up',    def:'To maintain a level, or to not fall behind.',    ex:'Keep up the good work!'},
-    {p:'on',    def:'To continue doing something.',    ex:'She just kept on talking despite the noise.'},
-    {p:'out',    def:'To stay outside or exclude.',    ex:'Please keep out — this area is restricted.'},
-    {p:'back',    def:'To hold in reserve, or to suppress.',    ex:'She kept back the most important detail.'},
-    {p:'away',    def:'To stay at a distance.',    ex:'Keep away from the edge of the platform.'},
-    {p:'up with',    def:'To stay at the same level or pace as someone.',    ex:'It was hard to keep up with the class.'},
+    {p:'up',      def:'To maintain a level, or to not fall behind.',         ex:'Keep up the good work!'},
+    {p:'on',      def:'To continue doing something.',                        ex:'She just kept on talking despite the noise.'},
+    {p:'out',     def:'To stay outside or exclude.',                         ex:'Please keep out — this area is restricted.'},
+    {p:'back',    def:'To hold in reserve, or to suppress.',                 ex:'She kept back the most important detail.'},
+    {p:'away',    def:'To stay at a distance.',                              ex:'Keep away from the edge of the platform.'},
+    {p:'up with', def:'To stay at the same level or pace as someone.',      ex:'It was hard to keep up with the class.'},
+    {p:'to',      def:'To stay within limits, or not share a secret.',       ex:'Keep to the path and you won\'t get lost.'},
+    {p:'from',    def:'To prevent someone from doing something.',            ex:'What kept you from calling me?'},
+    {p:'on at',   def:'To nag or pester someone repeatedly.',               ex:'She kept on at him until he agreed.'},
   ]},
   { verb:'cut', pairs:[
-    {p:'out',    def:'To remove, or to stop an engine, or to stop doing something.',    ex:'My doctor told me to cut out sugar.'},
-    {p:'down',    def:'To reduce in amount.',    ex:'I\'m trying to cut down on caffeine.'},
-    {p:'off',    def:'To interrupt, or to disconnect.',    ex:'We were cut off in the middle of the call.'},
-    {p:'back',    def:'To reduce spending or activity.',    ex:'The company had to cut back on staff.'},
-    {p:'in',    def:'To interrupt a conversation.',    ex:'She cut in just as I was finishing my sentence.'},
-    {p:'up',    def:'To chop into small pieces.',    ex:'Cut up the vegetables and add them to the pot.'},
+    {p:'out',    def:'To remove, or to stop an engine, or to stop doing something.',  ex:'My doctor told me to cut out sugar.'},
+    {p:'down',   def:'To reduce in amount.',                                           ex:'I\'m trying to cut down on caffeine.'},
+    {p:'off',    def:'To interrupt, or to disconnect.',                                ex:'We were cut off in the middle of the call.'},
+    {p:'back',   def:'To reduce spending or activity.',                                ex:'The company had to cut back on staff.'},
+    {p:'in',     def:'To interrupt a conversation.',                                   ex:'She cut in just as I was finishing my sentence.'},
+    {p:'up',     def:'To chop into small pieces.',                                     ex:'Cut up the vegetables and add them to the pot.'},
+    {p:'across', def:'To be relevant to different groups, or to cross a shorter way.', ex:'The issue cuts across all age groups.'},
   ]},
   { verb:'pull', pairs:[
-    {p:'out',    def:'To withdraw from a deal or place.',    ex:'They pulled out of the agreement.'},
-    {p:'off',    def:'To succeed at something difficult.',    ex:'I cannot believe she pulled it off!'},
-    {p:'through',    def:'To survive a serious illness or difficulty.',    ex:'The doctors are confident she will pull through.'},
-    {p:'together',    def:'To cooperate or compose oneself.',    ex:'Pull yourself together — we need you focused.'},
-    {p:'up',    def:'To stop a vehicle, or to reprimand.',    ex:'The car pulled up outside the hotel.'},
-    {p:'down',    def:'To demolish, or to earn a salary.',    ex:'They pulled down the old factory last month.'},
+    {p:'out',      def:'To withdraw from a deal or place.',                  ex:'They pulled out of the agreement.'},
+    {p:'off',      def:'To succeed at something difficult.',                 ex:'I cannot believe she pulled it off!'},
+    {p:'through',  def:'To survive a serious illness or difficulty.',        ex:'The doctors are confident she will pull through.'},
+    {p:'together', def:'To cooperate or compose oneself.',                   ex:'Pull yourself together — we need you focused.'},
+    {p:'up',       def:'To stop a vehicle, or to reprimand.',                ex:'The car pulled up outside the hotel.'},
+    {p:'down',     def:'To demolish, or to earn a salary.',                  ex:'They pulled down the old factory last month.'},
+    {p:'apart',    def:'To separate by pulling, or to criticise harshly.',  ex:'The review pulled the book apart.'},
   ]},
   { verb:'stand', pairs:[
     {p:'out',    def:'To be clearly better or more noticeable.',    ex:'Her performance really stood out.'},
-    {p:'up',    def:'To get to your feet, or to fail to keep a date.',    ex:'She stood me up — I waited for an hour.'},
+    {p:'up',     def:'To get to your feet, or to fail to keep a date.',    ex:'She stood me up — I waited for an hour.'},
     {p:'for',    def:'To represent or tolerate.',    ex:'I won\'t stand for that kind of behaviour.'},
-    {p:'by',    def:'To be ready, or to support someone.',    ex:'Stand by — the broadcast is about to begin.'},
-    {p:'down',    def:'To resign or step aside.',    ex:'The CEO stood down after the scandal.'},
-    {p:'in',    def:'To substitute for someone.',    ex:'Can you stand in for me while I am away?'},
+    {p:'by',     def:'To be ready, or to support someone.',    ex:'Stand by — the broadcast is about to begin.'},
+    {p:'down',   def:'To resign or step aside.',    ex:'The CEO stood down after the scandal.'},
+    {p:'in',     def:'To substitute for someone.',    ex:'Can you stand in for me while I am away?'},
+    {p:'up for', def:'To defend or support someone.',    ex:'She always stands up for her colleagues.'},
+    {p:'against',def:'To oppose or compete against.',    ex:'He stood against the proposal in parliament.'},
   ]},
   { verb:'point', pairs:[
     {p:'out',    def:'To indicate or draw attention to something.',    ex:'She pointed out several mistakes in my essay.'},
@@ -478,11 +550,13 @@ const VERBS = [
     {p:'into',    def:'To develop or become suited to.',    ex:'She has really grown into her role as manager.'},
   ]},
   { verb:'throw', pairs:[
-    {p:'away',    def:'To discard something.',    ex:'Don\'t throw away your old notes — you\'ll need them.'},
-    {p:'out',    def:'To discard, or to force someone to leave.',    ex:'He was thrown out of the restaurant.'},
-    {p:'up',    def:'To vomit (informal), or to raise your hands.',    ex:'The smell made her want to throw up.'},
-    {p:'off',    def:'To get rid of, or to confuse.',    ex:'She threw off her pursuers in the crowd.'},
-    {p:'in',    def:'To add something extra at no cost.',    ex:'If you buy the laptop, we\'ll throw in a bag.'},
+    {p:'away',     def:'To discard something.',                                     ex:'Don\'t throw away your old notes — you\'ll need them.'},
+    {p:'out',      def:'To discard, or to force someone to leave.',                 ex:'He was thrown out of the restaurant.'},
+    {p:'up',       def:'To vomit (informal), or to raise your hands.',              ex:'The smell made her want to throw up.'},
+    {p:'off',      def:'To get rid of, or to confuse.',                             ex:'She threw off her pursuers in the crowd.'},
+    {p:'in',       def:'To add something extra at no cost.',                        ex:'If you buy the laptop, we\'ll throw in a bag.'},
+    {p:'together', def:'To make something quickly and without much care.',          ex:'She threw together a quick meal from leftovers.'},
+    {p:'back',     def:'To return something, or to remind someone of the past.',   ex:'The question threw me back to my childhood.'},
   ]},
   { verb:'think', pairs:[
     {p:'over',    def:'To consider carefully.',    ex:'Let me think it over and get back to you.'},
@@ -519,17 +593,21 @@ const VERBS = [
     {p:'away',    def:'To move backwards slowly.',    ex:'The dog growled and she backed away.'},
   ]},
   { verb:'move', pairs:[
-    {p:'on',    def:'To continue or progress past something.',    ex:'It\'s time to move on and forget the past.'},
-    {p:'out',    def:'To leave a place of residence.',    ex:'They moved out last weekend.'},
-    {p:'in',    def:'To begin living somewhere.',    ex:'The new tenants moved in on Friday.'},
-    {p:'up',    def:'To advance or make room by shifting.',    ex:'Could you move up so I can sit down?'},
-    {p:'forward',    def:'To make progress.',    ex:'The project is moving forward as planned.'},
+    {p:'on',      def:'To continue or progress past something.',     ex:'It\'s time to move on and forget the past.'},
+    {p:'out',     def:'To leave a place of residence.',              ex:'They moved out last weekend.'},
+    {p:'in',      def:'To begin living somewhere.',                  ex:'The new tenants moved in on Friday.'},
+    {p:'up',      def:'To advance or make room by shifting.',        ex:'Could you move up so I can sit down?'},
+    {p:'forward', def:'To make progress.',                           ex:'The project is moving forward as planned.'},
+    {p:'over',    def:'To shift to one side to make space.',         ex:'Could you move over a little? I need more room.'},
+    {p:'away',    def:'To leave a place permanently.',               ex:'They moved away from the city last year.'},
   ]},
   { verb:'draw', pairs:[
-    {p:'up',    def:'To prepare a formal document.',    ex:'The lawyers drew up the contract.'},
-    {p:'out',    def:'To make something longer, or to withdraw money.',    ex:'He drew out the meeting far longer than necessary.'},
-    {p:'back',    def:'To retreat or withdraw.',    ex:'She drew back from the edge.'},
-    {p:'on',    def:'To use a resource or experience.',    ex:'She drew on her personal experience in her writing.'},
+    {p:'up',       def:'To prepare a formal document.',                          ex:'The lawyers drew up the contract.'},
+    {p:'out',      def:'To make something longer, or to withdraw money.',        ex:'He drew out the meeting far longer than necessary.'},
+    {p:'back',     def:'To retreat or withdraw.',                                ex:'She drew back from the edge.'},
+    {p:'on',       def:'To use a resource or experience.',                       ex:'She drew on her personal experience in her writing.'},
+    {p:'apart',    def:'To move apart, or to become estranged.',                 ex:'The couple slowly drew apart over the years.'},
+    {p:'together', def:'To gather people or things together.',                   ex:'The crisis drew the community together.'},
   ]},
   { verb:'wear', pairs:[
     {p:'out',    def:'To exhaust, or to become damaged through use.',    ex:'This constant worrying will wear you out.'},
@@ -992,6 +1070,11 @@ function init() {
 
 function startGame() {
   found = new Set(); timeLeft = 60; finalScore = 0; hintUsed = false;
+  extraTimeUsed = false;
+  const etWrap = document.getElementById('extraTimeWrap');
+  const etBtn  = document.getElementById('extraTimeBtn');
+  if (etWrap) etWrap.style.display = 'none';
+  if (etBtn)  { etBtn.disabled = false; etBtn.innerHTML = '⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(-20 pts)</span>'; }
   document.getElementById('phase-intro').style.display = 'none';
   document.getElementById('phase-game').style.display  = 'flex';
   document.getElementById('scoreVal').textContent      = '0';
@@ -1233,9 +1316,33 @@ function runTimer() {
     timeLeft--;
     document.getElementById('timerNum').textContent = timeLeft;
     updateRing();
-    if (timeLeft <= 10) document.getElementById('timerCircle').style.stroke = 'var(--wrong)';
+    if (timeLeft <= 10) {
+      document.getElementById('timerCircle').style.stroke = 'var(--wrong)';
+      // Show the Extra Time button the moment we hit 10 seconds — only
+      // if it hasn't already been used or the game is effectively over.
+      const wrap = document.getElementById('extraTimeWrap');
+      const btn  = document.getElementById('extraTimeBtn');
+      if (wrap && btn && !btn.disabled) wrap.style.display = 'block';
+    }
     if (timeLeft <= 0) { clearInterval(timer); endGame(); }
   }, 1000);
+}
+
+// Give the player 30 extra seconds in exchange for 20 points.
+// One use only — the button disables itself after being clicked.
+let extraTimeUsed = false;
+function useExtraTime() {
+  if (extraTimeUsed) return;
+  extraTimeUsed = true;
+  const btn = document.getElementById('extraTimeBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '✓ +30s added'; }
+  timeLeft += 30;
+  document.getElementById('timerNum').textContent = timeLeft;
+  updateRing();
+  // Revert the red colour now that there's time again
+  document.getElementById('timerCircle').style.stroke = 'var(--gold)';
+  finalScore = Math.max(0, finalScore - 20);
+  document.getElementById('scoreVal').textContent = finalScore;
 }
 function updateRing() {
   const c = 194.8;
