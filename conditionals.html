@@ -13,6 +13,58 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 .rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
 .rules-box strong { color:var(--text); }
 
+/* Practice mode button — sits above the scored-mode tabs, clearly distinct */
+.btn-practice {
+  background: transparent;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  padding: .55rem 1.4rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--gold);
+  cursor: pointer;
+  letter-spacing: .02em;
+  transition: background .15s, color .15s;
+  width: 100%;
+}
+.btn-practice:hover { background: var(--gold-dim); }
+
+/* Practice sub-category cards — one per conditional type */
+.practice-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  cursor: default;
+}
+.practice-card .pc-type {
+  font-family: 'Space Mono', monospace;
+  font-size: .6rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: .2rem .5rem;
+  border-radius: 99px;
+  display: inline-block;
+  width: fit-content;
+}
+.practice-card .pc-rule {
+  font-size: .75rem;
+  color: var(--muted);
+  line-height: 1.55;
+  font-style: italic;
+}
+.practice-card .btn-ghost {
+  font-size: .8rem;
+  padding: .4rem .8rem;
+  align-self: flex-start;
+  margin-top: .25rem;
+}
+
 /* Timer */
 .timer-wrap { width:100%; }
 .timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
@@ -141,6 +193,8 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 <main>
   <!-- Start screen — shown before the player has chosen to begin -->
   <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <!-- Practice button sits above the scored-mode tabs, visually distinct -->
+    <button class="btn-practice" onclick="showPracticeMenu()">🎓 Practice mode</button>
     <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
       <button class="diff-tab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
       <button class="diff-tab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
@@ -151,6 +205,15 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
       <span id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong>Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
     </div>
     <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
+  </div>
+
+  <!-- Practice menu — shown when the player clicks Practice mode -->
+  <div id="practiceMenu" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div style="display:flex;align-items:center;width:100%;gap:.5rem">
+      <button class="btn-ghost" style="font-size:.8rem;padding:.4rem .8rem" onclick="hidePracticeMenu()">← Back</button>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin:0;flex:1;text-align:center">Choose a conditional to practise</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;width:100%" id="practiceCards"></div>
   </div>
 
   <!-- Game UI -->
@@ -173,10 +236,14 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
       <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
     </div>
 
-    <!-- Timer -->
-    <div class="timer-wrap">
+    <!-- Timer (scored modes) / Practice controls (practice mode) -->
+    <div id="timerArea" class="timer-wrap">
       <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%;background:var(--gold)"></div></div>
       <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">120s</span></div>
+    </div>
+    <div id="practiceBar" style="display:none;width:100%;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:.5rem;background:var(--gold-dim);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:.55rem 1rem;">
+      <span style="font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">🎓 Practice — no time limit</span>
+      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;border-color:var(--gold);color:var(--gold)" onclick="finishPractice()">Finish practice ✕</button>
     </div>
 
     <!-- IF clause card -->
@@ -1674,6 +1741,8 @@ const EXPERT_PRIORITY = ['inv1','inv2','inv3','condq'];
 const ROUND_SIZE = 10;
 const TIMES = { beginner:120, intermediate:120, advanced:150, expert:120 };
 let currentDiff = 'beginner';
+let practiceMode = false;  // true when playing an untimed practice session
+let practiceType = null;   // which conditional type is being practised
 let roundQs = [], current = 0, score = 0, correct = 0, streak = 0;
 let timerInterval = null, timeLeft = 120;
 let results = [];
@@ -1699,6 +1768,7 @@ function previewDiff(d) {
 }
 
 function beginGame() {
+  practiceMode = false;
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
   Object.keys(DIFF_IDS).forEach(x=>{
@@ -1707,6 +1777,66 @@ function beginGame() {
   switchLb(currentDiff);
   initRound();
 }
+
+// ── Practice mode ────────────────────────────────────────────────────
+const PRACTICE_TYPES = [
+  { key:'zero',   label:'Zero conditional',         rule:'If + present simple, present simple.',                                       example:'If you heat ice, it melts.' },
+  { key:'first',  label:'First conditional',        rule:'If + present simple, will + infinitive.',                                    example:'If it rains, we will stay inside.' },
+  { key:'second', label:'Second conditional',       rule:'If + past simple, would + infinitive.',                                      example:'If I had a car, I would drive to work.' },
+  { key:'third',  label:'Third conditional',        rule:'If + past perfect, would have + past participle.',                           example:'If she had studied, she would have passed.' },
+  { key:'m32',    label:'Mixed conditional (3→2)',  rule:'If + past perfect, would + infinitive. (Past cause → present result.)',      example:'If he had slept, he wouldn\'t be tired now.' },
+  { key:'m23',    label:'Mixed conditional (2→3)',  rule:'If + past simple, would have + past participle. (Present state → past result.)', example:'If she were taller, she would have made the team.' },
+];
+
+function showPracticeMenu() {
+  document.getElementById('startScreen').style.display = 'none';
+  const menu = document.getElementById('practiceMenu');
+  menu.style.display = 'flex';
+
+  // Build the sub-category cards
+  const grid = document.getElementById('practiceCards');
+  grid.innerHTML = '';
+  PRACTICE_TYPES.forEach(pt => {
+    const typeInfo = TYPES[pt.key] || {};
+    const color = typeInfo.color || 'var(--gold)';
+    const card = document.createElement('div');
+    card.className = 'practice-card';
+    card.innerHTML = `
+      <span class="pc-type" style="background:${color};color:#0d0d0d">${pt.label}</span>
+      <div style="font-size:.78rem;font-weight:600;color:var(--text)">${pt.rule}</div>
+      <div class="pc-rule">"${pt.example}"</div>
+      <button class="btn-ghost" onclick="startPractice('${pt.key}')">Practice →</button>`;
+    grid.appendChild(card);
+  });
+}
+
+function hidePracticeMenu() {
+  document.getElementById('practiceMenu').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'flex';
+}
+
+function startPractice(type) {
+  practiceMode = true;
+  practiceType = type;
+  document.getElementById('practiceMenu').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'flex';
+  // Hide the scored-mode difficulty tabs — not relevant in practice
+  const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
+  if (tabBar) tabBar.style.display = 'none';
+  initRound();
+}
+
+function finishPractice() {
+  clearInterval(timerInterval);
+  practiceMode = false;
+  practiceType = null;
+  // Restore the difficulty tabs
+  const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
+  if (tabBar) tabBar.style.display = '';
+  document.getElementById('gameUI').style.display = 'none';
+  document.getElementById('practiceMenu').style.display = 'flex';
+}
+
 
 function setDiff(d) {
   currentDiff = d;
@@ -1724,13 +1854,37 @@ function switchLb(d){
   renderLeaderboard('conditionals_'+d,'lbBody');
 }
 function switchEndDiff(){
-  const order=['beginner','intermediate','advanced','expert'];
-  const next=order[(order.indexOf(currentDiff)+1)%4];
-  setDiff(next);
+  // Return to the start screen so the player can pick whichever level
+  // they want, rather than automatically cycling to the next one.
+  document.getElementById('endCard').style.display  = 'none';
+  document.getElementById('gameUI').style.display   = 'none';
+  document.getElementById('startScreen').style.display = 'flex';
 }
 
 // ── Init ────────────────────────────────────────────────────────────
 function initRound(){
+  // ── Practice mode branch ────────────────────────────────────────
+  if (practiceMode && practiceType) {
+    // Pick ALL questions of the chosen type, shuffle them, use them
+    // as an infinite pool — nextQuestion wraps around when exhausted.
+    const typePool = ALL_QUESTIONS.filter(q => q.t === practiceType);
+    const idxs = freshRandomIndices('practice_'+practiceType, typePool, typePool.length);
+    roundQs = idxs.map(i => typePool[i]);
+    current = 0; score = 0; correct = 0; streak = 0; results = [];
+    document.getElementById('endCard').style.display = 'none';
+    // Hide timer, show practice bar
+    document.getElementById('timerArea').style.display = 'none';
+    document.getElementById('practiceBar').style.display = 'flex';
+    // Hide dots (no fixed round length in practice)
+    document.getElementById('dots').innerHTML = '';
+    clearInterval(timerInterval); // no timer in practice
+    loadQuestion();
+    return; // skip the scored-mode setup below
+  }
+  // ── Restore scored-mode UI ──────────────────────────────────────
+  document.getElementById('timerArea').style.display = '';
+  document.getElementById('practiceBar').style.display = 'none';
+
   // Filter questions by difficulty. All selection now uses true per-play
   // randomisation (freshRandomIndices), not a daily-seeded pick — so the
   // same examples no longer repeat across consecutive games the way they
@@ -1839,7 +1993,10 @@ function updateTimer(){
 
 // ── Load question ────────────────────────────────────────────────────
 function loadQuestion(){
-  if(current>=roundQs.length){clearInterval(timerInterval);endRound();return;}
+  if(current>=roundQs.length){
+    if(practiceMode){ finishPractice(); return; } // shouldn't happen but safe fallback
+    clearInterval(timerInterval); endRound(); return;
+  }
   const q=roundQs[current];
   const type=TYPES[q.t];
   answered=false; selectedOption=null;
@@ -2025,6 +2182,13 @@ function showFeedback(correct, q, chose, pts){
 
 function nextQuestion(){
   current++;
+  // In practice mode, loop back to the start when all questions are done
+  if (practiceMode && current >= roundQs.length) {
+    const typePool = ALL_QUESTIONS.filter(q => q.t === practiceType);
+    const idxs = freshRandomIndices('practice_'+practiceType+'_loop', typePool, typePool.length);
+    roundQs = idxs.map(i => typePool[i]);
+    current = 0;
+  }
   loadQuestion();
 }
 
