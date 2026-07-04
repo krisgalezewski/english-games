@@ -1522,8 +1522,8 @@ function endGame() {
       ? VERBS.filter(v => v.pairs.some(p => p.p === currentParticle)).length
       : 1;
   }
-  document.getElementById('resultHeadline').textContent = `${finalScore} of ${total} found!`;
-  document.getElementById('resultMsg').textContent = finalScore === total ? '🎉 Perfect — you got them all!' : finalScore >= total/2 ? '👏 Great effort!' : 'Keep practising — phrasal verbs take time!';
+  document.getElementById('resultHeadline').textContent = `${found.size} of ${total} found!`;
+  document.getElementById('resultMsg').textContent = found.size === total ? '🎉 Perfect — you got them all!' : found.size >= total/2 ? '👏 Great effort!' : 'Keep practising — phrasal verbs take time!';
 
   // Found chips in result — copy from foundChips (which already have click handlers)
   const rf = document.getElementById('resultFound');

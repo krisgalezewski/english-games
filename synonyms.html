@@ -231,7 +231,6 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 <script src="shared.js"></script>
 <script>
 // ── Word bank ─────────────────────────────────────────────────────
-// Each entry: word, syn[] (synonyms), ant[] (antonyms), def, ex
 const WORDS = [
   { word:'abundant',    syn:['plentiful','ample','copious'],         ant:['scarce','rare','meagre'],              def:'Existing or available in large quantities; more than enough.',             ex:'There was abundant evidence to support the theory.' },
   { word:'accurate',    syn:['precise','exact','correct'],           ant:['inaccurate','wrong','imprecise'],       def:'Correct in all details; without errors.',                                  ex:'The weather forecast was surprisingly accurate.' },
@@ -289,9 +288,16 @@ const WORDS = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────
-let selectedMode = 1;    // 1 = find synonym, 2 = find antonym, 3 = type it
-let typeSub = 1;         // type sub-mode: 1 = synonyms, 2 = antonyms
+let selectedMode = 1;    // 1=find synonym, 2=find antonym, 3=type it
+let typeSub = 1;         // type sub-mode: 1=synonyms, 2=antonyms
 let currentWord, found, timer, timeLeft, finalScore, hintUsed, extraTimeUsed;
+// Queue of words to present — rebuilt each time the pool is exhausted.
+// Ensures no word appears twice in a row and a gap of ≥3 between repeats.
+let wordQueue = [];
+let lastWords = [];       // recently shown words (last 3), used to enforce gap
+// Track items seen in this game round for post-game display
+// Each entry: { word (string), answer (string), isAnt (bool), parentWord (WORDS entry) }
+let foundItems = [];
 
 const MODE_DESC = {
   1: 'A word is shown. Pick its <strong>synonym</strong> (a word with a similar meaning) from the options. Wrong answer = −5 seconds.',
@@ -302,9 +308,7 @@ const MODE_DESC = {
 // ── Intro ─────────────────────────────────────────────────────────
 function selectMode(n) {
   selectedMode = n;
-  [1,2,3].forEach(i => {
-    document.getElementById('mTab'+i).classList.toggle('active', i===n);
-  });
+  [1,2,3].forEach(i => document.getElementById('mTab'+i).classList.toggle('active', i===n));
   document.getElementById('typeSubMode').style.display = n===3 ? 'flex' : 'none';
   document.getElementById('modeDesc').innerHTML = MODE_DESC[n];
   const sample = WORDS[Math.floor(Math.random() * WORDS.length)];
@@ -331,75 +335,80 @@ function goToIntro() {
 function switchMode(n) {
   clearInterval(timer);
   selectedMode = n;
-  [1,2,3].forEach(i => {
-    document.getElementById('gTab'+i).classList.toggle('active', i===n);
-  });
+  [1,2,3].forEach(i => document.getElementById('gTab'+i).classList.toggle('active', i===n));
   startGame();
 }
 
 // ── Game start ─────────────────────────────────────────────────────
 function startGame() {
-  // Reset state
   found = new Set();
+  foundItems = [];
+  wordQueue = [];
+  lastWords = [];
   timeLeft = 60;
   finalScore = 0;
   hintUsed = false;
   extraTimeUsed = false;
 
-  // Reset Extra Time button
   const etWrap = document.getElementById('extraTimeWrap');
   const etBtn  = document.getElementById('extraTimeBtn');
   etWrap.style.display = 'none';
   etBtn.disabled = false;
   etBtn.innerHTML = '⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(-20 pts)</span>';
 
-  // Reset submit area
   document.getElementById('submitArea').innerHTML = `
     <div class="submit-row">
       <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
       <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
     </div>`;
-
   document.getElementById('scoreVal').textContent = 0;
   document.getElementById('foundChips').innerHTML = '';
 
-  // Show game phase, hide others
   document.getElementById('phase-intro').style.display = 'none';
   document.getElementById('phase-result').style.display = 'none';
   document.getElementById('phase-game').style.display = 'flex';
-
-  // Sync in-game mode tabs
   [1,2,3].forEach(i => document.getElementById('gTab'+i).classList.toggle('active', i===selectedMode));
-
-  // Show correct mode area
   ['m1area','m2area','m3area'].forEach((id,i) => {
     document.getElementById(id).style.display = (i+1===selectedMode) ? 'flex' : 'none';
   });
 
-  // Pick a starting word and build the UI
-  pickNewWord();
+  pickNextWord();
   runTimer();
 }
 
-// ── Word selection ─────────────────────────────────────────────────
-function pickNewWord() {
-  // Pick a word not yet fully "found" for this session
-  // (We track found by word+type to allow cycling through many words)
-  const available = WORDS.filter(w => {
-    if (selectedMode === 1) return w.syn.some(s => !found.has('syn:'+s));
-    if (selectedMode === 2) return w.ant.some(a => !found.has('ant:'+a));
-    // Mode 3: either type still has answers left
-    const synLeft = typeSub === 1 ? w.syn.filter(s => !found.has('syn:'+s)) : [];
-    const antLeft = typeSub === 2 ? w.ant.filter(a => !found.has('ant:'+a)) : [];
-    return synLeft.length > 0 || antLeft.length > 0;
+// ── Word queue management ─────────────────────────────────────────
+// Builds a shuffled queue of all words that still have unfound answers,
+// enforcing a minimum gap of 3 other words between repeats of the same word.
+function buildQueue() {
+  const type = selectedMode === 2 ? 'ant' : 'syn';
+  let available = WORDS.filter(w => {
+    const list = type === 'syn' ? w.syn : w.ant;
+    return list.some(a => !found.has(type+':'+a));
   });
   if (available.length === 0) {
-    // All words exhausted — reshuffle (clear found and start fresh)
+    // All words fully exhausted — clear found and start over
     found = new Set();
-    pickNewWord();
-    return;
+    available = [...WORDS];
   }
-  currentWord = available[Math.floor(Math.random() * available.length)];
+  // Shuffle and enforce gap: words in lastWords can't appear in the first positions
+  let q = shuffle(available);
+  // Move any words that appeared recently to later in the queue
+  lastWords.forEach((lw, gapIdx) => {
+    const minPos = lastWords.length - gapIdx; // how far in future to push it
+    const pos = q.findIndex(w => w.word === lw);
+    if (pos !== -1 && pos < minPos) {
+      const [removed] = q.splice(pos, 1);
+      q.splice(Math.max(minPos, q.length), 0, removed);
+    }
+  });
+  return q;
+}
+
+function pickNextWord() {
+  if (wordQueue.length === 0) wordQueue = buildQueue();
+  currentWord = wordQueue.shift();
+  // Track last 3 words for gap enforcement
+  lastWords = [currentWord.word, ...lastWords].slice(0, 3);
   document.getElementById('gameWord').textContent = currentWord.word;
   document.getElementById('foundTitle').textContent =
     selectedMode === 1 ? 'Synonyms found' : selectedMode === 2 ? 'Antonyms found' : 'Words found';
@@ -409,37 +418,38 @@ function pickNewWord() {
   else buildMode3();
 }
 
-// ── Mode 1: pick synonym ──────────────────────────────────────────
+// ── Mode 1: find synonym ──────────────────────────────────────────
 function buildMode1() {
   document.getElementById('gameInstruction').textContent = 'Find the synonym →';
   const grid = document.getElementById('m1grid');
   grid.innerHTML = '';
 
-  const correctSyns = currentWord.syn.filter(s => !found.has('syn:'+s));
-  if (correctSyns.length === 0) { pickNewWord(); return; }
-  const correct = correctSyns[Math.floor(Math.random() * correctSyns.length)];
-
-  // Build distractors: antonyms of this word + synonyms of OTHER words
+  // Pick ONE correct synonym to present (not already found)
+  const available = currentWord.syn.filter(s => !found.has('syn:'+s));
+  if (available.length === 0) { pickNextWord(); return; }
+  const correct = available[Math.floor(Math.random() * available.length)];
   const distractors = buildDistractors(correct, currentWord.ant, 'syn');
-
   const options = shuffle([correct, ...distractors.slice(0, 5)]);
+
   options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'opt';
     btn.textContent = opt;
-    btn.onclick = () => handleOpt1(opt, correct, btn);
+    const parentRef = currentWord; // capture for closure
+    btn.onclick = () => handleOpt1(opt, correct, btn, parentRef);
     grid.appendChild(btn);
   });
 }
 
-function handleOpt1(chosen, correct, btn) {
+function handleOpt1(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('syn:'+correct);
     finalScore++;
     document.getElementById('scoreVal').textContent = finalScore;
-    addFoundChip(correct, false);
-    setTimeout(buildMode1, 700);
+    addFoundChip(correct, false, parentRef);
+    // Always move to a NEW word after each correct pick
+    setTimeout(pickNextWord, 700);
   } else {
     btn.classList.add('wrong');
     penalise();
@@ -447,37 +457,37 @@ function handleOpt1(chosen, correct, btn) {
   }
 }
 
-// ── Mode 2: pick antonym ──────────────────────────────────────────
+// ── Mode 2: find antonym ──────────────────────────────────────────
 function buildMode2() {
   document.getElementById('gameInstruction').textContent = 'Find the antonym ↔';
   const grid = document.getElementById('m2grid');
   grid.innerHTML = '';
 
-  const correctAnts = currentWord.ant.filter(a => !found.has('ant:'+a));
-  if (correctAnts.length === 0) { pickNewWord(); return; }
-  const correct = correctAnts[Math.floor(Math.random() * correctAnts.length)];
-
-  // Distractors: synonyms of this word + antonyms of OTHER words
+  const available = currentWord.ant.filter(a => !found.has('ant:'+a));
+  if (available.length === 0) { pickNextWord(); return; }
+  const correct = available[Math.floor(Math.random() * available.length)];
   const distractors = buildDistractors(correct, currentWord.syn, 'ant');
-
   const options = shuffle([correct, ...distractors.slice(0, 5)]);
+
   options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'opt';
     btn.textContent = opt;
-    btn.onclick = () => handleOpt2(opt, correct, btn);
+    const parentRef = currentWord;
+    btn.onclick = () => handleOpt2(opt, correct, btn, parentRef);
     grid.appendChild(btn);
   });
 }
 
-function handleOpt2(chosen, correct, btn) {
+function handleOpt2(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('ant:'+correct);
     finalScore++;
     document.getElementById('scoreVal').textContent = finalScore;
-    addFoundChip(correct, true);
-    setTimeout(buildMode2, 700);
+    addFoundChip(correct, true, parentRef);
+    // Always move to a NEW word after each correct pick
+    setTimeout(pickNextWord, 700);
   } else {
     btn.classList.add('wrong');
     penalise();
@@ -496,7 +506,6 @@ function buildMode3() {
   document.getElementById('hintDisplay').textContent = '';
   document.getElementById('hintBtn').disabled = false;
 
-  // Get targets not yet found
   if (typeSub === 1) {
     m3targets = currentWord.syn.filter(s => !found.has('syn:'+s));
     badge.textContent = 'TYPE A SYNONYM';
@@ -509,7 +518,7 @@ function buildMode3() {
     document.getElementById('m3instruction').textContent = 'Type an antonym and press Enter · Wrong = −5 seconds';
   }
 
-  if (m3targets.length === 0) { pickNewWord(); return; }
+  if (m3targets.length === 0) { pickNextWord(); return; }
   m3current = Math.floor(Math.random() * m3targets.length);
   input.value = '';
   input.focus();
@@ -521,12 +530,11 @@ function submitTyped() {
   const typed = input.value.trim().toLowerCase();
   if (!typed) return;
 
-  const target = m3targets[m3current];
-  // Accept if typed matches any valid target (not just the "current" one shown by hint)
   const validTargets = typeSub === 1
     ? currentWord.syn.filter(s => !found.has('syn:'+s))
     : currentWord.ant.filter(a => !found.has('ant:'+a));
   const match = validTargets.find(t => t.toLowerCase() === typed);
+  const parentRef = currentWord;
 
   if (match) {
     input.className = 'type-input ok';
@@ -534,19 +542,16 @@ function submitTyped() {
     found.add(key);
     finalScore++;
     document.getElementById('scoreVal').textContent = finalScore;
-    addFoundChip(match, typeSub === 2);
+    addFoundChip(match, typeSub === 2, parentRef);
     hintUsed = false;
     document.getElementById('hintDisplay').textContent = '';
     document.getElementById('hintBtn').disabled = false;
-    setTimeout(buildMode3, 600);
+    // Move to new word after each correct answer (same as modes 1 and 2)
+    setTimeout(pickNextWord, 600);
   } else {
     input.className = 'type-input bad';
     penalise();
-    setTimeout(() => {
-      input.className = 'type-input';
-      input.value = '';
-      input.focus();
-    }, 500);
+    setTimeout(() => { input.className = 'type-input'; input.value = ''; input.focus(); }, 500);
   }
 }
 
@@ -560,9 +565,6 @@ function showTypeHint() {
 
 // ── Helpers ────────────────────────────────────────────────────────
 function buildDistractors(correct, sameWordList, type) {
-  // Gather plausible wrong answers:
-  //  - synonyms or antonyms from OTHER words (not the current one)
-  //  - exclude the correct answer and the other list for this word
   const exclude = new Set([correct, ...sameWordList]);
   const pool = [];
   WORDS.forEach(w => {
@@ -576,19 +578,34 @@ function buildDistractors(correct, sameWordList, type) {
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
 }
 
-function addFoundChip(word, isAnt) {
+// addFoundChip — stores parentRef at creation time so it never goes stale
+function addFoundChip(word, isAnt, parentRef) {
+  // Record for post-game summary
+  foundItems.push({ word, isAnt, parent: parentRef });
+
   const chip = document.createElement('span');
   chip.className = 'found-chip' + (isAnt ? ' ant-chip' : '');
   chip.textContent = word;
-  chip.title = isAnt ? 'Antonym' : 'Synonym';
-  chip.onclick = () => showLocalDefModal(currentWord.word, currentWord.def, currentWord.ex);
+  chip.title = isAnt ? 'Antonym of ' + parentRef.word : 'Synonym of ' + parentRef.word;
+  chip.onclick = () => showWordModal(word, isAnt, parentRef);
   document.getElementById('foundChips').appendChild(chip);
+}
+
+// showWordModal — shows the answer word, its relationship to the parent, then parent's def/ex
+function showWordModal(word, isAnt, parentRef) {
+  const rel = isAnt ? 'antonym' : 'synonym';
+  const relOf = isAnt ? 'opposite of' : 'synonym of';
+  showLocalDefModal(
+    word,
+    `"${word}" is a ${rel} of "${parentRef.word}" — ${relOf}: ${parentRef.word.toLowerCase()}.\n${parentRef.def}`,
+    parentRef.ex
+  );
 }
 
 function penalise() {
@@ -621,7 +638,7 @@ function runTimer() {
 
 function updateRing() {
   const c = 194.8;
-  document.getElementById('timerCircle').style.strokeDashoffset = c - (timeLeft / 60) * c;
+  document.getElementById('timerCircle').style.strokeDashoffset = c - (timeLeft/60)*c;
 }
 
 function useExtraTime() {
@@ -652,39 +669,41 @@ function endGame() {
     total >= 6  ? 'Good effort — keep building your vocabulary!' :
     'Keep practising — every session helps!';
 
-  // Reconstruct found items for result display
+  // ── Found items: clickable chips with correct parent context ──
   const foundEl = document.getElementById('resultFound');
   foundEl.innerHTML = '';
-  found.forEach(key => {
-    const [type, word] = key.split(':');
+  foundItems.forEach(item => {
     const chip = document.createElement('span');
-    chip.className = 'found-chip' + (type==='ant' ? ' ant-chip' : '');
-    chip.textContent = word;
+    chip.className = 'found-chip' + (item.isAnt ? ' ant-chip' : '');
+    chip.textContent = item.word;
+    chip.title = (item.isAnt ? 'Antonym' : 'Synonym') + ' of ' + item.parent.word;
+    chip.style.cursor = 'pointer';
+    chip.onclick = () => showWordModal(item.word, item.isAnt, item.parent);
     foundEl.appendChild(chip);
   });
 
-  // Missed words (words in the bank that have unfound synonyms/antonyms)
-  let missed = [];
-  if (selectedMode === 1 || selectedMode === 3) {
-    WORDS.forEach(w => w.syn.forEach(s => { if (!found.has('syn:'+s)) missed.push(s); }));
-  }
-  if (selectedMode === 2 || selectedMode === 3) {
-    WORDS.forEach(w => w.ant.forEach(a => { if (!found.has('ant:'+a)) missed.push(a); }));
-  }
-  missed = shuffle(missed).slice(0, 12); // show a reasonable sample
+  // ── Missed items: also clickable with correct parent context ──
   const missedEl = document.getElementById('missedChips');
   missedEl.innerHTML = '';
+  const type = selectedMode === 2 ? 'ant' : 'syn';
+  let missed = [];
+  WORDS.forEach(w => {
+    const list = type === 'syn' ? w.syn : w.ant;
+    list.forEach(a => {
+      if (!found.has(type+':'+a)) {
+        missed.push({ word: a, isAnt: type==='ant', parent: w });
+      }
+    });
+  });
+  missed = shuffle(missed).slice(0, 12);
   if (missed.length > 0) {
     document.getElementById('missedTitle').textContent = 'Some you missed';
-    missed.forEach(w => {
+    missed.forEach(item => {
       const chip = document.createElement('span');
       chip.className = 'missed-chip';
-      chip.textContent = w;
-      // Find which word this belongs to for the modal
-      chip.onclick = () => {
-        const parent = WORDS.find(entry => entry.syn.includes(w) || entry.ant.includes(w));
-        if (parent) showLocalDefModal(parent.word, parent.def, parent.ex);
-      };
+      chip.textContent = item.word;
+      chip.style.cursor = 'pointer';
+      chip.onclick = () => showWordModal(item.word, item.isAnt, item.parent);
       missedEl.appendChild(chip);
     });
   } else {
@@ -727,6 +746,7 @@ document.addEventListener('keydown', e => {
 // ── Boot ───────────────────────────────────────────────────────────
 selectMode(1);
 switchWsLb(1);
+
 </script>
 </body>
 </html>

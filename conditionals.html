@@ -243,7 +243,7 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
     </div>
     <div id="practiceBar" style="display:none;width:100%;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:.5rem;background:var(--gold-dim);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:.55rem 1rem;">
       <span style="font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">🎓 Practice — no time limit</span>
-      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;border-color:var(--gold);color:var(--gold)" onclick="finishPractice()">Finish practice ✕</button>
+      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;border-color:var(--gold);color:var(--gold)" onclick="finishPractice(false)">Finish practice ✕</button>
     </div>
 
     <!-- IF clause card -->
@@ -273,6 +273,26 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
       <div id="fbRule" class="fb-rule"></div>
       <div id="fbWrong" class="fb-wrong" style="display:none"></div>
       <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <!-- Practice summary — shown after completing all 10 practice questions -->
+  <div id="practiceSummary" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+    <div style="display:flex;align-items:center;width:100%;gap:.5rem">
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin:0;flex:1;text-align:center">Practice complete 🎓</h2>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;text-align:center;margin:0" id="practiceSummarySubtitle"></p>
+    <div class="review-grid" id="practiceReviewGrid" style="max-height:55vh"></div>
+    <!-- Feedback panel for practice summary item clicks -->
+    <div class="feedback-panel" id="practiceFeedbackPanel" style="display:none;width:100%;max-width:500px">
+      <div id="pFbType" class="fb-type"></div>
+      <div id="pFbRule" class="fb-rule"></div>
+      <div id="pFbWrong" class="fb-wrong" style="display:none"></div>
+      <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" onclick="document.getElementById('practiceFeedbackPanel').style.display='none'">Close</button>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+      <button class="btn-ghost" onclick="practiceAgain()">Practice again</button>
+      <button class="btn-ghost" onclick="hidePracticeSummary()">← Back to types</button>
     </div>
   </div>
 
@@ -1819,6 +1839,8 @@ function startPractice(type) {
   practiceMode = true;
   practiceType = type;
   document.getElementById('practiceMenu').style.display = 'none';
+  document.getElementById('practiceSummary').style.display = 'none';
+  document.getElementById('practiceFeedbackPanel').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
   // Hide the scored-mode difficulty tabs — not relevant in practice
   const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
@@ -1826,14 +1848,94 @@ function startPractice(type) {
   initRound();
 }
 
-function finishPractice() {
+// finishPractice(showSummary) — called in two ways:
+//  • showSummary=true  → after completing all 10 questions naturally → show review
+//  • showSummary=false → player clicked "Finish ✕" mid-session → return to menu
+function finishPractice(showSummary) {
   clearInterval(timerInterval);
+  const savedType = practiceType;
   practiceMode = false;
   practiceType = null;
   // Restore the difficulty tabs
   const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
   if (tabBar) tabBar.style.display = '';
   document.getElementById('gameUI').style.display = 'none';
+  document.getElementById('practiceFeedbackPanel').style.display = 'none';
+
+  if (showSummary && results.length > 0) {
+    showPracticeSummary(savedType);
+  } else {
+    document.getElementById('practiceMenu').style.display = 'flex';
+  }
+}
+
+function showPracticeSummary(typeKey) {
+  const typeInfo = TYPES[typeKey] || {};
+  document.getElementById('practiceSummarySubtitle').textContent =
+    `${typeInfo.label || typeKey} — ${results.length} sentence${results.length===1?'':'s'}`;
+
+  const grid = document.getElementById('practiceReviewGrid');
+  grid.innerHTML = '';
+  results.forEach((r, idx) => {
+    const type = TYPES[r.q.t];
+    const el = document.createElement('div');
+    // In practice all answers are either correct or wrong (no skips)
+    el.className = 'review-item ' + (r.isCorrect ? 'correct' : 'wrong');
+    // Show the complete sentence in its correct form regardless of what was chosen
+    const fullSentence = r.q.reversed
+      ? `"${r.q.if} ${r.q.c}"`
+      : `"${r.q.if} ${r.q.c}"`;
+    el.innerHTML = `
+      <div class="rv-sentence">${r.q.reversed
+        ? '"' + r.q.if + ' <strong>' + r.q.c + '</strong>"'
+        : '"' + r.q.if + ' <strong>' + r.q.c + '</strong>"'
+      }</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span class="type-badge" style="background:${type.color};font-size:.5rem;padding:.15rem .5rem">${type.label}</span>
+        <span class="rv-tag" style="color:${r.isCorrect?'var(--correct)':'var(--wrong)'}">${r.isCorrect?'✓ correct':'✗ wrong'}</span>
+      </div>`;
+    // Click shows the same info as during the game
+    el.addEventListener('click', () => showPracticeFeedback(r));
+    grid.appendChild(el);
+  });
+
+  document.getElementById('practiceSummary').style.display = 'flex';
+}
+
+// Show the feedback panel inside the practice summary — same info as during gameplay
+function showPracticeFeedback(r) {
+  const type = TYPES[r.q.t];
+  const panel = document.getElementById('practiceFeedbackPanel');
+  panel.style.display = 'flex';
+  document.getElementById('pFbType').textContent = type.label;
+  document.getElementById('pFbType').style.color = type.color;
+  let ruleHtml = `<strong>${r.isCorrect ? '✓ Correct!' : '✗ Not quite.'}</strong> ${type.rule}`;
+  if (!r.isCorrect) {
+    document.getElementById('pFbWrong').style.display = 'block';
+    document.getElementById('pFbWrong').textContent = 'Correct answer: "' + r.q.c + '"';
+  } else {
+    document.getElementById('pFbWrong').style.display = 'none';
+  }
+  if (r.q.note) {
+    ruleHtml += '<br><span style="color:var(--muted);font-size:.82rem">' + r.q.note + '</span>';
+  }
+  document.getElementById('pFbRule').innerHTML = ruleHtml;
+  // Scroll the panel into view
+  setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'nearest' }), 80);
+}
+
+function hidePracticeSummary() {
+  document.getElementById('practiceSummary').style.display = 'none';
+  document.getElementById('practiceFeedbackPanel').style.display = 'none';
+  document.getElementById('practiceMenu').style.display = 'flex';
+}
+
+function practiceAgain() {
+  document.getElementById('practiceSummary').style.display = 'none';
+  document.getElementById('practiceFeedbackPanel').style.display = 'none';
+  // Re-enter the same type immediately
+  const menuDisplay = document.getElementById('practiceMenu');
+  // startPractice needs the type — read it from the subtitle or just re-show menu
   document.getElementById('practiceMenu').style.display = 'flex';
 }
 
@@ -1998,7 +2100,7 @@ function updateTimer(){
 // ── Load question ────────────────────────────────────────────────────
 function loadQuestion(){
   if(current>=roundQs.length){
-    if(practiceMode){ finishPractice(); return; } // shouldn't happen but safe fallback
+    if(practiceMode){ finishPractice(false); return; } // shouldn't happen but safe fallback
     clearInterval(timerInterval); endRound(); return;
   }
   const q=roundQs[current];
@@ -2186,10 +2288,9 @@ function showFeedback(correct, q, chose, pts){
 
 function nextQuestion(){
   current++;
-  // In practice mode: once all 10 questions are done, go back to the
-  // practice menu rather than ending with the regular scored end-card.
+  // In practice mode: once all 10 questions are done, show the summary
   if (practiceMode && current >= roundQs.length) {
-    finishPractice();
+    finishPractice(true);
     return;
   }
   loadQuestion();
