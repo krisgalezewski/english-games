@@ -1865,18 +1865,22 @@ function switchEndDiff(){
 function initRound(){
   // ── Practice mode branch ────────────────────────────────────────
   if (practiceMode && practiceType) {
-    // Pick ALL questions of the chosen type, shuffle them, use them
-    // as an infinite pool — nextQuestion wraps around when exhausted.
+    // Pick exactly 10 questions from this conditional type, truly
+    // randomised each time so entering the same type twice gives
+    // a different set. freshRandomIndices uses markSeen under the
+    // hood to avoid seeing the same questions back-to-back across
+    // sessions, but still cycles through all 20 over time.
+    const PRACTICE_SIZE = 10;
     const typePool = ALL_QUESTIONS.filter(q => q.t === practiceType);
-    const idxs = freshRandomIndices('practice_'+practiceType, typePool, typePool.length);
+    const idxs = freshRandomIndices('practice_'+practiceType, typePool, PRACTICE_SIZE);
     roundQs = idxs.map(i => typePool[i]);
     current = 0; score = 0; correct = 0; streak = 0; results = [];
     document.getElementById('endCard').style.display = 'none';
     // Hide timer, show practice bar
     document.getElementById('timerArea').style.display = 'none';
     document.getElementById('practiceBar').style.display = 'flex';
-    // Hide dots (no fixed round length in practice)
-    document.getElementById('dots').innerHTML = '';
+    // Show 10 progress dots so the student can see where they are
+    buildDots();
     clearInterval(timerInterval); // no timer in practice
     loadQuestion();
     return; // skip the scored-mode setup below
@@ -2182,12 +2186,11 @@ function showFeedback(correct, q, chose, pts){
 
 function nextQuestion(){
   current++;
-  // In practice mode, loop back to the start when all questions are done
+  // In practice mode: once all 10 questions are done, go back to the
+  // practice menu rather than ending with the regular scored end-card.
   if (practiceMode && current >= roundQs.length) {
-    const typePool = ALL_QUESTIONS.filter(q => q.t === practiceType);
-    const idxs = freshRandomIndices('practice_'+practiceType+'_loop', typePool, typePool.length);
-    roundQs = idxs.map(i => typePool[i]);
-    current = 0;
+    finishPractice();
+    return;
   }
   loadQuestion();
 }
