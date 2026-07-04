@@ -295,9 +295,11 @@ let currentWord, found, timer, timeLeft, finalScore, hintUsed, extraTimeUsed;
 // Ensures no word appears twice in a row and a gap of ≥3 between repeats.
 let wordQueue = [];
 let lastWords = [];       // recently shown words (last 3), used to enforce gap
-// Track items seen in this game round for post-game display
-// Each entry: { word (string), answer (string), isAnt (bool), parentWord (WORDS entry) }
+// foundItems: every item found this session, for post-game display
+// allFound: permanent record of every unique key found — never resets even when
+// the word pool exhausts and 'found' is cleared for recycling
 let foundItems = [];
+let allFound = new Set(); // permanent, never cleared
 
 const MODE_DESC = {
   1: 'A word is shown. Pick its <strong>synonym</strong> (a word with a similar meaning) from the options. Wrong answer = −5 seconds.',
@@ -343,6 +345,7 @@ function switchMode(n) {
 function startGame() {
   found = new Set();
   foundItems = [];
+  allFound = new Set();
   wordQueue = [];
   lastWords = [];
   timeLeft = 60;
@@ -445,10 +448,8 @@ function handleOpt1(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('syn:'+correct);
-    finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
+    if (!allFound.has('syn:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
     addFoundChip(correct, false, parentRef);
-    // Always move to a NEW word after each correct pick
     setTimeout(pickNextWord, 700);
   } else {
     btn.classList.add('wrong');
@@ -483,10 +484,8 @@ function handleOpt2(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('ant:'+correct);
-    finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
+    if (!allFound.has('ant:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
     addFoundChip(correct, true, parentRef);
-    // Always move to a NEW word after each correct pick
     setTimeout(pickNextWord, 700);
   } else {
     btn.classList.add('wrong');
@@ -540,13 +539,11 @@ function submitTyped() {
     input.className = 'type-input ok';
     const key = typeSub === 1 ? 'syn:'+match : 'ant:'+match;
     found.add(key);
-    finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
+    if (!allFound.has(key)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
     addFoundChip(match, typeSub === 2, parentRef);
     hintUsed = false;
     document.getElementById('hintDisplay').textContent = '';
     document.getElementById('hintBtn').disabled = false;
-    // Move to new word after each correct answer (same as modes 1 and 2)
     setTimeout(pickNextWord, 600);
   } else {
     input.className = 'type-input bad';
@@ -584,8 +581,13 @@ function shuffle(arr) {
   return a;
 }
 
-// addFoundChip — stores parentRef at creation time so it never goes stale
+// addFoundChip — stores parentRef at creation time so it never goes stale.
+// allFound guards against double-counting when the word pool resets mid-game.
 function addFoundChip(word, isAnt, parentRef) {
+  const key = (isAnt ? 'ant:' : 'syn:') + word;
+  if (allFound.has(key)) return; // already found earlier this session — skip
+  allFound.add(key);
+
   // Record for post-game summary
   foundItems.push({ word, isAnt, parent: parentRef });
 
@@ -599,11 +601,10 @@ function addFoundChip(word, isAnt, parentRef) {
 
 // showWordModal — shows the answer word, its relationship to the parent, then parent's def/ex
 function showWordModal(word, isAnt, parentRef) {
-  const rel = isAnt ? 'antonym' : 'synonym';
-  const relOf = isAnt ? 'opposite of' : 'synonym of';
+  const relLabel = isAnt ? 'Antonym of' : 'Synonym of';
   showLocalDefModal(
     word,
-    `"${word}" is a ${rel} of "${parentRef.word}" — ${relOf}: ${parentRef.word.toLowerCase()}.\n${parentRef.def}`,
+    `${relLabel}: ${parentRef.word}.\n${parentRef.def}`,
     parentRef.ex
   );
 }
@@ -661,12 +662,13 @@ function endGame() {
   document.getElementById('phase-game').style.display = 'none';
   document.getElementById('phase-result').style.display = 'flex';
 
-  const total = finalScore;
-  document.getElementById('resultHeadline').textContent = `${total} word${total===1?'':'s'} found!`;
+  const foundCount = foundItems.length; // foundItems accumulates throughout the whole game;
+  // found.size would be wrong if the word pool was exhausted and reset mid-game
+  document.getElementById('resultHeadline').textContent = `${foundCount} word${foundCount===1?'':'s'} found!`;
   document.getElementById('resultMsg').textContent =
-    total >= 20 ? '🎉 Outstanding — brilliant vocabulary!' :
-    total >= 12 ? '👏 Great work!' :
-    total >= 6  ? 'Good effort — keep building your vocabulary!' :
+    foundCount >= 20 ? '🎉 Outstanding — brilliant vocabulary!' :
+    foundCount >= 12 ? '👏 Great work!' :
+    foundCount >= 6  ? 'Good effort — keep building your vocabulary!' :
     'Keep practising — every session helps!';
 
   // ── Found items: clickable chips with correct parent context ──
@@ -710,7 +712,7 @@ function endGame() {
     document.getElementById('missedTitle').textContent = '';
   }
 
-  document.getElementById('submitArea').dataset.score = total * 10;
+  document.getElementById('submitArea').dataset.score = finalScore * 10;
   switchWsLb(selectedMode);
 }
 
