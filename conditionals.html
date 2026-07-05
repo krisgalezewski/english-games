@@ -218,7 +218,7 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 
   <!-- Game UI -->
   <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <!-- Difficulty tabs -->
+    <!-- Difficulty tabs + End game button -->
     <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
       <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
         <button class="diff-tab active" id="tabAGame" onclick="setDiff('beginner')">Beginner</button>
@@ -226,6 +226,7 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
         <button class="diff-tab"        id="tabCGame" onclick="setDiff('advanced')">Advanced</button>
         <button class="diff-tab"        id="tabDGame" onclick="setDiff('expert')">Expert</button>
       </div>
+      <button id="endGameBtn" class="btn-ghost" style="font-size:.75rem;padding:.35rem .8rem" onclick="endGameEarly()">✕ End game</button>
       <div class="dots" id="dots"></div>
     </div>
 
@@ -1842,6 +1843,9 @@ function startPractice(type) {
   document.getElementById('practiceSummary').style.display = 'none';
   document.getElementById('practiceFeedbackPanel').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';
+  // Hide the scored-mode End game button — practice has its own "Finish practice ✕"
+  const endBtn = document.getElementById('endGameBtn');
+  if (endBtn) endBtn.style.display = 'none';
   // Hide the scored-mode difficulty tabs — not relevant in practice
   const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
   if (tabBar) tabBar.style.display = 'none';
@@ -1859,6 +1863,9 @@ function finishPractice(showSummary) {
   // Restore the difficulty tabs
   const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
   if (tabBar) tabBar.style.display = '';
+  // Restore the scored-mode End game button
+  const endBtn = document.getElementById('endGameBtn');
+  if (endBtn) endBtn.style.display = '';
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('practiceFeedbackPanel').style.display = 'none';
 
@@ -1955,6 +1962,15 @@ function switchLb(d){
   });
   renderLeaderboard('conditionals_'+d,'lbBody');
 }
+// Ends the current scored game immediately and returns to the main menu.
+// Not available in practice mode (that uses "Finish practice ✕" instead).
+function endGameEarly() {
+  clearInterval(timerInterval);
+  document.getElementById('gameUI').style.display   = 'none';
+  document.getElementById('endCard').style.display  = 'none';
+  document.getElementById('startScreen').style.display = 'flex';
+}
+
 function switchEndDiff(){
   // Return to the start screen so the player can pick whichever level
   // they want, rather than automatically cycling to the next one.

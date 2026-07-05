@@ -49,6 +49,18 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 .type-input.ok  { border-color:var(--correct); }
 .type-input.bad { border-color:var(--wrong); animation:shake .35s; }
 
+/* Letter boxes — shown immediately when word appears in Type It mode */
+.letter-boxes { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
+.letter-box {
+  width:2rem; height:2.4rem; border-radius:4px;
+  border:2px solid var(--border2); background:var(--surface2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
+  color:var(--text); transition:border-color .2s, background .2s;
+}
+.letter-box.revealed { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
+.letter-box.empty { border-style:dashed; }
+
 /* found list */
 .found-area { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; }
 .found-area h3 { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
@@ -165,14 +177,17 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <div style="text-align:center">
       <span class="word-type-badge" id="m3badge"></span>
     </div>
-    <div class="instruction" id="m3instruction">Type and press Enter · Wrong = −5 seconds</div>
+    <!-- Letter boxes: first letter always revealed, remaining shown as empty boxes -->
+    <div class="letter-boxes" id="letterBoxes"></div>
+    <div class="instruction" id="m3instruction">Type and press Enter</div>
     <div class="type-input-wrap">
       <input class="type-input" id="m3input" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type here…"/>
       <button class="btn-primary" onclick="submitTyped()">→</button>
     </div>
-    <div id="hintArea" style="display:flex;align-items:center;gap:.75rem">
-      <button class="btn-ghost" id="hintBtn" onclick="showTypeHint()">💡 Hint (first letter)</button>
-      <span id="hintDisplay" style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold);min-width:2rem"></span>
+    <div id="hintArea" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:center">
+      <button class="btn-ghost" id="hintBtn"      onclick="showHint()">💡 Hint (−3 pts)</button>
+      <button class="btn-ghost" id="extraHintBtn" onclick="showExtraHint()">🔍 Extra hint (−5 pts)</button>
+      <button class="btn-ghost" id="skipBtn"      onclick="skipTypeWord()">⏭ Skip (−8 pts)</button>
     </div>
   </div>
 
@@ -287,10 +302,292 @@ const WORDS = [
   { word:'wise',        syn:['sensible','prudent','judicious'],      ant:['foolish','naive','imprudent'],          def:'Having experience, knowledge, and good judgement.',                          ex:'It would be wise to save some money for emergencies.' },
 ];
 
-// ── State ─────────────────────────────────────────────────────────
+// Example sentences for every synonym and antonym in the bank.
+// Used by showWordModal so clicking 'risky' shows a sentence about 'risky',
+// not the parent word 'dangerous'.
+const WORD_EXAMPLES = {
+  plentiful:'Fresh fruit is plentiful in summer markets.',
+  ample:'There is ample time to finish the project before the deadline.',
+  copious:'She took copious notes during the lecture.',
+  scarce:'Clean water is scarce in many parts of the world.',
+  rare:'It is rare to see a shooting star in the city.',
+  meagre:'The refugees survived on meagre rations for weeks.',
+  precise:'The surgeon made a precise incision with steady hands.',
+  exact:'Can you give me the exact time of the meeting?',
+  correct:'She gave the correct answer without hesitating.',
+  inaccurate:'The report contained several inaccurate figures.',
+  wrong:'He realised he had taken the wrong turning.',
+  imprecise:'His instructions were too imprecise to follow.',
+  old:'The old bridge was finally demolished last year.',
+  archaic:'The law uses archaic language that few people understand.',
+  antique:'She inherited an antique clock from her grandmother.',
+  modern:'The building\'s modern design stands out among the older ones.',
+  contemporary:'Contemporary art often challenges traditional ideas.',
+  new:'They moved into a new apartment on the edge of town.',
+  worried:'He looked worried when he heard the news.',
+  nervous:'He was nervous before speaking in public.',
+  apprehensive:'She felt apprehensive about starting the new job.',
+  calm:'She took a deep breath and tried to stay calm.',
+  relaxed:'He was completely relaxed after the holiday.',
+  confident:'She walked into the room looking confident and prepared.',
+  conceited:'He became conceited after receiving so much praise.',
+  haughty:'Her haughty manner put people off.',
+  pompous:'The pompous speech lasted twice as long as necessary.',
+  humble:'Despite his success, he remained humble and gracious.',
+  modest:'She was modest about her achievements.',
+  meek:'The meek employee never complained, even when treated unfairly.',
+  brave:'It was brave of him to speak out against the injustice.',
+  daring:'The daring rescue was carried out in terrible conditions.',
+  courageous:'The firefighters made a courageous decision to enter the building.',
+  timid:'The timid student rarely put her hand up in class.',
+  cowardly:'It was cowardly to blame someone else for his mistake.',
+  fearful:'The child was fearful of the dark.',
+  short:'The meeting was short but productive.',
+  concise:'Please write a concise summary of the report.',
+  succinct:'Her answer was succinct and to the point.',
+  long:'The long journey left everyone exhausted.',
+  lengthy:'The professor gave a lengthy explanation of the theory.',
+  verbose:'His verbose emails were difficult to read quickly.',
+  careful:'Be careful when handling fragile equipment.',
+  wary:'She was wary of strangers after the incident.',
+  prudent:'It was prudent to save money before making the investment.',
+  reckless:'His reckless driving put everyone at risk.',
+  careless:'A careless mistake in the report cost them the contract.',
+  hasty:'A hasty decision can lead to serious regrets.',
+  happy:'The children were happy playing in the garden.',
+  joyful:'The reunion was a joyful occasion for the whole family.',
+  upbeat:'She remained upbeat despite all the setbacks.',
+  miserable:'He was miserable after losing his job.',
+  gloomy:'The weather was gloomy all weekend.',
+  sad:'It was a sad day when the factory finally closed.',
+  complicated:'The instructions were far too complicated to follow easily.',
+  intricate:'The watch has an intricate mechanism with hundreds of tiny parts.',
+  elaborate:'They put together an elaborate plan to solve the problem.',
+  simple:'The solution turned out to be surprisingly simple.',
+  straightforward:'The process is straightforward once you know the steps.',
+  basic:'He only had basic knowledge of the subject.',
+  brutal:'The conditions in the camp were brutal.',
+  harsh:'The judge gave a harsh sentence for the crime.',
+  ruthless:'The ruthless businessman cared only about profit.',
+  kind:'She was kind enough to offer her seat to the elderly woman.',
+  gentle:'He spoke in a gentle tone to calm the frightened child.',
+  merciful:'The court was merciful and gave him a second chance.',
+  inquisitive:'The inquisitive student asked question after question.',
+  nosy:'The nosy neighbour always wanted to know everyone\'s business.',
+  interested:'She seemed genuinely interested in what he had to say.',
+  indifferent:'He was completely indifferent to her opinion.',
+  uninterested:'The student looked uninterested and stared out of the window.',
+  bored:'The children were bored after ten minutes of waiting.',
+  hazardous:'Working with chemicals can be hazardous without proper training.',
+  risky:'Starting a business is risky, but it can be rewarding.',
+  perilous:'The climbers faced a perilous descent in the blizzard.',
+  safe:'The neighbourhood is safe enough to walk alone at night.',
+  harmless:'The spider looks scary but is completely harmless.',
+  secure:'The building is secure with cameras on every entrance.',
+  resolute:'She was resolute in her decision to quit and never looked back.',
+  persistent:'His persistent efforts finally paid off.',
+  tenacious:'She was tenacious and refused to give up despite the obstacles.',
+  irresolute:'An irresolute leader makes decisions difficult for the whole team.',
+  hesitant:'He was hesitant to share his opinion in front of the group.',
+  wavering:'Her wavering commitment made the project difficult to complete.',
+  keen:'He is keen to learn and always does extra research.',
+  enthusiastic:'The volunteers were enthusiastic about the project from the start.',
+  avid:'She is an avid reader and finishes a book every week.',
+  reluctant:'She was reluctant to admit she had made a mistake.',
+  unwilling:'He was unwilling to apologise even though he was wrong.',
+  apathetic:'Young people often feel apathetic about politics.',
+  huge:'The company made a huge profit last quarter.',
+  vast:'The desert stretched out across a vast, empty landscape.',
+  immense:'The task ahead seemed immense, but she was determined.',
+  tiny:'The cabin was tiny but perfectly equipped.',
+  small:'They live in a small village in the mountains.',
+  minute:'There was only a minute difference between the two scores.',
+  obvious:'The answer was obvious once she thought about it carefully.',
+  apparent:'It was apparent from his tone that he was unhappy.',
+  clear:'The instructions were clear and easy to follow.',
+  hidden:'There was a hidden door behind the bookcase.',
+  unclear:'The instructions were so unclear that nobody knew what to do.',
+  obscure:'The reference was too obscure for most readers to understand.',
+  tired:'After the long journey, he was too tired to eat.',
+  weary:'She was weary after months of working without a break.',
+  drained:'He felt completely drained after the emotional conversation.',
+  energetic:'The energetic puppy ran around the garden all afternoon.',
+  refreshed:'A short nap left her feeling refreshed and ready to continue.',
+  vigorous:'He maintained a vigorous exercise routine even in his seventies.',
+  renowned:'The chef is renowned for her creative use of local ingredients.',
+  celebrated:'The celebrated author received the prize at a formal ceremony.',
+  prominent:'She is a prominent figure in the world of environmental law.',
+  unknown:'The painting was by an unknown artist from the seventeenth century.',
+  anonymous:'The donation was made by an anonymous benefactor.',
+  delicate:'The surgery requires delicate movements and great precision.',
+  breakable:'Mark the parcel as breakable before sending it.',
+  brittle:'Old bones become brittle and more likely to fracture.',
+  sturdy:'The table was sturdy enough to stand on.',
+  robust:'The engine is robust and designed to work in extreme conditions.',
+  durable:'These shoes are made of durable leather that lasts for years.',
+  giving:'She is a giving person who always puts others first.',
+  liberal:'The university has a liberal attitude towards student expression.',
+  charitable:'The company made a charitable donation to the local food bank.',
+  stingy:'He was too stingy to leave a proper tip.',
+  selfish:'It was selfish of him to take the last piece without asking.',
+  mean:'It was mean to make fun of her in front of everyone.',
+  authentic:'The restaurant serves authentic Italian dishes.',
+  real:'She could tell the offer was real, not just talk.',
+  sincere:'He made a sincere effort to make things right.',
+  fake:'The painting turned out to be a very convincing fake.',
+  false:'She gave a false name at the hotel reception.',
+  artificial:'The flowers were artificial, but they looked very lifelike.',
+  slow:'Progress was slow due to the bad weather.',
+  steady:'She made steady progress throughout the year.',
+  incremental:'The improvements were incremental but added up over time.',
+  sudden:'There was a sudden change in the weather.',
+  abrupt:'His abrupt departure left everyone confused.',
+  rapid:'The rapid spread of the disease alarmed health officials.',
+  unassuming:'Despite his success, he remained unassuming and easy to talk to.',
+  arrogant:'His arrogant manner made it difficult to work with him.',
+  proud:'She was proud of everything her children had achieved.',
+  conceited:'He became conceited after receiving so much praise.',
+  uninformed:'Many voters remained uninformed about the key policy differences.',
+  unaware:'She was completely unaware of the problem until it was too late.',
+  uneducated:'Access to schooling meant fewer people were uneducated.',
+  knowledgeable:'She was knowledgeable about art history and guided us well.',
+  informed:'An informed public is essential for a healthy democracy.',
+  educated:'He was highly educated but had very little common sense.',
+  fair:'The referee tried to be fair to both sides.',
+  neutral:'Switzerland remained neutral during the conflict.',
+  unbiased:'We need an unbiased assessment of the situation.',
+  biased:'The coverage was clearly biased in favour of one candidate.',
+  partial:'The committee was accused of giving a partial ruling.',
+  prejudiced:'She had a prejudiced view of the neighbourhood before she visited.',
+  unavoidable:'Some disruption during the construction phase is unavoidable.',
+  certain:'It is certain that prices will rise again this year.',
+  inescapable:'The conclusion seemed inescapable given the evidence.',
+  avoidable:'Many road accidents are completely avoidable.',
+  preventable:'Most cases of the disease are preventable with vaccination.',
+  uncertain:'The outcome of the negotiation remains uncertain.',
+  clever:'She came up with a clever solution to the problem.',
+  smart:'It was smart to bring an umbrella — it rained all afternoon.',
+  bright:'He was one of the brightest students in the class.',
+  stupid:'It was stupid to leave the door unlocked.',
+  foolish:'It would be foolish to invest without doing your research first.',
+  dull:'The lecture was so dull that half the audience fell asleep.',
+  idle:'He spent an idle afternoon watching television.',
+  sluggish:'The economy remained sluggish despite the government\'s efforts.',
+  indolent:'An indolent attitude will not help you progress in your career.',
+  hardworking:'She is hardworking and always the last to leave the office.',
+  diligent:'A diligent student reviews their notes every evening.',
+  industrious:'The industrious team finished the project a week ahead of schedule.',
+  faithful:'The dog was faithful to its owner until the very end.',
+  devoted:'She was devoted to her work and rarely took time off.',
+  trustworthy:'You need to be trustworthy if people are going to rely on you.',
+  disloyal:'His disloyal behaviour cost him many friendships.',
+  treacherous:'The icy roads were treacherous in the early morning.',
+  unfaithful:'He felt betrayed when he discovered she had been unfaithful.',
+  enigmatic:'The sculptor was an enigmatic figure who rarely gave interviews.',
+  puzzling:'The sudden change in policy was puzzling to many observers.',
+  mysterious:'A mysterious package arrived with no return address.',
+  innocent:'She looked innocent, but the evidence told a different story.',
+  gullible:'He was gullible enough to believe the obvious lie.',
+  credulous:'A credulous audience will believe almost anything they read online.',
+  shrewd:'She made a shrewd investment that paid off years later.',
+  worldly:'He was worldly and well-travelled, with stories from every continent.',
+  sophisticated:'The event attracted a sophisticated crowd of collectors and critics.',
+  anxious:'He felt anxious waiting for the results to come in.',
+  uneasy:'There was an uneasy silence after the announcement.',
+  jittery:'Too much coffee made her jittery and unable to concentrate.',
+  composed:'She remained composed throughout the difficult interview.',
+  evident:'It was evident from the crowd\'s reaction that the speech had gone well.',
+  hopeful:'The team remained hopeful despite falling behind early in the game.',
+  positive:'Try to stay positive even when things are not going to plan.',
+  pessimistic:'He was pessimistic about the chances of a peaceful resolution.',
+  negative:'Her negative attitude made it hard to work alongside her.',
+  tolerant:'The school worked hard to create a tolerant and inclusive environment.',
+  impatient:'He grew impatient after waiting for over an hour.',
+  restless:'The children became restless after sitting still for so long.',
+  strange:'She had a strange feeling that something was about to happen.',
+  odd:'There was an odd smell coming from the kitchen.',
+  unusual:'It was unusual for him to be late — he was always punctual.',
+  normal:'After a few weeks, things returned to normal.',
+  ordinary:'It was an ordinary Tuesday, until the phone rang.',
+  common:'Mistakes like this are common among beginners.',
+  accurate:'The clock was accurate to within a few seconds.',
+  specific:'Can you give me a more specific time for the delivery?',
+  vague:'His answer was so vague that it was impossible to pin down.',
+  approximate:'Can you give me an approximate idea of the cost?',
+  rough:'Here is a rough estimate — the final figure may change.',
+  famous:'The painting is one of the most famous in the world.',
+  notable:'She made several notable contributions to the field of medicine.',
+  distinguished:'He was a distinguished professor with an outstanding reputation.',
+  insignificant:'The error seemed insignificant at the time but caused major problems.',
+  wealthy:'She came from a wealthy family with properties abroad.',
+  successful:'She built a highly successful career in technology.',
+  thriving:'The local restaurant scene is thriving with new openings every month.',
+  poor:'The family was too poor to afford new school uniforms.',
+  struggling:'Many small businesses are still struggling after the pandemic.',
+  failing:'The bank was failing and needed an emergency bailout.',
+  loath:'She was loath to admit that she had made a mistake.',
+  eager:'The students were eager to hear the results.',
+  willing:'He was willing to help at any time.',
+  stiff:'Her movements were stiff after sitting for so long.',
+  inflexible:'The management was inflexible about working hours.',
+  firm:'He kept a firm grip on the steering wheel in the storm.',
+  flexible:'She was flexible about which days she could come in.',
+  supple:'Regular stretching keeps the body supple and injury-free.',
+  adaptable:'You need to be adaptable when working in a fast-changing environment.',
+  impolite:'It is impolite to interrupt someone while they are speaking.',
+  offensive:'Some found his remarks offensive and demanded an apology.',
+  insolent:'The insolent reply shocked everyone in the room.',
+  polite:'He was polite and always held the door open for others.',
+  courteous:'The hotel staff were courteous and responded quickly to requests.',
+  respectful:'She was respectful towards her colleagues even during disagreements.',
+  acute:'She had an acute sense of detail that others often missed.',
+  perceptive:'A perceptive reader will notice the symbolism in the title.',
+  blunt:'He was blunt to the point of rudeness — but always honest.',
+  genuine:'Her concern for others seemed completely genuine.',
+  honest:'He was honest about his limitations from the very beginning.',
+  insincere:'The apology felt insincere and did little to repair the damage.',
+  dishonest:'It is dishonest to claim credit for someone else\'s work.',
+  refined:'She had refined taste in everything — from wine to furniture.',
+  cultured:'He was cultured and well-read, with a passion for opera.',
+  unsophisticated:'The campaign used simple, unsophisticated language to reach a wide audience.',
+  shy:'She was too shy to speak up in meetings.',
+  pressing:'There are several pressing issues that need to be resolved today.',
+  critical:'This is a critical moment for the company\'s future.',
+  immediate:'The situation requires immediate attention.',
+  unimportant:'He dismissed the complaint as unimportant.',
+  trivial:'Don\'t waste energy on trivial matters.',
+  minor:'The repair was minor and took less than an hour.',
+  ambiguous:'The contract contained several ambiguous clauses.',
+  definite:'Is there a definite date for the launch yet?',
+  active:'She leads an active lifestyle and rarely sits still.',
+  dynamic:'The new manager brought a dynamic energy to the whole team.',
+  weak:'His weak excuses did not convince anyone.',
+  lethargic:'He felt lethargic all morning and struggled to get started.',
+  exposed:'Without insurance, you are financially exposed to serious risks.',
+  defenceless:'The defenceless villages were left without any protection.',
+  susceptible:'Young children are particularly susceptible to infections.',
+  protected:'The data is fully protected by encryption.',
+  invulnerable:'No system is completely invulnerable to attack.',
+  rich:'She married into a rich family with estates in the country.',
+  affluent:'The neighbourhood was affluent, with well-maintained gardens.',
+  impoverished:'Many impoverished communities lack access to basic services.',
+  destitute:'After losing everything in the fire, the family was left destitute.',
+  sensible:'It was sensible to leave early and avoid the rush-hour traffic.',
+  judicious:'A judicious use of resources can make a big difference.',
+  imprudent:'It was imprudent to invest all your savings in a single stock.',
+  naive:'She was naive to trust a stranger with her personal details.',
+  simple_adj:'The design was elegant and simple.',
+  prosperous:'The town became prosperous after the factory opened.',
+  unassuming_adj:'He was unassuming and never boasted about his achievements.',
+};
+
+
 let selectedMode = 1;    // 1=find synonym, 2=find antonym, 3=type it
 let typeSub = 1;         // type sub-mode: 1=synonyms, 2=antonyms
-let currentWord, found, timer, timeLeft, finalScore, hintUsed, extraTimeUsed;
+let currentWord, found, timer, timeLeft, finalScore, extraTimeUsed;
+// Type It mode state
+let hint1Used = false, extraHintUsed = false, skipsLeft = 3;
+let revealedLetters = 1; // how many letters of the target are currently shown
 // Queue of words to present — rebuilt each time the pool is exhausted.
 // Ensures no word appears twice in a row and a gap of ≥3 between repeats.
 let wordQueue = [];
@@ -350,7 +647,7 @@ function startGame() {
   lastWords = [];
   timeLeft = 60;
   finalScore = 0;
-  hintUsed = false;
+  hint1Used = false; extraHintUsed = false; skipsLeft = 3; revealedLetters = 1;
   extraTimeUsed = false;
 
   const etWrap = document.getElementById('extraTimeWrap');
@@ -501,28 +798,87 @@ let m3current = 0;
 function buildMode3() {
   const badge = document.getElementById('m3badge');
   const input = document.getElementById('m3input');
-  hintUsed = false;
-  document.getElementById('hintDisplay').textContent = '';
-  document.getElementById('hintBtn').disabled = false;
+  hint1Used = false; extraHintUsed = false; revealedLetters = 1;
 
   if (typeSub === 1) {
     m3targets = currentWord.syn.filter(s => !found.has('syn:'+s));
     badge.textContent = 'TYPE A SYNONYM';
     badge.className = 'word-type-badge badge-syn';
-    document.getElementById('m3instruction').textContent = 'Type a synonym and press Enter · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Type the synonym and press Enter · Wrong = −5 seconds';
   } else {
     m3targets = currentWord.ant.filter(a => !found.has('ant:'+a));
     badge.textContent = 'TYPE AN ANTONYM';
     badge.className = 'word-type-badge badge-ant';
-    document.getElementById('m3instruction').textContent = 'Type an antonym and press Enter · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Type the antonym and press Enter · Wrong = −5 seconds';
   }
 
   if (m3targets.length === 0) { pickNextWord(); return; }
   m3current = Math.floor(Math.random() * m3targets.length);
+
+  // Reset hint buttons
+  const hintBtn = document.getElementById('hintBtn');
+  const extraHintBtn = document.getElementById('extraHintBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  hintBtn.disabled = false;
+  extraHintBtn.disabled = true; // enabled only after hint1 is used
+  skipBtn.disabled = skipsLeft <= 0;
+  skipBtn.textContent = `⏭ Skip (${skipsLeft} left)`;
+
+  buildLetterBoxes();
   input.value = '';
   input.focus();
   input.className = 'type-input';
 }
+
+// Build the letter box display — first letter always shown, rest as empty boxes
+function buildLetterBoxes() {
+  const target = m3targets[m3current];
+  const container = document.getElementById('letterBoxes');
+  container.innerHTML = '';
+  for (let i = 0; i < target.length; i++) {
+    const box = document.createElement('div');
+    if (i < revealedLetters) {
+      box.className = 'letter-box revealed';
+      box.textContent = target[i].toUpperCase();
+    } else {
+      box.className = 'letter-box empty';
+      box.textContent = '';
+    }
+    container.appendChild(box);
+  }
+}
+
+function showHint() {
+  if (hint1Used) return;
+  hint1Used = true;
+  document.getElementById('hintBtn').disabled = true;
+  document.getElementById('extraHintBtn').disabled = false;
+  // Deduct points for using hint
+  finalScore = Math.max(0, finalScore - 3);
+  document.getElementById('scoreVal').textContent = finalScore;
+  revealedLetters = 2; // reveal second letter
+  buildLetterBoxes();
+}
+
+function showExtraHint() {
+  if (!hint1Used || extraHintUsed) return;
+  extraHintUsed = true;
+  document.getElementById('extraHintBtn').disabled = true;
+  finalScore = Math.max(0, finalScore - 5);
+  document.getElementById('scoreVal').textContent = finalScore;
+  revealedLetters = 3; // reveal third letter
+  buildLetterBoxes();
+}
+
+function skipTypeWord() {
+  if (skipsLeft <= 0) return;
+  skipsLeft--;
+  finalScore = Math.max(0, finalScore - 8);
+  document.getElementById('scoreVal').textContent = finalScore;
+  setTimeout(pickNextWord, 300);
+}
+
+function showTypeHint() { showHint(); } // backwards compat alias
 
 function submitTyped() {
   const input = document.getElementById('m3input');
@@ -541,9 +897,9 @@ function submitTyped() {
     found.add(key);
     if (!allFound.has(key)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
     addFoundChip(match, typeSub === 2, parentRef);
-    hintUsed = false;
-    document.getElementById('hintDisplay').textContent = '';
+    hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;
+    document.getElementById('extraHintBtn').disabled = true;
     setTimeout(pickNextWord, 600);
   } else {
     input.className = 'type-input bad';
@@ -552,13 +908,6 @@ function submitTyped() {
   }
 }
 
-function showTypeHint() {
-  if (hintUsed) return;
-  hintUsed = true;
-  document.getElementById('hintBtn').disabled = true;
-  const target = m3targets[m3current];
-  document.getElementById('hintDisplay').textContent = target[0].toUpperCase() + ' …';
-}
 
 // ── Helpers ────────────────────────────────────────────────────────
 function buildDistractors(correct, sameWordList, type) {
@@ -599,13 +948,16 @@ function addFoundChip(word, isAnt, parentRef) {
   document.getElementById('foundChips').appendChild(chip);
 }
 
-// showWordModal — shows the answer word, its relationship to the parent, then parent's def/ex
+// showWordModal — shows the selected word, its relationship to the parent word,
+// the parent word's definition, and an example sentence FOR THE SELECTED WORD.
 function showWordModal(word, isAnt, parentRef) {
   const relLabel = isAnt ? 'Antonym of' : 'Synonym of';
+  // Look up an example sentence for this specific word (not the parent word)
+  const wordEx = WORD_EXAMPLES[word.toLowerCase()] || parentRef.ex;
   showLocalDefModal(
     word,
     `${relLabel}: ${parentRef.word}.\n${parentRef.def}`,
-    parentRef.ex
+    wordEx
   );
 }
 
