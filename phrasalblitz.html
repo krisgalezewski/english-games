@@ -254,16 +254,26 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <div class="found-chips" id="resultFound" style="justify-content:center;margin-bottom:.75rem"></div>
     <div class="missed-title" id="missedTitle"></div>
     <div class="missed-chips" id="missedChips"></div>
-    <button class="btn-ghost" style="margin-top:.5rem" onclick="resetGame()">Play again</button>
-  </div>
-  <div id="submitArea">
-    <div class="submit-row">
-      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+
+    <!-- Continue / stop decision — hidden once the player chooses stop -->
+    <div id="continueDecision" style="width:100%;text-align:center;margin-top:.5rem">
+      <p style="color:var(--text);font-size:.85rem;margin-bottom:.6rem">Continue to the next round, or stop and save your score?</p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+        <button class="btn-primary" onclick="continueGame()">Continue → next round</button>
+        <button class="btn-ghost" onclick="stopAndShowSubmit()">🏁 Stop &amp; save score</button>
+      </div>
+    </div>
+
+    <!-- Submit form — only shown once the player chooses to stop -->
+    <div id="submitArea" style="display:none;margin-top:.5rem">
+      <div class="submit-row">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>
     </div>
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem">
-    <button class="btn-ghost" onclick="resetGame()">Play again</button>
+    <button class="btn-ghost" onclick="resetGame()">Start over</button>
     <button class="btn-ghost" onclick="goToIntro()">Change mode</button>
     <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
   </div>
@@ -1304,7 +1314,7 @@ function clickParticle(p, btn, correctSet) {
     found.add(p);
     btn.classList.add('correct');
     addFoundChip(currentVerb.verb + ' ' + p, p);
-    finalScore++;
+    finalScore += 10;
     document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
     if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
@@ -1343,7 +1353,7 @@ function clickVerb(v, btn, correctSet) {
     const verbObj = VERBS.find(vb => vb.verb === v);
     const pairObj = verbObj?.pairs.find(p => p.p === currentParticle);
     addFoundChipVerb(v + ' ' + currentParticle, v + ' ' + currentParticle, pairObj || {});
-    finalScore++;
+    finalScore += 10;
     document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
     if (found.size === correctSet.size) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
@@ -1387,7 +1397,7 @@ function submitTyped() {
       found.add(val);
       inp.className = 'type-input ok';
       addFoundChip(currentVerb.verb + ' ' + val, val);
-      finalScore++;
+      finalScore += 10;
       document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
       if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
@@ -1405,7 +1415,7 @@ function submitTyped() {
       const verbObj = VERBS.find(v=>v.verb===val);
       const pairObj = verbObj?.pairs.find(p=>p.p===currentParticle);
       addFoundChipVerb(val + ' ' + currentParticle, val + ' ' + currentParticle, pairObj);
-      finalScore++;
+      finalScore += 10;
       document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
       if (found.size === correctVerbs.size) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
@@ -1529,7 +1539,7 @@ function endGame() {
       ? VERBS.filter(v => v.pairs.some(p => p.p === currentParticle)).length
       : 1;
   }
-  document.getElementById('resultHeadline').textContent = `${found.size} of ${total} found!`;
+  document.getElementById('resultHeadline').textContent = `${found.size} of ${total} found · ${finalScore} pts`;
   document.getElementById('resultMsg').textContent = found.size === total ? '🎉 Perfect — you got them all!' : found.size >= total/2 ? '👏 Great effort!' : 'Keep practising — phrasal verbs take time!';
 
   // Found chips in result — copy from foundChips (which already have click handlers)
@@ -1588,16 +1598,53 @@ function endGame() {
     });
   } else { missedTitle.textContent = ''; }
 
-  document.getElementById('submitArea').dataset.score = finalScore * 10;
+  document.getElementById('submitArea').dataset.score = finalScore;
+  // Show decision panel (continue or stop), hide submit form until player decides
+  const dec = document.getElementById('continueDecision');
+  const sub = document.getElementById('submitArea');
+  if (dec) dec.style.display = 'block';
+  if (sub) sub.style.display = 'none';
   // Show the leaderboard for the mode that was actually just played
   const playedKey = currentLbKey();
-  switchPbLb(selectedMode); // also updates the visible LB tab to match
+  switchPbLb(selectedMode);
   renderLeaderboard(playedKey, 'lbBody');
+}
+
+// Continue to the next round — preserves accumulated score, picks a fresh verb/particle
+function continueGame() {
+  const savedScore      = finalScore;
+  const savedFoundCount = parseInt(document.getElementById('foundVal').textContent || '0');
+  startGame();
+  // Restore accumulated totals after startGame resets them to 0
+  finalScore = savedScore;
+  document.getElementById('scoreVal').textContent = finalScore;
+  document.getElementById('foundVal').textContent = savedFoundCount;
+}
+
+// Stop here — hides the decision prompt and shows the submit form
+function stopAndShowSubmit() {
+  const dec = document.getElementById('continueDecision');
+  const sub = document.getElementById('submitArea');
+  if (dec) dec.style.display = 'none';
+  if (sub) {
+    sub.style.display = 'block';
+    sub.innerHTML = `
+      <div class="submit-row" style="margin-top:.5rem">
+        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+        <button class="btn-primary" type="button" onclick="doSubmit()">Add to leaderboard</button>
+      </div>`;
+    sub.dataset.score = finalScore;
+    const inp = document.getElementById('nameInput');
+    if (inp) inp.focus();
+  }
 }
 
 function resetGame() {
   document.getElementById('phase-result').style.display = 'none';
   document.getElementById('phase-intro').style.display = 'flex';
+  // Reset decision panel so next game starts fresh
+  const dec = document.getElementById('continueDecision');
+  if (dec) dec.style.display = 'block';
   document.getElementById('m2input')?.removeEventListener('keydown', m2keydown);
   document.getElementById('m3input')?.removeEventListener('keydown', m3keydown);
 }
