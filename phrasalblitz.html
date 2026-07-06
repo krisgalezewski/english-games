@@ -187,9 +187,15 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
       <div class="verb-hero" id="gameVerb" style="font-size:2.2rem"></div>
       <div style="font-family:'Space Mono',monospace;font-size:.65rem;color:var(--muted);margin-top:.2rem" id="gameSubLabel"></div>
     </div>
-    <div class="score-box">
-      <div class="val" id="scoreVal">0</div>
-      <div class="lbl">Found</div>
+    <div style="display:flex;flex-direction:column;gap:.4rem">
+      <div class="score-box">
+        <div class="val" id="foundVal">0</div>
+        <div class="lbl">Found</div>
+      </div>
+      <div class="score-box">
+        <div class="val" id="scoreVal" style="font-size:1.1rem">0</div>
+        <div class="lbl">Pts</div>
+      </div>
     </div>
   </div>
 
@@ -1227,6 +1233,7 @@ function startGame() {
   document.getElementById('phase-intro').style.display = 'none';
   document.getElementById('phase-game').style.display  = 'flex';
   document.getElementById('scoreVal').textContent      = '0';
+  document.getElementById('foundVal').textContent      = '0';
   document.getElementById('foundChips').innerHTML      = '';
   document.getElementById('gameSubLabel').textContent  = '';
   [1,2,3].forEach(i => { const a=document.getElementById('m'+i+'area'); if(a) a.style.display='none'; });
@@ -1298,7 +1305,7 @@ function clickParticle(p, btn, correctSet) {
     btn.classList.add('correct');
     addFoundChip(currentVerb.verb + ' ' + p, p);
     finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
+    document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
     if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
     btn.classList.add('wrong');
@@ -1337,7 +1344,7 @@ function clickVerb(v, btn, correctSet) {
     const pairObj = verbObj?.pairs.find(p => p.p === currentParticle);
     addFoundChipVerb(v + ' ' + currentParticle, v + ' ' + currentParticle, pairObj || {});
     finalScore++;
-    document.getElementById('scoreVal').textContent = finalScore;
+    document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
     if (found.size === correctSet.size) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
     btn.classList.add('wrong');
@@ -1381,7 +1388,7 @@ function submitTyped() {
       inp.className = 'type-input ok';
       addFoundChip(currentVerb.verb + ' ' + val, val);
       finalScore++;
-      document.getElementById('scoreVal').textContent = finalScore;
+      document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
       if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
       inp.className = 'type-input bad';
@@ -1399,7 +1406,7 @@ function submitTyped() {
       const pairObj = verbObj?.pairs.find(p=>p.p===currentParticle);
       addFoundChipVerb(val + ' ' + currentParticle, val + ' ' + currentParticle, pairObj);
       finalScore++;
-      document.getElementById('scoreVal').textContent = finalScore;
+      document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
       if (found.size === correctVerbs.size) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
       inp.className = 'type-input bad';

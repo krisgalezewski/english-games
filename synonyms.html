@@ -147,9 +147,15 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
       <div class="instruction" id="gameInstruction"></div>
       <div class="word-hero" id="gameWord" style="font-size:2.2rem"></div>
     </div>
-    <div class="score-box">
-      <div class="val" id="scoreVal">0</div>
-      <div class="lbl">Found</div>
+    <div style="display:flex;flex-direction:column;gap:.4rem">
+      <div class="score-box">
+        <div class="val" id="foundVal">0</div>
+        <div class="lbl">Found</div>
+      </div>
+      <div class="score-box">
+        <div class="val" id="scoreVal" style="font-size:1.1rem">0</div>
+        <div class="lbl">Pts</div>
+      </div>
     </div>
   </div>
 
@@ -662,6 +668,7 @@ function startGame() {
       <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
     </div>`;
   document.getElementById('scoreVal').textContent = 0;
+  document.getElementById('foundVal').textContent = 0;
   document.getElementById('foundChips').innerHTML = '';
 
   document.getElementById('phase-intro').style.display = 'none';
@@ -745,7 +752,7 @@ function handleOpt1(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('syn:'+correct);
-    if (!allFound.has('syn:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
+    if (!allFound.has('syn:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, false, parentRef);
     setTimeout(pickNextWord, 700);
   } else {
@@ -781,7 +788,7 @@ function handleOpt2(chosen, correct, btn, parentRef) {
   if (chosen === correct) {
     btn.classList.add('correct');
     found.add('ant:'+correct);
-    if (!allFound.has('ant:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
+    if (!allFound.has('ant:'+correct)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, true, parentRef);
     setTimeout(pickNextWord, 700);
   } else {
@@ -895,7 +902,7 @@ function submitTyped() {
     input.className = 'type-input ok';
     const key = typeSub === 1 ? 'syn:'+match : 'ant:'+match;
     found.add(key);
-    if (!allFound.has(key)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; }
+    if (!allFound.has(key)) { finalScore++; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(match, typeSub === 2, parentRef);
     hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;

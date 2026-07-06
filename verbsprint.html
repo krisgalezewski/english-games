@@ -1314,15 +1314,39 @@ function submitAnswer() {
 
 // Accept alternate spellings (e.g. burnt/burned, learnt/learned, dreamt/dreamed)
 function checkAnswer(typed, correct) {
-  const alternatives = { 'burnt':'burned','burned':'burnt','learnt':'learned','learned':'learnt',
-    'dreamt':'dreamed','dreamed':'dreamt','spilt':'spilled','spilled':'spilt',
-    'smelt':'smelled','smelled':'smelt','knelt':'kneeled','kneeled':'knelt',
-    'was':'was','were':'were' };
-  if(typed === correct.toLowerCase()) return true;
-  // Handle was/were
-  if(correct === 'was/were' && (typed==='was'||typed==='were')) return true;
-  // Alternate spellings
-  if(alternatives[typed] === correct.toLowerCase()) return true;
+  // Normalise both sides: trim, lowercase, collapse internal whitespace,
+  // strip smart quotes. This handles mobile keyboard artefacts such as
+  // auto-inserted spaces, smart apostrophes, or stray newline characters.
+  const norm = s => s.trim().toLowerCase().replace(/\s+/g,' ').replace(/['']/g,"'").replace(/[""]/g,'"');
+  const t = norm(typed);
+  const c = norm(correct);
+
+  if(t === c) return true;
+
+  // was/were special case
+  if(c === 'was/were' && (t==='was'||t==='were')) return true;
+
+  // Alternate spellings — accepted in both directions
+  const alternatives = {
+    'burnt':'burned',   'burned':'burnt',
+    'learnt':'learned', 'learned':'learnt',
+    'dreamt':'dreamed', 'dreamed':'dreamt',
+    'spilt':'spilled',  'spilled':'spilt',
+    'smelt':'smelled',  'smelled':'smelt',
+    'knelt':'kneeled',  'kneeled':'knelt',
+    'leapt':'leaped',   'leaped':'leapt',
+    'leant':'leaned',   'leaned':'leant',
+    'dwelt':'dwelled',  'dwelled':'dwelt',
+    'spat':'spit',      'spit':'spat',
+    'woke':'waked',     'waked':'woke',
+    'shrunk':'shrank',  'shrank':'shrunk',
+    'dived':'dove',     'dove':'dived',
+    'pled':'pleaded',   'pleaded':'pled',
+    'snuck':'sneaked',  'sneaked':'snuck',
+    'strove':'strived', 'strived':'strove',
+  };
+  if(alternatives[t] === c) return true;
+
   return false;
 }
 

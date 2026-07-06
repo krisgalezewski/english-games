@@ -1993,6 +1993,9 @@ function initRound(){
     const idxs = freshRandomIndices('practice_'+practiceType, typePool, PRACTICE_SIZE);
     roundQs = idxs.map(i => typePool[i]);
     current = 0; score = 0; correct = 0; streak = 0; results = [];
+    document.getElementById('scoreVal').textContent   = 0;
+    document.getElementById('correctVal').textContent = 0;
+    document.getElementById('streakVal').textContent  = 0;
     document.getElementById('endCard').style.display = 'none';
     // Hide timer, show practice bar
     document.getElementById('timerArea').style.display = 'none';
