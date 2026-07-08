@@ -981,6 +981,7 @@ function penalise() {
 
 // ── Timer ──────────────────────────────────────────────────────────
 function runTimer() {
+  clearInterval(timer);
   updateRing();
   timer = setInterval(() => {
     timeLeft--;

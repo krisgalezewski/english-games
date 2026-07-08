@@ -295,6 +295,7 @@ async function getPartsOfSpeech(word) {
 // ── Timer ──────────────────────────────────────────────────────────
 function startTimer() {
   timeLeft = START_TIME;
+  clearInterval(timerInterval);
   updateTimerUI();
   timerInterval = setInterval(() => {
     timeLeft = Math.max(0, timeLeft - 1);

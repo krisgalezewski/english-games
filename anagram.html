@@ -571,17 +571,17 @@ function updateTimerUI() {
 let roundEnded = false; // guards against any double-fire of timeOut/endRound
 
 function timeOut() {
-  // Defensive guard: if the round has already finished (or the timer
-  // somehow fires again after the round ended), do nothing rather than
-  // risk acting on stale state.
   if (roundEnded) return;
-  if (current < ROUND_SIZE) {
-    skipWord(true);
-  } else {
-    // Edge case: timer fired exactly as the last word was already
-    // answered/skipped by the player — make sure the round still ends.
-    endRound();
+  // Skip all unanswered words in one batch — never go through loadWord()
+  // which would rebuild the tiles and leave the game UI active.
+  while (current < ROUND_SIZE) {
+    const w = roundWords[current];
+    const dot = document.getElementById('adot' + current);
+    if (dot) dot.className = 'dot skip';
+    results.push({ w: w.w, cat: w.cat, def: w.def, status: 'time', pts: 0 });
+    current++;
   }
+  endRound();
 }
 
 function loadWord() {
