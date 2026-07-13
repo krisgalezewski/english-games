@@ -729,9 +729,11 @@ function pickNextWord() {
 function buildMode1() {
   document.getElementById('gameInstruction').textContent = 'Find the synonym →';
   const grid = document.getElementById('m1grid');
+  // Explicitly strip all state classes from any lingering buttons before
+  // clearing — prevents iOS Safari from carrying over touch/focus highlight
+  [...grid.querySelectorAll('.opt')].forEach(b => b.className = 'opt');
   grid.innerHTML = '';
 
-  // Pick ONE correct synonym to present (not already found)
   const available = currentWord.syn.filter(s => !found.has('syn:'+s));
   if (available.length === 0) { pickNextWord(); return; }
   const correct = available[Math.floor(Math.random() * available.length)];
@@ -742,7 +744,7 @@ function buildMode1() {
     const btn = document.createElement('button');
     btn.className = 'opt';
     btn.textContent = opt;
-    const parentRef = currentWord; // capture for closure
+    const parentRef = currentWord;
     btn.onclick = () => handleOpt1(opt, correct, btn, parentRef);
     grid.appendChild(btn);
   });
@@ -754,7 +756,11 @@ function handleOpt1(chosen, correct, btn, parentRef) {
     found.add('syn:'+correct);
     if (!allFound.has('syn:'+correct)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, false, parentRef);
-    setTimeout(pickNextWord, 700);
+    setTimeout(() => {
+      // Remove the class before navigating so iOS doesn't carry it forward
+      btn.classList.remove('correct');
+      pickNextWord();
+    }, 700);
   } else {
     btn.classList.add('wrong');
     penalise();
@@ -766,6 +772,7 @@ function handleOpt1(chosen, correct, btn, parentRef) {
 function buildMode2() {
   document.getElementById('gameInstruction').textContent = 'Find the antonym ↔';
   const grid = document.getElementById('m2grid');
+  [...grid.querySelectorAll('.opt')].forEach(b => b.className = 'opt');
   grid.innerHTML = '';
 
   const available = currentWord.ant.filter(a => !found.has('ant:'+a));
@@ -790,7 +797,10 @@ function handleOpt2(chosen, correct, btn, parentRef) {
     found.add('ant:'+correct);
     if (!allFound.has('ant:'+correct)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, true, parentRef);
-    setTimeout(pickNextWord, 700);
+    setTimeout(() => {
+      btn.classList.remove('correct');
+      pickNextWord();
+    }, 700);
   } else {
     btn.classList.add('wrong');
     penalise();
@@ -917,8 +927,18 @@ function submitTyped() {
 
 
 // ── Helpers ────────────────────────────────────────────────────────
-function buildDistractors(correct, sameWordList, type) {
-  const exclude = new Set([correct, ...sameWordList]);
+function buildDistractors(correct, sameWordOtherList, type) {
+  // Build a comprehensive exclusion set:
+  // - the correct answer itself
+  // - the target word itself (e.g. 'anxious' must never appear as an option when searching for synonyms of 'anxious')
+  // - ALL synonyms of the current word (any of them would also be a correct answer)
+  // - ALL antonyms of the current word (opposite meaning — confusing as a distractor)
+  const exclude = new Set([
+    correct,
+    currentWord.word,          // the word being displayed — must never appear as an option
+    ...currentWord.syn,        // all synonyms — any would be a valid correct answer
+    ...currentWord.ant,        // all antonyms — wrong meaning direction
+  ]);
   const pool = [];
   WORDS.forEach(w => {
     if (w.word === currentWord.word) return;
@@ -1044,7 +1064,7 @@ function endGame() {
     foundEl.appendChild(chip);
   });
 
-  // ── Missed items: also clickable with correct parent context ──
+  // ── Missed items: the word on screen when time ran out comes first ──
   const missedEl = document.getElementById('missedChips');
   missedEl.innerHTML = '';
   const type = selectedMode === 2 ? 'ant' : 'syn';
@@ -1057,7 +1077,12 @@ function endGame() {
       }
     });
   });
-  missed = shuffle(missed).slice(0, 12);
+
+  // Put the word that was active when time ran out at the front
+  const lastKey = type + ':' + (currentWord ? (type === 'syn' ? currentWord.syn[0] : currentWord.ant[0]) : '');
+  const lastWordItems = missed.filter(m => m.parent.word === (currentWord ? currentWord.word : ''));
+  const otherItems    = shuffle(missed.filter(m => m.parent.word !== (currentWord ? currentWord.word : '')));
+  missed = [...lastWordItems, ...otherItems].slice(0, 12);
   if (missed.length > 0) {
     document.getElementById('missedTitle').textContent = 'Some you missed';
     missed.forEach(item => {
