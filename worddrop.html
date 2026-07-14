@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WordDrop — English Games</title>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+main { max-width:600px; margin:0 auto; padding:1rem 1rem 2rem; display:flex; flex-direction:column; gap:.75rem; align-items:center; }
+
+/* ── HUD ── */
+.hud { display:flex; align-items:center; justify-content:space-between; width:100%; gap:.5rem; }
+.hud-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .8rem; text-align:center; min-width:3.5rem; }
+.hud-val { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--gold); line-height:1; }
+.hud-lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.hud-center { flex:1; text-align:center; }
+.round-label { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.round-val   { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--text); }
+
+/* ── Sentence strip ── */
+.sentence-strip {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:.75rem 1rem; text-align:center;
+  font-family:'DM Sans',sans-serif; font-size:1rem; line-height:1.7;
+  min-height:3.2rem; position:relative; overflow:hidden;
+}
+.sentence-strip .gap {
+  display:inline-block; min-width:3rem; border-bottom:2px solid var(--gold);
+  vertical-align:bottom; margin:0 .2rem;
+}
+.sentence-strip .gap.filled { border-bottom-color:var(--correct); }
+
+/* ── Game canvas ── */
+.game-canvas-wrap {
+  position:relative; width:100%; border:1px solid var(--border);
+  border-radius:10px; overflow:hidden; background:#0a0a0a;
+  touch-action:none; user-select:none;
+}
+canvas { display:block; width:100%; height:auto; }
+
+/* ── Column labels ── */
+.col-labels {
+  display:flex; width:100%;
+}
+.col-label {
+  flex:1; text-align:center; padding:.4rem .2rem;
+  font-family:'Space Mono',monospace; font-size:.6rem;
+  letter-spacing:.08em; text-transform:uppercase; font-weight:700;
+  border:1px solid var(--border); border-top:none;
+  cursor:pointer; transition:background .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.col-label:first-child { border-radius:0 0 0 8px; }
+.col-label:last-child  { border-radius:0 0 8px 0; }
+.col-label:hover { background:var(--surface); }
+.col-label.flash-good { animation:colFlashGood .35s; }
+.col-label.flash-bad  { animation:colFlashBad  .35s; }
+@keyframes colFlashGood { 0%,100%{background:transparent} 50%{background:var(--correct-dim)} }
+@keyframes colFlashBad  { 0%,100%{background:transparent} 50%{background:var(--wrong-dim)} }
+
+/* ── Arrow controls (mobile) ── */
+.arrow-controls { display:flex; gap:.5rem; width:100%; justify-content:center; }
+.arrow-btn {
+  flex:1; max-width:100px; padding:.75rem; background:var(--surface);
+  border:1px solid var(--border2); border-radius:8px;
+  font-size:1.4rem; text-align:center; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.arrow-btn:active { background:var(--gold-dim); }
+.drop-btn {
+  flex:1; max-width:160px; padding:.75rem; background:var(--surface);
+  border:1px solid var(--border2); border-radius:8px;
+  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.08em;
+  text-transform:uppercase; text-align:center; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.drop-btn:active { background:var(--gold-dim); }
+
+/* ── Progress dots ── */
+.progress-dots { display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap; }
+.pdot { width:.45rem; height:.45rem; border-radius:50%; background:var(--border2); transition:background .2s; }
+.pdot.done-correct { background:var(--correct); }
+.pdot.done-wrong   { background:var(--wrong); }
+.pdot.current      { background:var(--gold); }
+
+/* ── Pause overlay ── */
+.pause-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.75);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1.5rem; z-index:100;
+}
+.pause-overlay h2 { font-family:'Playfair Display',serif; font-size:2rem; color:var(--text); }
+.pause-overlay p  { color:var(--muted); font-size:.9rem; text-align:center; }
+
+/* ── Sound toggle ── */
+.sound-btn {
+  background:none; border:1px solid var(--border); border-radius:6px;
+  padding:.3rem .7rem; font-size:.85rem; cursor:pointer; color:var(--muted);
+  -webkit-tap-highlight-color:transparent;
+}
+.sound-btn:hover { color:var(--text); }
+
+/* ── Intro ── */
+.intro-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; width:100%; }
+.intro-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:.75rem; }
+.intro-card p  { font-size:.87rem; color:var(--muted); line-height:1.7; margin-bottom:.5rem; }
+.category-preview { display:flex; gap:.4rem; flex-wrap:wrap; margin:.5rem 0; }
+.cat-pill { padding:.25rem .7rem; border-radius:99px; font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; }
+
+/* ── Round complete overlay ── */
+.round-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.8);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1rem; z-index:100; padding:1.5rem;
+}
+.round-overlay h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--gold); }
+.round-overlay .new-cat { background:var(--gold-dim); border:1px solid rgba(212,175,55,.3); border-radius:10px; padding:.75rem 1.25rem; font-size:.9rem; text-align:center; }
+.round-overlay .new-cat strong { color:var(--gold); }
+
+/* ── Result ── */
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.75rem; text-align:center; width:100%; animation:fadeIn .4s; }
+.result-card h2 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; margin-bottom:.4rem; }
+.result-msg { color:var(--muted); font-size:.88rem; margin-bottom:1rem; }
+.mistakes-list { display:flex; flex-direction:column; gap:.5rem; text-align:left; margin:.75rem 0; max-height:200px; overflow-y:auto; }
+.mistake-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .75rem; font-size:.83rem; }
+.mistake-item .mi-sent { color:var(--muted); font-size:.78rem; margin-bottom:.2rem; }
+.mistake-item .mi-word { font-weight:700; color:var(--wrong); }
+.mistake-item .mi-pos  { color:var(--correct); font-size:.75rem; }
+
+.lb-section { width:100%; max-width:600px; padding:0 1rem 2.5rem; }
+#phase-intro, #phase-game, #phase-result { width:100%; display:flex; flex-direction:column; align-items:center; gap:.75rem; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+@keyframes shake  { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">⬇ WordDrop</span>
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇 Off</button>
+</nav>
+
+<main>
+<!-- ── INTRO ── -->
+<div id="phase-intro">
+  <div class="intro-card">
+    <h2>⬇ WordDrop</h2>
+    <p>A word falls from its sentence — steer it into the correct <strong>part of speech</strong> column before it lands!</p>
+    <p>Swipe left/right or use the arrow buttons to move. Tap to drop instantly. Double-tap anywhere to pause.</p>
+    <p>New categories unlock every 5 rounds. Speed increases as you progress.</p>
+    <div style="margin:.75rem 0">
+      <div class="eyebrow" style="margin-bottom:.4rem">Starting categories</div>
+      <div class="category-preview" id="catPreview"></div>
+    </div>
+    <p style="font-size:.8rem">20 rounds · Up to 5 categories · Words in context</p>
+  </div>
+  <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
+  <div class="lb-wrap" style="width:100%">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBodyIntro"></tbody></table>
+  </div>
+</div>
+
+<!-- ── GAME ── -->
+<div id="phase-game" style="display:none">
+  <div class="hud" style="width:100%">
+    <div class="hud-box">
+      <div class="hud-val" id="scoreVal">0</div>
+      <div class="hud-lbl">Score</div>
+    </div>
+    <div class="hud-center">
+      <div class="round-label">Round</div>
+      <div class="round-val" id="roundVal">1 / 20</div>
+    </div>
+    <div class="hud-box">
+      <div class="hud-val" id="streakVal">0</div>
+      <div class="hud-lbl">Streak</div>
+    </div>
+  </div>
+
+  <div class="sentence-strip" id="sentenceStrip">Ready…</div>
+  <div class="progress-dots" id="progressDots"></div>
+
+  <div class="game-canvas-wrap" id="canvasWrap">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <div class="col-labels" id="colLabels"></div>
+
+  <div class="arrow-controls">
+    <div class="arrow-btn" id="btnLeft"  ontouchstart="onArrow(-1)" onmousedown="onArrow(-1)">←</div>
+    <div class="drop-btn"                ontouchstart="onDrop()"    onmousedown="onDrop()">Drop ↓</div>
+    <div class="arrow-btn" id="btnRight" ontouchstart="onArrow(1)"  onmousedown="onArrow(1)">→</div>
+  </div>
+</div>
+
+<!-- ── RESULT ── -->
+<div id="phase-result" style="display:none">
+  <div class="result-card">
+    <h2 id="resultHeadline"></h2>
+    <div class="result-msg" id="resultMsg"></div>
+    <div style="display:flex;gap:1rem;justify-content:center;margin:.5rem 0">
+      <div class="hud-box"><div class="hud-val" id="finalScore">0</div><div class="hud-lbl">Score</div></div>
+      <div class="hud-box"><div class="hud-val" id="finalCorrect">0</div><div class="hud-lbl">Correct</div></div>
+      <div class="hud-box"><div class="hud-val" id="finalRound">0</div><div class="hud-lbl">Rounds</div></div>
+    </div>
+    <div id="mistakesList" class="mistakes-list"></div>
+  </div>
+  <div id="submitArea">
+    <div class="submit-row">
+      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="startGame()">Play again</button>
+    <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+  </div>
+  <div class="lb-wrap" style="width:100%;margin-top:.5rem">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBodyResult"></tbody></table>
+  </div>
+</div>
+</main>
+
+<!-- Pause overlay -->
+<div class="pause-overlay" id="pauseOverlay" style="display:none">
+  <h2>⏸ Paused</h2>
+  <p>Double-tap or press Escape to resume</p>
+  <button class="btn-primary" onclick="togglePause()">Resume →</button>
+</div>
+
+<!-- Round-complete overlay -->
+<div class="round-overlay" id="roundOverlay" style="display:none">
+  <h2 id="roundOverlayTitle">Round complete!</h2>
+  <div id="roundOverlayScore" style="color:var(--muted);font-size:.9rem"></div>
+  <div class="new-cat" id="roundOverlayNewCat" style="display:none"></div>
+  <button class="btn-primary" onclick="nextRound()">Next round →</button>
+</div>
+
+<div class="lb-section" style="display:none" id="lbSection">
+  <div class="lb-wrap">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"></tbody></table>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+
+// ══════════════════════════════════════════════════════════
+// WORD BANK
+// ══════════════════════════════════════════════════════════
+const WORD_BANK = [
+  ['The ___dog___ barked all night.', 'dog', 'noun', 1],
+  ['She put the ___book___ on the shelf.', 'book', 'noun', 1],
+  ['The ___rain___ fell heavily.', 'rain', 'noun', 1],
+  ['He drove his ___car___ to work.', 'car', 'noun', 1],
+  ['They sat around the ___table___.', 'table', 'noun', 1],
+  ['She bought a new ___dress___.', 'dress', 'noun', 1],
+  ['The ___child___ laughed loudly.', 'child', 'noun', 1],
+  ['He opened the ___door___.', 'door', 'noun', 1],
+  ['The ___teacher___ explained the rule.', 'teacher', 'noun', 1],
+  ['She carried a heavy ___bag___.', 'bag', 'noun', 1],
+  ['The ___sun___ set behind the hills.', 'sun', 'noun', 1],
+  ['He lost his ___key___.', 'key', 'noun', 1],
+  ['The ___river___ flows to the sea.', 'river', 'noun', 1],
+  ['She ate an ___apple___.', 'apple', 'noun', 1],
+  ['The ___bird___ sang in the tree.', 'bird', 'noun', 1],
+  ['He wrote a ___letter___.', 'letter', 'noun', 1],
+  ['The ___city___ was full of life.', 'city', 'noun', 1],
+  ['She found a ___coin___ on the floor.', 'coin', 'noun', 1],
+  ['The ___story___ had a happy ending.', 'story', 'noun', 1],
+  ['He fixed the broken ___window___.', 'window', 'noun', 1],
+  ['The ___garden___ was full of flowers.', 'garden', 'noun', 1],
+  ['She held his ___hand___.', 'hand', 'noun', 1],
+  ['The ___doctor___ examined the patient.', 'doctor', 'noun', 1],
+  ['He read the ___newspaper___.', 'newspaper', 'noun', 1],
+  ['The ___mountain___ was covered in snow.', 'mountain', 'noun', 1],
+  ['She baked a ___cake___.', 'cake', 'noun', 1],
+  ['The ___phone___ rang twice.', 'phone', 'noun', 1],
+  ['He wore a warm ___coat___.', 'coat', 'noun', 1],
+  ['The ___school___ closed early.', 'school', 'noun', 1],
+  ['She planted a ___tree___.', 'tree', 'noun', 1],
+  ['She ___sings___ beautifully.', 'sings', 'verb', 1],
+  ['He ___runs___ every morning.', 'runs', 'verb', 1],
+  ['They ___laughed___ at the joke.', 'laughed', 'verb', 1],
+  ['She ___writes___ in her diary.', 'writes', 'verb', 1],
+  ['He ___cooked___ dinner for us.', 'cooked', 'verb', 1],
+  ['The cat ___sleeps___ all day.', 'sleeps', 'verb', 1],
+  ['She ___painted___ the wall white.', 'painted', 'verb', 1],
+  ['He ___jumped___ over the fence.', 'jumped', 'verb', 1],
+  ['They ___built___ a new house.', 'built', 'verb', 1],
+  ['She ___whispered___ in his ear.', 'whispered', 'verb', 1],
+  ['He ___forgot___ his umbrella.', 'forgot', 'verb', 1],
+  ['They ___celebrate___ every year.', 'celebrate', 'verb', 1],
+  ['She ___studied___ for the exam.', 'studied', 'verb', 1],
+  ['He ___climbed___ the tall tree.', 'climbed', 'verb', 1],
+  ['They ___argued___ about the bill.', 'argued', 'verb', 1],
+  ['She ___discovered___ a new path.', 'discovered', 'verb', 1],
+  ['He ___fixed___ the broken chair.', 'fixed', 'verb', 1],
+  ['They ___travelled___ by train.', 'travelled', 'verb', 1],
+  ['She ___remembered___ his birthday.', 'remembered', 'verb', 1],
+  ['He ___promised___ to be on time.', 'promised', 'verb', 1],
+  ['They ___decided___ to leave early.', 'decided', 'verb', 1],
+  ['She ___explained___ the problem.', 'explained', 'verb', 1],
+  ['He ___borrowed___ a pen.', 'borrowed', 'verb', 1],
+  ['They ___enjoyed___ the concert.', 'enjoyed', 'verb', 1],
+  ['She ___answered___ the question.', 'answered', 'verb', 1],
+  ['He ___arrived___ at midnight.', 'arrived', 'verb', 1],
+  ['They ___disagreed___ on the plan.', 'disagreed', 'verb', 1],
+  ['She ___introduced___ her colleague.', 'introduced', 'verb', 1],
+  ['He ___accepted___ the offer.', 'accepted', 'verb', 1],
+  ['They ___escaped___ through the window.', 'escaped', 'verb', 1],
+  ['It was a ___beautiful___ day.', 'beautiful', 'adjective', 1],
+  ['He gave a ___long___ speech.', 'long', 'adjective', 1],
+  ['The soup was ___hot___.', 'hot', 'adjective', 1],
+  ['She wore a ___red___ scarf.', 'red', 'adjective', 1],
+  ['The film was ___boring___.', 'boring', 'adjective', 1],
+  ['He felt ___tired___ after work.', 'tired', 'adjective', 1],
+  ['The room was ___dark___.', 'dark', 'adjective', 1],
+  ['She was ___happy___ to see him.', 'happy', 'adjective', 1],
+  ['The test was ___difficult___.', 'difficult', 'adjective', 1],
+  ['He was ___angry___ about the delay.', 'angry', 'adjective', 1],
+  ['The pizza was ___delicious___.', 'delicious', 'adjective', 1],
+  ['She had a ___friendly___ smile.', 'friendly', 'adjective', 1],
+  ['The road was ___narrow___.', 'narrow', 'adjective', 1],
+  ['He was ___nervous___ before the speech.', 'nervous', 'adjective', 1],
+  ['The water was ___cold___.', 'cold', 'adjective', 1],
+  ['She felt ___proud___ of her result.', 'proud', 'adjective', 1],
+  ['The hotel was ___expensive___.', 'expensive', 'adjective', 1],
+  ['He was ___surprised___ by the news.', 'surprised', 'adjective', 1],
+  ['The garden smelled ___fresh___.', 'fresh', 'adjective', 1],
+  ['She was ___kind___ to everyone.', 'kind', 'adjective', 1],
+  ['The journey was ___long___ and tiring.', 'long', 'adjective', 1],
+  ['He felt ___guilty___ about lying.', 'guilty', 'adjective', 1],
+  ['The building was ___enormous___.', 'enormous', 'adjective', 1],
+  ['She looked ___elegant___ in the dress.', 'elegant', 'adjective', 1],
+  ['The answer was ___correct___.', 'correct', 'adjective', 1],
+  ['He was ___polite___ to the staff.', 'polite', 'adjective', 1],
+  ['The street was ___quiet___ at night.', 'quiet', 'adjective', 1],
+  ['She was ___curious___ about the result.', 'curious', 'adjective', 1],
+  ['The plan seemed ___reasonable___.', 'reasonable', 'adjective', 1],
+  ['He was ___generous___ with his time.', 'generous', 'adjective', 1],
+  ['She ___quickly___ finished her work.', 'quickly', 'adverb', 1],
+  ['He spoke ___quietly___ in the library.', 'quietly', 'adverb', 1],
+  ['They arrived ___late___.', 'late', 'adverb', 1],
+  ['She ___always___ wakes up early.', 'always', 'adverb', 1],
+  ['He answered ___correctly___.', 'correctly', 'adverb', 1],
+  ['She smiled ___warmly___.', 'warmly', 'adverb', 1],
+  ['He ___never___ eats meat.', 'never', 'adverb', 1],
+  ['They worked ___hard___ all week.', 'hard', 'adverb', 1],
+  ['She ___almost___ missed the train.', 'almost', 'adverb', 1],
+  ['He spoke ___honestly___ about the problem.', 'honestly', 'adverb', 1],
+  ['She ___often___ visits her grandmother.', 'often', 'adverb', 1],
+  ['He ran ___fast___ down the street.', 'fast', 'adverb', 1],
+  ['She ___carefully___ wrapped the gift.', 'carefully', 'adverb', 1],
+  ['He ___rarely___ complains.', 'rarely', 'adverb', 1],
+  ['She ___immediately___ called the doctor.', 'immediately', 'adverb', 1],
+  ['He ___suddenly___ stopped walking.', 'suddenly', 'adverb', 1],
+  ['She ___clearly___ explained the idea.', 'clearly', 'adverb', 1],
+  ['He slept ___deeply___ all night.', 'deeply', 'adverb', 1],
+  ['She ___gradually___ improved.', 'gradually', 'adverb', 1],
+  ['He answered ___reluctantly___.', 'reluctantly', 'adverb', 1],
+  ['She smiled ___shyly___ at him.', 'shyly', 'adverb', 1],
+  ['He ___completely___ forgot about it.', 'completely', 'adverb', 1],
+  ['She ___barely___ passed the exam.', 'barely', 'adverb', 1],
+  ['He ___firmly___ refused to go.', 'firmly', 'adverb', 1],
+  ['She ___patiently___ waited for an hour.', 'patiently', 'adverb', 1],
+  ['He ___loudly___ slammed the door.', 'loudly', 'adverb', 1],
+  ['She ___eventually___ found the answer.', 'eventually', 'adverb', 1],
+  ['He ___accidentally___ spilled the coffee.', 'accidentally', 'adverb', 1],
+  ['She ___proudly___ showed her certificate.', 'proudly', 'adverb', 1],
+  ['He ___gently___ picked up the baby.', 'gently', 'adverb', 1],
+  ['She is a ___fast___ runner.', 'fast', 'adjective', 2],
+  ['He ___fast___ed for three days.', 'fasted', 'verb', 2],
+  ['She carried a ___light___ bag.', 'light', 'adjective', 2],
+  ['Please ___light___ the candle.', 'light', 'verb', 2],
+  ['The ___light___ in the room was dim.', 'light', 'noun', 2],
+  ['She ___loves___ Italian food.', 'loves', 'verb', 2],
+  ['His ___love___ for music is obvious.', 'love', 'noun', 2],
+  ['She goes to ___work___ by bus.', 'work', 'noun', 2],
+  ['They ___work___ very long hours.', 'work', 'verb', 2],
+  ['Turn ___right___ at the junction.', 'right', 'adverb', 2],
+  ['That is the ___right___ answer.', 'right', 'adjective', 2],
+  ['He stood on her ___right___.', 'right', 'noun', 2],
+  ['She was ___kind___ to the children.', 'kind', 'adjective', 2],
+  ['What ___kind___ of music do you like?', 'kind', 'noun', 2],
+  ['He ___watched___ the game at home.', 'watched', 'verb', 2],
+  ['She lost her ___watch___ on the bus.', 'watch', 'noun', 2],
+  ['He studied ___hard___ for weeks.', 'hard', 'adverb', 2],
+  ['The exam was ___hard___.', 'hard', 'adjective', 2],
+  ['She hit a ___hard___ surface.', 'hard', 'adjective', 2],
+  ['She ___flies___ to Warsaw every week.', 'flies', 'verb', 2],
+  ['A swarm of ___flies___ appeared.', 'flies', 'noun', 2],
+  ['They went for a ___run___.', 'run', 'noun', 2],
+  ['She ___runs___ the whole department.', 'runs', 'verb', 2],
+  ['The bottle was ___empty___.', 'empty', 'adjective', 2],
+  ['Please ___empty___ the bin.', 'empty', 'verb', 2],
+  ['She had a ___free___ afternoon.', 'free', 'adjective', 2],
+  ['He ___freed___ the trapped bird.', 'freed', 'verb', 2],
+  ['The tickets were ___free___.', 'free', 'adjective', 2],
+  ['She placed an ___order___ online.', 'order', 'noun', 2],
+  ['He ___ordered___ everyone to leave.', 'ordered', 'verb', 2],
+  ['She remained ___calm___ throughout.', 'calm', 'adjective', 2],
+  ['He tried to ___calm___ the crowd.', 'calm', 'verb', 2],
+  ['She heard a ___sound___ outside.', 'sound', 'noun', 2],
+  ['His advice was ___sound___.', 'sound', 'adjective', 2],
+  ['She received a ___present___.', 'present', 'noun', 2],
+  ['All students must be ___present___.', 'present', 'adjective', 2],
+  ['He ___presented___ his findings.', 'presented', 'verb', 2],
+  ['There is a ___need___ for change.', 'need', 'noun', 2],
+  ['You ___need___ to rest.', 'need', 'verb', 2],
+  ['She asked for ___change___ at the till.', 'change', 'noun', 2],
+  ['He ___changed___ his mind completely.', 'changed', 'verb', 2],
+  ['The room was ___cold___ and dark.', 'cold', 'adjective', 2],
+  ['She caught a ___cold___ last week.', 'cold', 'noun', 2],
+  ['This is a ___place___ to think.', 'place', 'noun', 2],
+  ['She ___placed___ the cup on the table.', 'placed', 'verb', 2],
+  ['The house was ___clean___ and tidy.', 'clean', 'adjective', 2],
+  ['He ___cleaned___ the whole kitchen.', 'cleaned', 'verb', 2],
+  ['That was the ___last___ train.', 'last', 'adjective', 2],
+  ['He ___lasted___ only ten minutes.', 'lasted', 'verb', 2],
+  ['She arrived ___last___.', 'last', 'adverb', 2],
+  ['She woke up ___early___.', 'early', 'adverb', 2],
+  ['He took an ___early___ flight.', 'early', 'adjective', 2],
+  ['The decision was ___fair___.', 'fair', 'adjective', 2],
+  ['She played ___fair___ throughout.', 'fair', 'adverb', 2],
+  ['They went to the summer ___fair___.', 'fair', 'noun', 2],
+  ['He ___acted___ immediately.', 'acted', 'verb', 2],
+  ['The first ___act___ was impressive.', 'act', 'noun', 2],
+  ['She has a ___sharp___ mind.', 'sharp', 'adjective', 2],
+  ['She finished the test dead ___sharp___ on time.', 'sharp', 'adverb', 2],
+  ['It was a ___long___ wait.', 'long', 'adjective', 2],
+  ['She had ___longed___ for this moment.', 'longed', 'verb', 2],
+  ['She was ___cross___ about the delay.', 'cross', 'adjective', 2],
+  ['He ___crossed___ the street carefully.', 'crossed', 'verb', 2],
+  ['She wore a gold ___cross___.', 'cross', 'noun', 2],
+  ['She finished in ___second___ place.', 'second', 'adjective', 2],
+  ['He ___seconded___ the motion.', 'seconded', 'verb', 2],
+  ['Wait just a ___second___.', 'second', 'noun', 2],
+  ['She ___might___ come later.', 'might', 'verb', 2],
+  ['He did it with all his ___might___.', 'might', 'noun', 2],
+  ['She ___backed___ the proposal.', 'backed', 'verb', 2],
+  ['He sat at the ___back___ of the room.', 'back', 'noun', 2],
+  ['She walked ___back___ home.', 'back', 'adverb', 2],
+  ['They played a ___match___ on Sunday.', 'match', 'noun', 2],
+  ['She ___matched___ the colours perfectly.', 'matched', 'verb', 2],
+  ['She has her ___own___ opinion.', 'own', 'adjective', 2],
+  ['He ___owns___ three properties.', 'owns', 'verb', 2],
+  ['Not a ___single___ person came.', 'single', 'adjective', 2],
+  ['She is ___single___ at the moment.', 'single', 'adjective', 2],
+  ['He ___singled___ her out for praise.', 'singled', 'verb', 2],
+  ['He asked a ___question___.', 'question', 'noun', 2],
+  ['She ___questioned___ the decision.', 'questioned', 'verb', 2],
+  ['She is a fashion ___model___.', 'model', 'noun', 2],
+  ['This is a ___model___ school.', 'model', 'adjective', 2],
+  ['He ___modelled___ the new design.', 'modelled', 'verb', 2],
+  ['They received ___equal___ shares.', 'equal', 'adjective', 2],
+  ['Three plus three ___equals___ six.', 'equals', 'verb', 2],
+  ['The shop is ___open___ until nine.', 'open', 'adjective', 2],
+  ['Please ___open___ the window.', 'open', 'verb', 2],
+  ['She ___covered___ the pot with a lid.', 'covered', 'verb', 2],
+  ['He read the ___cover___ of the book.', 'cover', 'noun', 2],
+  ['She ___used___ to live in Warsaw.', 'used', 'verb', 2],
+  ['He bought a ___used___ car.', 'used', 'adjective', 2],
+  ['She is ___still___ waiting.', 'still', 'adverb', 2],
+  ['The lake was ___still___ and silent.', 'still', 'adjective', 2],
+  ['He ___stilled___ his nerves.', 'stilled', 'verb', 2],
+  ['She speaks English very ___well___.', 'well', 'adverb', 2],
+  ['He dug a ___well___ in the garden.', 'well', 'noun', 2],
+  ['She is not ___well___ today.', 'well', 'adjective', 2],
+  ['History is her favourite ___subject___.', 'subject', 'noun', 2],
+  ['She ___subjected___ him to questioning.', 'subjected', 'verb', 2],
+  ['All prices are ___subject___ to change.', 'subject', 'adjective', 2],
+  ['She gave a ___perfect___ performance.', 'perfect', 'adjective', 2],
+  ['He ___perfected___ his technique.', 'perfected', 'verb', 2],
+  ['A ___bear___ appeared in the forest.', 'bear', 'noun', 2],
+  ['She could not ___bear___ the noise.', 'bear', 'verb', 2],
+  ['What does this word ___mean___?', 'mean', 'verb', 2],
+  ['That was a ___mean___ thing to say.', 'mean', 'adjective', 2],
+  ['She calculated the ___mean___ score.', 'mean', 'noun', 2],
+  ['She paid a large ___fine___.', 'fine', 'noun', 2],
+  ['The weather was ___fine___ all week.', 'fine', 'adjective', 2],
+  ['He ___fined___ the driver fifty pounds.', 'fined', 'verb', 2],
+  ['She said she felt ___fine___.', 'fine', 'adverb', 2],
+  ['He had a deep ___wound___ on his arm.', 'wound', 'noun', 2],
+  ['She ___wound___ the thread around the spool.', 'wound', 'verb', 2],
+  ['She felt ___down___ all week.', 'down', 'adjective', 2],
+  ['He ___downed___ his drink quickly.', 'downed', 'verb', 2],
+  ['The bird flew ___down___.', 'down', 'adverb', 2],
+  ['She arrived ___before___ him.', 'before', 'preposition', 3],
+  ['He sat ___beside___ her.', 'beside', 'preposition', 3],
+  ['They walked ___through___ the park.', 'through', 'preposition', 3],
+  ['She hid ___behind___ the door.', 'behind', 'preposition', 3],
+  ['He climbed ___over___ the wall.', 'over', 'preposition', 3],
+  ['She sat ___between___ them.', 'between', 'preposition', 3],
+  ['He spoke ___against___ the proposal.', 'against', 'preposition', 3],
+  ['She arrived ___despite___ the rain.', 'despite', 'preposition', 3],
+  ['He left ___without___ saying goodbye.', 'without', 'preposition', 3],
+  ['She did it ___according___ to plan.', 'according', 'preposition', 3],
+  ['He was promoted ___within___ a year.', 'within', 'preposition', 3],
+  ['She waited ___throughout___ the ceremony.', 'throughout', 'preposition', 3],
+  ['He did it ___via___ the back door.', 'via', 'preposition', 3],
+  ['She succeeded ___despite___ her illness.', 'despite', 'preposition', 3],
+  ['He was hired ___following___ the interview.', 'following', 'preposition', 3],
+  ['She did it ___regardless___ of the cost.', 'regardless', 'preposition', 3],
+  ['He left ___amid___ the confusion.', 'amid', 'preposition', 3],
+  ['She arrived ___ahead___ of schedule.', 'ahead', 'preposition', 3],
+  ['They sat ___beneath___ the stars.', 'beneath', 'preposition', 3],
+  ['He acted ___beyond___ his authority.', 'beyond', 'preposition', 3],
+  ['She completed it ___alongside___ her team.', 'alongside', 'preposition', 3],
+  ['He ran ___past___ her in the corridor.', 'past', 'preposition', 3],
+  ['She stood ___opposite___ the bank.', 'opposite', 'preposition', 3],
+  ['He passed the exam ___owing___ to hard work.', 'owing', 'preposition', 3],
+  ['She spoke ___regarding___ the new policy.', 'regarding', 'preposition', 3],
+  ['He agreed ___concerning___ the details.', 'concerning', 'preposition', 3],
+  ['She did it ___out___ of kindness.', 'out', 'preposition', 3],
+  ['He left ___prior___ to the meeting.', 'prior', 'preposition', 3],
+  ['She acted ___on___ behalf of the team.', 'on', 'preposition', 3],
+  ['He arrived ___at___ midnight.', 'at', 'preposition', 3],
+  ['She left early ___because___ she was tired.', 'because', 'conjunction', 3],
+  ['He studied hard ___although___ he was ill.', 'although', 'conjunction', 3],
+  ['She came ___even___ though it was late.', 'even', 'conjunction', 3],
+  ['He will help ___provided___ you ask.', 'provided', 'conjunction', 3],
+  ['She stayed ___until___ the end.', 'until', 'conjunction', 3],
+  ['She agreed ___as___ long as he helped.', 'as', 'conjunction', 3],
+  ['She spoke ___whereas___ he stayed silent.', 'whereas', 'conjunction', 3],
+  ['He left ___once___ the meeting was over.', 'once', 'conjunction', 3],
+  ['She smiled ___whenever___ he walked in.', 'whenever', 'conjunction', 3],
+  ['He succeeded ___wherever___ he went.', 'wherever', 'conjunction', 3],
+  ['She agreed ___unless___ told otherwise.', 'unless', 'conjunction', 3],
+  ['He left ___after___ she arrived.', 'after', 'conjunction', 3],
+  ['She waited ___while___ he parked the car.', 'while', 'conjunction', 3],
+  ['She will help ___supposing___ he returns the favour.', 'supposing', 'conjunction', 3],
+  ['She sang ___whether___ or not she felt like it.', 'whether', 'conjunction', 3],
+  ['He works hard ___so___ that he can retire early.', 'so', 'conjunction', 3],
+  ['She left ___lest___ she be seen.', 'lest', 'conjunction', 3],
+  ['He agreed ___provided___ they paid expenses.', 'provided', 'conjunction', 3],
+  ['She continued ___despite___ the interruptions.', 'despite', 'preposition', 3],
+  ['He laughed ___though___ he tried not to.', 'though', 'conjunction', 3],
+  ['She passed ___because___ she worked hard.', 'because', 'conjunction', 3],
+  ['He waited ___until___ she returned.', 'until', 'conjunction', 3],
+  ['She smiled ___as___ she walked away.', 'as', 'conjunction', 3],
+  ['He agreed ___once___ he saw the proof.', 'once', 'conjunction', 3],
+  ['She spoke ___while___ everyone listened.', 'while', 'conjunction', 3],
+  ['He paused ___before___ answering.', 'before', 'conjunction', 3],
+  ['She nodded ___although___ she was unsure.', 'although', 'conjunction', 3],
+  ['He agreed ___unless___ things changed.', 'unless', 'conjunction', 3],
+  ['She called ___whenever___ she could.', 'whenever', 'conjunction', 3],
+  ['He continued ___whereas___ others gave up.', 'whereas', 'conjunction', 3],
+  ['He has ___yet___ to reply.', 'yet', 'adverb', 3],
+  ['She is ___still___ the best player.', 'still', 'adverb', 3],
+  ['He was ___just___ leaving.', 'just', 'adverb', 3],
+  ['She had ___already___ finished.', 'already', 'adverb', 3],
+  ['He ___nearly___ fell off the ladder.', 'nearly', 'adverb', 3],
+  ['She is ___even___ better than before.', 'even', 'adverb', 3],
+  ['He ___simply___ refused to listen.', 'simply', 'adverb', 3],
+  ['She felt ___rather___ tired.', 'rather', 'adverb', 3],
+  ['He ___hardly___ ever speaks in class.', 'hardly', 'adverb', 3],
+  ['She has ___quite___ a few friends.', 'quite', 'adverb', 3],
+  ['He ___merely___ suggested an idea.', 'merely', 'adverb', 3],
+  ['She was ___indeed___ very clever.', 'indeed', 'adverb', 3],
+  ['He ___otherwise___ would have helped.', 'otherwise', 'adverb', 3],
+  ['She felt ___somewhat___ uncomfortable.', 'somewhat', 'adverb', 3],
+  ['He was ___nonetheless___ determined.', 'nonetheless', 'adverb', 3],
+  ['She spoke ___hence___ the confusion.', 'hence', 'adverb', 3],
+  ['He was ___therefore___ disqualified.', 'therefore', 'adverb', 3],
+  ['She ___thus___ avoided any problems.', 'thus', 'adverb', 3],
+  ['He had ___furthermore___ broken the rule.', 'furthermore', 'adverb', 3],
+  ['She was ___nevertheless___ polite.', 'nevertheless', 'adverb', 3],
+  ['He was ___likewise___ confused.', 'likewise', 'adverb', 3],
+  ['She had ___subsequently___ changed her mind.', 'subsequently', 'adverb', 3],
+  ['He was ___consequently___ dismissed.', 'consequently', 'adverb', 3],
+  ['She is ___arguably___ the best.', 'arguably', 'adverb', 3],
+  ['He ___literally___ ran out of time.', 'literally', 'adverb', 3],
+  ['She ___apparently___ missed the announcement.', 'apparently', 'adverb', 3],
+  ['He ___genuinely___ felt sorry.', 'genuinely', 'adverb', 3],
+  ['She was ___remarkably___ calm.', 'remarkably', 'adverb', 3],
+  ['He behaved ___accordingly___.', 'accordingly', 'adverb', 3],
+  ['She spoke ___briefly___ about the plan.', 'briefly', 'adverb', 3],
+  ['She ___hard___ly spoke.', 'hardly', 'adverb', 2],
+  ['He drove ___close___ to the edge.', 'close', 'adverb', 2],
+  ['She sat ___near___ the window.', 'near', 'adverb', 2],
+  ['He came ___straight___ home.', 'straight', 'adverb', 2],
+  ['She worked ___late___ into the night.', 'late', 'adverb', 2],
+  ['He runs ___high___ in the company.', 'high', 'adverb', 2],
+  ['She finished ___second___.', 'second', 'adverb', 2],
+  ['He went ___wrong___ at the junction.', 'wrong', 'adverb', 2],
+  ['She stood ___apart___ from the crowd.', 'apart', 'adverb', 2],
+  ['He pressed ___deep___ into the forest.', 'deep', 'adverb', 2],
+  ['A ___close___ friend called her.', 'close', 'adjective', 2],
+  ['She lives ___near___ the station.', 'near', 'preposition', 2],
+  ['She gave a ___straight___ answer.', 'straight', 'adjective', 2],
+  ['A ___high___ fence surrounded the yard.', 'high', 'adjective', 2],
+  ['She wore a ___deep___ blue coat.', 'deep', 'adjective', 2],
+  ['The ___wrong___ answer cost him points.', 'wrong', 'adjective', 2],
+  ['He ___late___d the application.', 'lated', 'verb', 2],
+  ['She ___close___d the curtains.', 'closed', 'verb', 2],
+  ['He ___wrong___ed her badly.', 'wronged', 'verb', 2],
+  ['She ___near___ed the finish line.', 'neared', 'verb', 2],
+  ['The ___report___ was filed on time.', 'report', 'noun', 2],
+  ['He gave a ___report___ to the board.', 'report', 'noun', 2],
+  ['She ___reported___ the incident.', 'reported', 'verb', 2],
+  ['The ___drop___ in temperature was sudden.', 'drop', 'noun', 2],
+  ['He ___dropped___ his keys.', 'dropped', 'verb', 2],
+  ['The ___rise___ in prices was unexpected.', 'rise', 'noun', 2],
+  ['She ___rose___ to the challenge.', 'rose', 'verb', 2],
+  ['He gave a ___start___ of surprise.', 'start', 'noun', 2],
+  ['She ___started___ the engine.', 'started', 'verb', 2],
+  ['The ___break___ in the clouds appeared.', 'break', 'noun', 2],
+  ['He ___broke___ the record.', 'broke', 'verb', 2],
+  ['She had a ___firm___ handshake.', 'firm', 'adjective', 2],
+  ['He ___firmed___ up the arrangement.', 'firmed', 'verb', 2],
+  ['She works for a law ___firm___.', 'firm', 'noun', 2],
+  ['The ___rate___ of change increased.', 'rate', 'noun', 2],
+  ['He ___rated___ the experience highly.', 'rated', 'verb', 2],
+  ['She showed great ___care___.', 'care', 'noun', 2],
+  ['He ___cared___ deeply about the outcome.', 'cared', 'verb', 2],
+  ['She looked ___pale___.', 'pale', 'adjective', 2],
+  ['His face ___paled___ with shock.', 'paled', 'verb', 2],
+  ['She sat in ___silence___.', 'silence', 'noun', 2],
+  ['He ___silenced___ the crowd.', 'silenced', 'verb', 2],
+  ['She gave a ___final___ warning.', 'final', 'adjective', 2],
+  ['He reached the ___final___.', 'final', 'noun', 2],
+  ['She made a ___sharp___ turn.', 'sharp', 'adjective', 2],
+  ['He ___turned___ ___sharp___ly left.', 'sharply', 'adverb', 2],
+  ['The ___total___ came to fifty pounds.', 'total', 'noun', 2],
+  ['He was in ___total___ shock.', 'total', 'adjective', 2],
+  ['She ___totalled___ the damages.', 'totalled', 'verb', 2],
+  ['She walked ___past___ the bakery.', 'past', 'preposition', 2],
+  ['He sat ___beside___ the window.', 'beside', 'preposition', 2],
+  ['She hid ___behind___ the curtain.', 'behind', 'preposition', 2],
+  ['He stood ___opposite___ her.', 'opposite', 'preposition', 2],
+  ['She ran ___around___ the block.', 'around', 'preposition', 2],
+  ['He slept ___through___ the alarm.', 'through', 'preposition', 2],
+  ['She sat ___across___ the table.', 'across', 'preposition', 2],
+  ['He leaned ___against___ the wall.', 'against', 'preposition', 2],
+  ['She worked ___throughout___ the night.', 'throughout', 'preposition', 2],
+  ['He drove ___along___ the coast.', 'along', 'preposition', 2],
+  ['She is tall ___but___ he is taller.', 'but', 'conjunction', 2],
+  ['He is tired ___and___ hungry.', 'and', 'conjunction', 2],
+  ['She will come ___or___ call ahead.', 'or', 'conjunction', 2],
+  ['He stayed home ___because___ of the rain.', 'because', 'conjunction', 2],
+  ['She left ___when___ he arrived.', 'when', 'conjunction', 2],
+  ['He agreed ___if___ she helped too.', 'if', 'conjunction', 2],
+  ['She smiled ___though___ she was sad.', 'though', 'conjunction', 2],
+  ['He waited ___until___ she was ready.', 'until', 'conjunction', 2],
+  ['She worked ___while___ he cooked.', 'while', 'conjunction', 2],
+  ['He stayed ___since___ he had nowhere else to go.', 'since', 'conjunction', 2]
+];
+// ══════════════════════════════════════════════════════════
+// GAME CONFIG
+// ══════════════════════════════════════════════════════════
+const ROUND_CONFIG = [
+  // [words_in_round, drop_interval_ms, active_categories]
+  { words:8,  interval:2800, cats:['noun','verb','adjective'] },           // R1
+  { words:8,  interval:2600, cats:['noun','verb','adjective'] },           // R2
+  { words:8,  interval:2400, cats:['noun','verb','adjective'] },           // R3
+  { words:9,  interval:2200, cats:['noun','verb','adjective'] },           // R4
+  { words:9,  interval:2000, cats:['noun','verb','adjective'] },           // R5
+  { words:10, interval:2000, cats:['noun','verb','adjective','adverb'] },  // R6  +adverb
+  { words:10, interval:1900, cats:['noun','verb','adjective','adverb'] },  // R7
+  { words:10, interval:1800, cats:['noun','verb','adjective','adverb'] },  // R8
+  { words:11, interval:1700, cats:['noun','verb','adjective','adverb'] },  // R9
+  { words:11, interval:1600, cats:['noun','verb','adjective','adverb'] },  // R10
+  { words:12, interval:1600, cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep
+  { words:12, interval:1500, cats:['noun','verb','adjective','adverb','preposition'] }, // R12
+  { words:12, interval:1400, cats:['noun','verb','adjective','adverb','preposition'] }, // R13
+  { words:13, interval:1300, cats:['noun','verb','adjective','adverb','preposition'] }, // R14
+  { words:13, interval:1200, cats:['noun','verb','adjective','adverb','preposition'] }, // R15
+  { words:14, interval:1200, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj
+  { words:14, interval:1100, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R17
+  { words:15, interval:1000, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R18
+  { words:15, interval:900,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R19
+  { words:15, interval:800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R20
+];
+
+const MAX_ROUNDS = ROUND_CONFIG.length; // 20
+
+// Colour per POS — drawn from theme vars where possible, else hardcoded
+const CAT_COLOURS = {
+  noun:        '#4fc3f7', // cyan
+  verb:        '#d4af37', // gold
+  adjective:   '#81c784', // green
+  adverb:      '#ff8a65', // orange
+  preposition: '#ce93d8', // purple
+  conjunction: '#f48fb1', // pink
+};
+
+const CAT_LABELS = {
+  noun:        'Noun',
+  verb:        'Verb',
+  adjective:   'Adjective',
+  adverb:      'Adverb',
+  preposition: 'Preposition',
+  conjunction: 'Conjunction',
+};
+
+const POINTS = { correct: 10, wrong: 0, streak3: 5, streak5: 10 };
+
+// ══════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════════════
+const canvas  = document.getElementById('gameCanvas');
+const ctx     = canvas.getContext('2d');
+const COLS    = 3; // starts at 3, increases with categories
+const BLOCK_H = 56; // px on the logical canvas
+let   canvasW, canvasH, colW;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  canvasW = wrap.clientWidth;
+  canvasH = Math.min(380, Math.round(canvasW * 0.72));
+  canvas.width  = canvasW;
+  canvas.height = canvasH;
+  colW = canvasW / activeCats.length;
+}
+
+// ══════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════
+let round      = 0;         // 0-indexed
+let activeCats = [];
+let score      = 0;
+let streak     = 0;
+let bestStreak = 0;
+let wordsThisRound = 0;
+let wordsDone  = 0;
+let mistakes   = [];        // { sent, word, givenCat, correctCat }
+let correctCount = 0;
+
+// Block state
+let block = null;
+/*  block = { x, y, word, pos, sentence, colIdx, falling, speed, opacity }
+    x, y in canvas pixels (top-left of block)
+    colIdx: which column the block is currently in (0-based) */
+let dropInterval   = null;  // setInterval for gravity
+let paused         = false;
+let gameActive     = false;
+let lastUsedIndices = [];   // per-tier randomisation
+
+// Per-round word pool (freshly shuffled each round from appropriate tiers)
+let roundPool = [];
+let roundPoolIdx = 0;
+
+// ══════════════════════════════════════════════════════════
+// AUDIO (Web Audio API — no external files)
+// ══════════════════════════════════════════════════════════
+let audioCtx = null;
+let soundOn  = false;
+
+document.getElementById('soundBtn').textContent = '🔇 Off';
+
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊 On' : '🔇 Off';
+  if (soundOn && !audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playTone(freq, type, duration, vol = 0.18) {
+  if (!soundOn || !audioCtx) return;
+  try {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+
+const SFX = {
+  correct()  { playTone(523, 'sine', 0.12); setTimeout(()=>playTone(659,'sine',0.12), 80); },
+  wrong()    { playTone(220, 'sawtooth', 0.18, 0.12); },
+  land()     { playTone(330, 'triangle', 0.08, 0.1); },
+  streak()   { playTone(784, 'sine', 0.2); setTimeout(()=>playTone(988,'sine',0.15),100); },
+  roundEnd() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.18),i*90)); },
+  gameOver() { [330,294,247,220].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.2,0.1),i*100)); },
+};
+
+// ══════════════════════════════════════════════════════════
+// RANDOMISATION
+// ══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function buildRoundPool(roundIdx) {
+  const cfg  = ROUND_CONFIG[roundIdx];
+  const cats = cfg.cats;
+  const tier = roundIdx < 5 ? 1 : roundIdx < 14 ? 2 : 3;
+
+  // Filter word bank: right tier AND pos must be one of the active cats
+  const eligible = WORD_BANK.filter(([,, pos, t]) => t <= tier && cats.includes(pos));
+
+  // Ensure each active cat has at least 1 word
+  // Shuffle and pick enough for this round (words * 1.5 for variety buffer)
+  const needed = cfg.words * 2;
+  const pool   = shuffle(eligible);
+  // Ensure balance: at least 1 per category
+  const perCat = {};
+  cats.forEach(c => perCat[c] = []);
+  pool.forEach(w => { if (perCat[w[2]]) perCat[w[2]].push(w); });
+  
+  let balanced = [];
+  cats.forEach(c => balanced.push(...perCat[c].slice(0, Math.ceil(needed / cats.length))));
+  balanced = shuffle(balanced).slice(0, Math.max(needed, cfg.words));
+  
+  return balanced;
+}
+
+// ══════════════════════════════════════════════════════════
+// COLUMN LABELS
+// ══════════════════════════════════════════════════════════
+function buildColLabels() {
+  const el = document.getElementById('colLabels');
+  el.innerHTML = '';
+  activeCats.forEach((cat, i) => {
+    const div = document.createElement('div');
+    div.className = 'col-label';
+    div.id = 'colLabel_' + i;
+    div.textContent = CAT_LABELS[cat];
+    div.style.color = CAT_COLOURS[cat];
+    div.style.borderColor = 'var(--border)';
+    // Tap column label = move block to that column
+    div.addEventListener('click', () => moveToCol(i));
+    div.addEventListener('touchend', e => { e.preventDefault(); moveToCol(i); });
+    el.appendChild(div);
+  });
+}
+
+function buildCatPreview() {
+  const el = document.getElementById('catPreview');
+  el.innerHTML = '';
+  ['noun','verb','adjective'].forEach(cat => {
+    const span = document.createElement('span');
+    span.className = 'cat-pill';
+    span.textContent = CAT_LABELS[cat];
+    span.style.background = CAT_COLOURS[cat] + '22';
+    span.style.color = CAT_COLOURS[cat];
+    span.style.border = '1px solid ' + CAT_COLOURS[cat] + '44';
+    el.appendChild(span);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// SENTENCE STRIP
+// ══════════════════════════════════════════════════════════
+function updateSentenceStrip(sentence, word, filled = false) {
+  const el = document.getElementById('sentenceStrip');
+  // Replace ___word___ with a gap span
+  const marked = sentence.replace(
+    '___' + word + '___',
+    `<span class="gap${filled?' filled':''}">${filled ? word : '&nbsp;'.repeat(Math.max(word.length, 3))}</span>`
+  );
+  el.innerHTML = marked;
+}
+
+// ══════════════════════════════════════════════════════════
+// PROGRESS DOTS
+// ══════════════════════════════════════════════════════════
+function buildDots() {
+  const el = document.getElementById('progressDots');
+  el.innerHTML = '';
+  const cfg = ROUND_CONFIG[round];
+  for (let i = 0; i < cfg.words; i++) {
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i === 0 ? ' current' : '');
+    d.id = 'pdot' + i;
+    el.appendChild(d);
+  }
+}
+
+function updateDot(idx, status) {
+  const d = document.getElementById('pdot' + idx);
+  if (!d) return;
+  d.className = 'pdot ' + (status === 'correct' ? 'done-correct' : status === 'wrong' ? 'done-wrong' : 'current');
+  const next = document.getElementById('pdot' + (idx + 1));
+  if (next) next.classList.add('current');
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════
+function draw() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+
+  // Column dividers
+  activeCats.forEach((cat, i) => {
+    const x = i * colW;
+    // Faint column background
+    ctx.fillStyle = CAT_COLOURS[cat] + '0a';
+    ctx.fillRect(x, 0, colW, canvasH);
+    // Divider line
+    if (i > 0) {
+      ctx.strokeStyle = CAT_COLOURS[cat] + '33';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasH); ctx.stroke();
+    }
+    // Landing zone indicator (bottom 8px)
+    ctx.fillStyle = CAT_COLOURS[cat] + '44';
+    ctx.fillRect(x + 2, canvasH - 8, colW - 4, 6);
+  });
+
+  // Falling block
+  if (block) {
+    const bx = block.colIdx * colW;
+    const by = block.y;
+    const bw = colW;
+    const bh = BLOCK_H;
+    const cat = block.pos;
+    const col = CAT_COLOURS[cat];
+
+    // Block background
+    ctx.save();
+    ctx.globalAlpha = block.opacity || 1;
+    // Rounded rect
+    const r = 8;
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.lineTo(bx + bw - r, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+    ctx.lineTo(bx + bw, by + bh - r);
+    ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
+    ctx.lineTo(bx + r, by + bh);
+    ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
+    ctx.lineTo(bx, by + r);
+    ctx.quadraticCurveTo(bx, by, bx + r, by);
+    ctx.closePath();
+    ctx.fillStyle = col + '22';
+    ctx.fill();
+    ctx.strokeStyle = col + 'bb';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Word text
+    ctx.fillStyle = col;
+    ctx.font = 'bold 16px "DM Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Clip long words
+    const maxW = bw - 12;
+    let fontSize = 16;
+    while (ctx.measureText(block.word).width > maxW && fontSize > 9) {
+      fontSize--;
+      ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
+    }
+    ctx.fillText(block.word, bx + bw / 2, by + bh / 2);
+    ctx.restore();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// BLOCK PHYSICS
+// ══════════════════════════════════════════════════════════
+let rafId = null;
+let lastTick = 0;
+
+function spawnBlock(entry) {
+  const [sentence, word, pos] = entry;
+  block = {
+    colIdx: Math.floor(activeCats.length / 2), // start in middle column
+    y: -BLOCK_H,
+    word, pos, sentence,
+    opacity: 1,
+    speed: ROUND_CONFIG[round].interval / 1000, // seconds to cross full height
+  };
+  updateSentenceStrip(sentence, word, false);
+  startDrop();
+}
+
+function startDrop() {
+  clearInterval(dropInterval);
+  const cfg = ROUND_CONFIG[round];
+  // Move block down by one step every tick
+  const stepsToBottom = canvasH / 8; // ~8px per step
+  const msPerStep = (cfg.interval / stepsToBottom);
+  
+  dropInterval = setInterval(() => {
+    if (paused || !block) return;
+    block.y += 8;
+    if (block.y >= canvasH - BLOCK_H) {
+      block.y = canvasH - BLOCK_H;
+      clearInterval(dropInterval);
+      landBlock(block.colIdx);
+    }
+    draw();
+  }, msPerStep);
+}
+
+function moveToCol(col) {
+  if (!block || !gameActive || paused) return;
+  block.colIdx = Math.max(0, Math.min(activeCats.length - 1, col));
+  draw();
+}
+
+function onArrow(dir) {
+  if (!block || !gameActive || paused) return;
+  block.colIdx = Math.max(0, Math.min(activeCats.length - 1, block.colIdx + dir));
+  draw();
+}
+
+function onDrop() {
+  if (!block || !gameActive || paused) return;
+  // Hard drop — move to bottom immediately
+  clearInterval(dropInterval);
+  block.y = canvasH - BLOCK_H;
+  draw();
+  SFX.land();
+  setTimeout(() => landBlock(block.colIdx), 80);
+}
+
+function landBlock(colIdx) {
+  if (!block) return;
+  const chosen  = activeCats[colIdx];
+  const correct = block.pos;
+  const isRight = chosen === correct;
+
+  // Flash column label
+  const labelEl = document.getElementById('colLabel_' + colIdx);
+  if (labelEl) {
+    labelEl.classList.remove('flash-good','flash-bad');
+    void labelEl.offsetWidth;
+    labelEl.classList.add(isRight ? 'flash-good' : 'flash-bad');
+    setTimeout(() => labelEl.classList.remove('flash-good','flash-bad'), 380);
+  }
+
+  // Update sentence strip
+  updateSentenceStrip(block.sentence, block.word, true);
+
+  if (isRight) {
+    SFX.correct();
+    score += POINTS.correct;
+    streak++;
+    if (streak >= 5) { score += POINTS.streak5; SFX.streak(); }
+    else if (streak >= 3) score += POINTS.streak3;
+    if (streak > bestStreak) bestStreak = streak;
+    correctCount++;
+    updateDot(wordsDone, 'correct');
+  } else {
+    SFX.wrong();
+    streak = 0;
+    mistakes.push({ sent: block.sentence, word: block.word, given: chosen, correct });
+    updateDot(wordsDone, 'wrong');
+    // Show correct column briefly
+    const correctColIdx = activeCats.indexOf(correct);
+    const correctLabel  = document.getElementById('colLabel_' + correctColIdx);
+    if (correctLabel) {
+      correctLabel.classList.add('flash-good');
+      setTimeout(() => correctLabel.classList.remove('flash-good'), 600);
+    }
+  }
+
+  document.getElementById('scoreVal').textContent  = score;
+  document.getElementById('streakVal').textContent = streak;
+  block = null;
+  draw();
+
+  wordsDone++;
+  const cfg = ROUND_CONFIG[round];
+
+  if (wordsDone >= cfg.words) {
+    setTimeout(showRoundComplete, 500);
+  } else {
+    setTimeout(spawnNext, 900);
+  }
+}
+
+function spawnNext() {
+  if (!gameActive) return;
+  if (roundPoolIdx >= roundPool.length) {
+    // Rebuild pool (unlikely but safe)
+    roundPool = buildRoundPool(round);
+    roundPoolIdx = 0;
+  }
+  spawnBlock(roundPool[roundPoolIdx++]);
+}
+
+// ══════════════════════════════════════════════════════════
+// ROUND MANAGEMENT
+// ══════════════════════════════════════════════════════════
+function showRoundComplete() {
+  clearInterval(dropInterval);
+  SFX.roundEnd();
+
+  const overlay = document.getElementById('roundOverlay');
+  const title   = document.getElementById('roundOverlayTitle');
+  const scoreEl = document.getElementById('roundOverlayScore');
+  const newCat  = document.getElementById('roundOverlayNewCat');
+
+  title.textContent = round + 1 < MAX_ROUNDS
+    ? `Round ${round + 1} complete! 🎉`
+    : 'Final round complete! 🏆';
+  scoreEl.textContent = `Score: ${score} pts`;
+
+  // Check if next round unlocks a new category
+  newCat.style.display = 'none';
+  if (round + 1 < MAX_ROUNDS) {
+    const curCats  = ROUND_CONFIG[round].cats;
+    const nextCats = ROUND_CONFIG[round + 1].cats;
+    const added    = nextCats.filter(c => !curCats.includes(c));
+    if (added.length > 0) {
+      newCat.style.display = 'block';
+      newCat.innerHTML = `New category unlocked: <strong style="color:${CAT_COLOURS[added[0]]}">${CAT_LABELS[added[0]]}</strong>`;
+    }
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function nextRound() {
+  document.getElementById('roundOverlay').style.display = 'none';
+  round++;
+  if (round >= MAX_ROUNDS) {
+    endGame();
+    return;
+  }
+  startRound();
+}
+
+function startRound() {
+  const cfg  = ROUND_CONFIG[round];
+  activeCats = cfg.cats;
+  wordsThisRound = cfg.words;
+  wordsDone  = 0;
+  block      = null;
+
+  document.getElementById('roundVal').textContent = `${round + 1} / ${MAX_ROUNDS}`;
+  resizeCanvas();
+  buildColLabels();
+  buildDots();
+  draw();
+
+  roundPool    = buildRoundPool(round);
+  roundPoolIdx = 0;
+
+  spawnNext();
+}
+
+// ══════════════════════════════════════════════════════════
+// SWIPE HANDLING
+// ══════════════════════════════════════════════════════════
+let touchStartX = null, touchStartY = null, touchStartTime = 0;
+let lastTapTime = 0;
+
+document.getElementById('gameCanvas').addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchStartTime = Date.now();
+  // Double-tap to pause
+  const now = Date.now();
+  if (now - lastTapTime < 300) { togglePause(); }
+  lastTapTime = now;
+}, { passive: true });
+
+document.getElementById('gameCanvas').addEventListener('touchend', e => {
+  if (touchStartX === null) return;
+  const t   = e.changedTouches[0];
+  const dx  = t.clientX - touchStartX;
+  const dy  = t.clientY - touchStartY;
+  const dt  = Date.now() - touchStartTime;
+
+  if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) && dt < 400) {
+    // Swipe — move block one column left or right
+    onArrow(dx > 0 ? 1 : -1);
+  } else if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 250) {
+    // Short tap — drop
+    onDrop();
+  }
+  touchStartX = null;
+}, { passive: true });
+
+// Also handle swipe on the whole canvas wrap for wider target
+document.getElementById('canvasWrap').addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchStartTime = Date.now();
+}, { passive: true });
+
+// Double-tap anywhere to pause
+document.body.addEventListener('dblclick', () => {
+  if (gameActive) togglePause();
+});
+
+// ══════════════════════════════════════════════════════════
+// KEYBOARD
+// ══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!gameActive) return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); onArrow(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); onArrow(1); }
+  if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); onDrop(); }
+  if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') togglePause();
+  // Number keys 1-6 to select column directly
+  const n = parseInt(e.key);
+  if (n >= 1 && n <= activeCats.length) moveToCol(n - 1);
+});
+
+// ══════════════════════════════════════════════════════════
+// PAUSE
+// ══════════════════════════════════════════════════════════
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+  if (!paused && block) startDrop();
+}
+
+// ══════════════════════════════════════════════════════════
+// START / END GAME
+// ══════════════════════════════════════════════════════════
+function startGame() {
+  // Reset all state
+  round       = 0;
+  score       = 0;
+  streak      = 0;
+  bestStreak  = 0;
+  correctCount= 0;
+  mistakes    = [];
+  paused      = false;
+  gameActive  = true;
+  block       = null;
+  clearInterval(dropInterval);
+
+  document.getElementById('phase-intro').style.display  = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-game').style.display   = 'flex';
+  document.getElementById('pauseOverlay').style.display  = 'none';
+  document.getElementById('roundOverlay').style.display  = 'none';
+
+  document.getElementById('scoreVal').textContent  = '0';
+  document.getElementById('streakVal').textContent = '0';
+
+  // Reset submit area
+  document.getElementById('submitArea').innerHTML = `
+    <div class="submit-row">
+      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>`;
+
+  activeCats = ROUND_CONFIG[0].cats;
+  resizeCanvas();
+  startRound();
+}
+
+function endGame() {
+  clearInterval(dropInterval);
+  gameActive = false;
+  block      = null;
+  SFX.gameOver();
+
+  document.getElementById('phase-game').style.display   = 'none';
+  document.getElementById('roundOverlay').style.display  = 'none';
+  document.getElementById('phase-result').style.display = 'flex';
+
+  const totalWords = ROUND_CONFIG.slice(0, round).reduce((s, c) => s + c.words, 0) + wordsDone;
+  document.getElementById('resultHeadline').textContent =
+    round >= MAX_ROUNDS ? '🏆 Game complete!' : `Round ${round + 1} — Game over`;
+  document.getElementById('resultMsg').textContent =
+    score >= 1500 ? '🎉 Outstanding! You clearly know your grammar!' :
+    score >= 900  ? '👏 Really impressive — well done!' :
+    score >= 500  ? 'Good effort — keep practising!' :
+    'Every drop teaches you something — try again!';
+
+  document.getElementById('finalScore').textContent   = score;
+  document.getElementById('finalCorrect').textContent = correctCount;
+  document.getElementById('finalRound').textContent   = round + (wordsDone > 0 ? 1 : 0);
+
+  document.getElementById('submitArea').dataset.score = score;
+
+  // Show mistakes
+  const ml = document.getElementById('mistakesList');
+  ml.innerHTML = '';
+  if (mistakes.length === 0) {
+    ml.innerHTML = '<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>';
+  } else {
+    mistakes.slice(-10).forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'mistake-item';
+      const display = m.sent.replace('___' + m.word + '___', `<strong>${m.word}</strong>`);
+      div.innerHTML = `
+        <div class="mi-sent">${display}</div>
+        <div><span class="mi-word">You chose: ${CAT_LABELS[m.given] || m.given}</span>
+        &nbsp;→&nbsp;<span class="mi-pos">Correct: ${CAT_LABELS[m.correct]}</span></div>`;
+      ml.appendChild(div);
+    });
+  }
+
+  renderLeaderboard('worddrop', 'lbBodyResult');
+}
+
+async function doSubmit() {
+  const score = parseInt(document.getElementById('submitArea').dataset.score || '0');
+  await handleScoreSubmit('worddrop', score, 'nameInput', 'submitArea', 'lbBodyResult');
+  renderLeaderboard('worddrop', 'lbBodyResult');
+}
+
+// ══════════════════════════════════════════════════════════
+// RESIZE OBSERVER
+// ══════════════════════════════════════════════════════════
+const ro = new ResizeObserver(() => {
+  if (document.getElementById('phase-game').style.display !== 'none') {
+    resizeCanvas();
+    buildColLabels();
+    draw();
+  }
+});
+ro.observe(document.getElementById('canvasWrap'));
+
+// ══════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════
+buildCatPreview();
+renderLeaderboard('worddrop', 'lbBodyIntro');
+</script>
+</body>
+</html>
