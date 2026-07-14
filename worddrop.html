@@ -167,6 +167,33 @@ main { max-width:none; margin:0; padding:0; }
   border-radius:10px; padding:.8rem 1.2rem; text-align:center; color:#ddd;
   font-size:.9rem; line-height:1.6;
 }
+
+/* Round summary chips */
+.ro-chip {
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+  border-radius:7px; padding:.4rem .65rem; cursor:pointer;
+  transition:background .15s; -webkit-tap-highlight-color:transparent;
+}
+.ro-chip:hover { background:rgba(255,255,255,.1); }
+.ro-chip.ro-correct { border-color:rgba(72,187,120,.4); }
+.ro-chip.ro-wrong   { border-color:rgba(192,57,43,.4); }
+.ro-chip .ro-word   { font-family:'Space Mono',monospace; font-size:.75rem; font-weight:700; color:#fff; }
+.ro-chip .ro-cat    { font-size:.65rem; color:#666; margin-top:.1rem; }
+.ro-chip.ro-correct .ro-cat { color:rgba(72,187,120,.7); }
+.ro-chip.ro-wrong   .ro-cat { color:rgba(192,57,43,.7); }
+
+/* Word info popup inside overlay */
+.word-popup {
+  background:#1a1a1a; border:1px solid #333; border-radius:10px;
+  padding:.85rem 1rem; text-align:left; width:100%; max-width:340px;
+  margin-top:.25rem;
+}
+.word-popup .wp-word { font-family:'Space Mono',monospace; font-size:1rem; font-weight:700; color:#fff; margin-bottom:.2rem; }
+.word-popup .wp-pos  { font-size:.7rem; font-family:'Space Mono',monospace; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.4rem; }
+.word-popup .wp-def  { font-size:.82rem; color:#ccc; line-height:1.55; margin-bottom:.35rem; }
+.word-popup .wp-ex   { font-size:.78rem; color:#666; font-style:italic; line-height:1.5; }
+.word-popup .wp-close { font-size:.72rem; color:#555; cursor:pointer; text-align:right; margin-top:.5rem; text-transform:uppercase; font-family:'Space Mono',monospace; letter-spacing:.07em; }
+.word-popup .wp-close:hover { color:#aaa; }
 .new-unlock-box .life-anim {
   font-size:1.8rem; animation:lifePulse .6s ease .2s both;
   display:block; margin-bottom:.3rem;
@@ -219,7 +246,7 @@ main { max-width:none; margin:0; padding:0; }
     <!-- Dots -->
     <div class="dots-col" id="progressDots"></div>
     <!-- Sound -->
-    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇</button>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
     <!-- Controls -->
     <div class="arrow-panel">
       <div class="arrow-row">
@@ -276,6 +303,10 @@ main { max-width:none; margin:0; padding:0; }
   <h2 id="roTitle">Round complete! 🎉</h2>
   <div id="roScore" style="color:#888;font-size:.88rem"></div>
   <div class="new-unlock-box" id="roUnlock" style="display:none"></div>
+
+  <!-- Per-round word summary -->
+  <div id="roSummary" style="width:100%;max-width:340px;max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:.35rem"></div>
+
   <div class="overlay-btns">
     <button class="btn-primary" onclick="nextRound()">Next round →</button>
     <button class="btn-ghost"   onclick="endGameEarly()">Save score &amp; finish</button>
@@ -697,26 +728,26 @@ const WORD_BANK = [
 // CONFIG
 // ══════════════════════════════════════════════════════════
 const ROUND_CONFIG = [
-  { words:6,  interval:10000, cats:['noun','verb','adjective'] },
-  { words:7,  interval:9200,  cats:['noun','verb','adjective'] },
-  { words:7,  interval:8500,  cats:['noun','verb','adjective'] },
-  { words:8,  interval:7800,  cats:['noun','verb','adjective'] },
-  { words:8,  interval:7200,  cats:['noun','verb','adjective'] },
-  { words:9,  interval:7200,  cats:['noun','verb','adjective','adverb'] },  // R6 +adverb +life
-  { words:9,  interval:6500,  cats:['noun','verb','adjective','adverb'] },
-  { words:10, interval:5900,  cats:['noun','verb','adjective','adverb'] },
-  { words:10, interval:5400,  cats:['noun','verb','adjective','adverb'] },
-  { words:10, interval:4900,  cats:['noun','verb','adjective','adverb'] },
-  { words:11, interval:4900,  cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep +life
-  { words:11, interval:4400,  cats:['noun','verb','adjective','adverb','preposition'] },
-  { words:12, interval:3900,  cats:['noun','verb','adjective','adverb','preposition'] },
-  { words:12, interval:3400,  cats:['noun','verb','adjective','adverb','preposition'] },
-  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition'] },
-  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj +life
-  { words:14, interval:2600,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
-  { words:14, interval:2200,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
-  { words:15, interval:1800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
-  { words:15, interval:1500,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:6,  interval:14000, cats:['noun','verb','adjective'] },
+  { words:7,  interval:13000, cats:['noun','verb','adjective'] },
+  { words:7,  interval:12000, cats:['noun','verb','adjective'] },
+  { words:8,  interval:11000, cats:['noun','verb','adjective'] },
+  { words:8,  interval:10000, cats:['noun','verb','adjective'] },
+  { words:9,  interval:10000, cats:['noun','verb','adjective','adverb'] },  // R6 +adverb +life
+  { words:9,  interval:9000,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:8000,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:7200,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:6500,  cats:['noun','verb','adjective','adverb'] },
+  { words:11, interval:6500,  cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep +life
+  { words:11, interval:5800,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:5200,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:4600,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:4000,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:4000,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj +life
+  { words:14, interval:3400,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:14, interval:2800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:2400,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:2000,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
 ];
 const MAX_ROUNDS    = ROUND_CONFIG.length;
 const BONUS_ROUNDS  = new Set([5, 10, 15]); // 0-indexed → rounds 6, 11, 16
@@ -750,9 +781,11 @@ let gapX = 0, gapY = 0;
 // GAME STATE
 // ══════════════════════════════════════════════════════════
 let round = 0, activeCats = [], score = 0, streak = 0;
+let roundCorrect = [], roundWrong = []; // per-round for summary
 let lives = MAX_LIVES;
 let correctCount = 0, mistakes = [], wordsDone = 0;
-let block = null, dropInterval = null, paused = false, gameActive = false;
+let roundHistory = []; // per-round: [{word, sentence, pos, given, correct:bool}]
+let block = null, paused = false, gameActive = false;
 let roundPool = [], roundPoolIdx = 0;
 
 // Sentence word layout cache
@@ -769,19 +802,17 @@ let previewTimer = null;
 // AUDIO — create context on first user gesture anywhere
 // ══════════════════════════════════════════════════════════
 let audioCtx = null;
-let soundOn  = false;
+let soundOn  = true;  // ON by default
 
-// Create AudioContext on first touch/click anywhere — required by browsers
 function ensureAudio() {
   if (!audioCtx) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(()=>{});
-  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
 }
-document.addEventListener('click',     ensureAudio, {once:false, passive:true});
-document.addEventListener('touchstart',ensureAudio, {once:false, passive:true});
+document.addEventListener('click',     ensureAudio, {passive:true});
+document.addEventListener('touchstart',ensureAudio, {passive:true});
+document.addEventListener('keydown',   ensureAudio, {passive:true});
 
 function toggleSound() {
   soundOn = !soundOn;
@@ -790,18 +821,23 @@ function toggleSound() {
 }
 
 function tone(freq, type, dur, vol=0.14) {
-  if (!soundOn || !audioCtx || audioCtx.state !== 'running') return;
-  try {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    o.type = type;
-    o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-    o.start();
-    o.stop(audioCtx.currentTime + dur);
-  } catch(e) {}
+  if (!soundOn) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  const play = () => {
+    try {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = type;
+      o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(vol, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch(e) {}
+  };
+  if (audioCtx.state === 'running') play();
+  else audioCtx.resume().then(play).catch(()=>{});
 }
 
 const SFX = {
@@ -1080,7 +1116,7 @@ function draw() {
 
   // Falling word — pure white, no colour hint
   if (block && block.slotState !== 'preview') {
-    const bx = block.colIdx * colW + colW / 2;
+    const bx = block.x !== undefined ? block.x : block.colIdx * colW + colW / 2;
     const by = block.y;
     let fs   = Math.max(13, Math.min(26, Math.round(colW * 0.27)));
     ctx.font = `bold ${fs}px "Space Mono", monospace`;
@@ -1123,84 +1159,132 @@ function buildPool(rIdx) {
 }
 
 // ══════════════════════════════════════════════════════════
-// SPAWN — word shown in gap for 1s, then falls from gapX/gapY
+// SPAWN — word shown in gap for 1s, slides to centre, then falls
 // ══════════════════════════════════════════════════════════
 function spawnBlock(entry) {
   const [sentence, word, pos] = entry;
 
   block = {
     colIdx: Math.floor(activeCats.length / 2),
-    y: 0,        // will be set to gapY after layoutSentence
+    x: 0,   // current x (set after layout)
+    y: 0,   // current y (set after layout)
+    targetX: 0, // centre column x
     word, pos, sentence,
     slotState: 'preview',
     slotColour: null,
     _fs: 18,
+    phase: 'preview', // 'preview' | 'slide' | 'fall'
   };
 
-  // Layout sentence with word visible in gap
   layoutSentence(sentence, word, 'preview', null);
-  // Position falling word at the gap — it won't move yet
+  block.x = gapX;
   block.y = gapY;
+  block.targetX = Math.floor(activeCats.length / 2) * colW + colW / 2;
   draw();
 
-  // After 1 second, word lifts out and begins falling from the gap position
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => {
     if (!gameActive || !block) return;
-    // Switch slot to empty
     layoutSentence(block.sentence, block.word, 'empty', null);
-    // Block starts at the exact gap position
-    block.y        = gapY;
     block.slotState = 'empty';
-    draw();
-    startDrop();
+    block.phase     = 'slide';
+    // Capture start positions for the slide
+    block.slideStartX = gapX;
+    block.slideStartY = gapY;
+    block.x = gapX;
+    block.y = gapY;
+    startDropRAF();
   }, 1000);
 }
 
-function startDrop() {
-  clearInterval(dropInterval);
-  const cfg      = ROUND_CONFIG[round];
-  // Drop from gapY (top of drop) to DROP_BOT
-  const range    = DROP_BOT - gapY;
-  const stepPx   = 5;
-  const steps    = range / stepPx;
-  const msPerStep = Math.max(14, cfg.interval / steps);
+// RAF-based smooth drop — replaces setInterval entirely
+let rafDrop = null;        // requestAnimationFrame id
+let dropLastTime = null;   // timestamp of last frame
+const SLIDE_DUR = 320;     // ms to slide from gap to centre column
+let slideElapsed = 0;
 
-  dropInterval = setInterval(() => {
-    if (paused || !block) return;
-    block.y += stepPx;
+function startDropRAF() {
+  if (rafDrop) cancelAnimationFrame(rafDrop);
+  dropLastTime  = null;
+  slideElapsed  = 0;
+  rafDrop = requestAnimationFrame(dropFrame);
+}
+
+function dropFrame(ts) {
+  if (!gameActive || !block || paused) {
+    dropLastTime = null;
+    rafDrop = requestAnimationFrame(dropFrame);
+    return;
+  }
+
+  if (dropLastTime === null) dropLastTime = ts;
+  const dt = Math.min(ts - dropLastTime, 50); // cap at 50ms to avoid huge jumps after tab switch
+  dropLastTime = ts;
+
+  const cfg   = ROUND_CONFIG[round];
+  const range = DROP_BOT - block.slideStartY;
+  // pixels per millisecond for the fall phase
+  const fallSpeed = range / cfg.interval;
+
+  if (block.phase === 'slide') {
+    slideElapsed += dt;
+    const prog  = Math.min(1, slideElapsed / SLIDE_DUR);
+    const ease  = prog < 0.5 ? 2*prog*prog : -1+(4-2*prog)*prog;
+    block.x = block.slideStartX + (block.targetX - block.slideStartX) * ease;
+    block.y = block.slideStartY; // stays at gap y during slide
+    if (prog >= 1) {
+      block.phase = 'fall';
+      block.x     = block.targetX;
+    }
+
+  } else if (block.phase === 'fall') {
+    block.y += fallSpeed * dt;
+    block.x  = block.colIdx * colW + colW / 2; // track column position
     if (block.y >= DROP_BOT) {
       block.y = DROP_BOT;
-      clearInterval(dropInterval);
       draw();
+      cancelAnimationFrame(rafDrop);
+      rafDrop = null;
       landBlock(block.colIdx);
-    } else {
-      draw();
+      return;
     }
-  }, msPerStep);
+  }
+
+  draw();
+  rafDrop = requestAnimationFrame(dropFrame);
 }
 
 function moveToCol(col) {
   if (!block || !gameActive || paused) return;
-  block.colIdx = Math.max(0, Math.min(activeCats.length-1, col));
+  block.colIdx  = Math.max(0, Math.min(activeCats.length-1, col));
+  block.targetX = block.colIdx * colW + colW / 2;
+  if (block.phase === 'fall') block.x = block.targetX;
   draw();
 }
 function onArrow(dir) {
   if (!block || !gameActive || paused) return;
-  block.colIdx = Math.max(0, Math.min(activeCats.length-1, block.colIdx+dir));
+  block.colIdx  = Math.max(0, Math.min(activeCats.length-1, block.colIdx + dir));
+  block.targetX = block.colIdx * colW + colW / 2;
+  if (block.phase === 'fall') block.x = block.targetX;
   draw();
 }
 function onDrop() {
   if (!block || !gameActive || paused) return;
   clearTimeout(previewTimer);
-  // If still in preview, start from gapY
+  // If still in preview, begin drop immediately
   if (block.slotState === 'preview') {
     layoutSentence(block.sentence, block.word, 'empty', null);
-    block.y        = gapY;
-    block.slotState = 'empty';
+    block.slotState    = 'empty';
+    block.phase        = 'fall';
+    block.slideStartY  = gapY;
+    block.x            = block.targetX;
+    block.y            = gapY;
   }
-  clearInterval(dropInterval);
-  block.y = DROP_BOT;
+  // Skip directly to bottom
+  if (rafDrop) { cancelAnimationFrame(rafDrop); rafDrop = null; }
+  block.phase = 'fall';
+  block.x     = block.targetX;
+  block.y     = DROP_BOT;
   draw();
   setTimeout(() => landBlock(block.colIdx), 50);
 }
@@ -1240,6 +1324,7 @@ function landBlock(colIdx) {
     else if (streak >= 3) score += 5;
     correctCount++;
     updateDot(wordsDone, 'correct');
+    roundCorrect.push({ word:savedWord, pos:correct, sent:savedSentence });
 
     const col = CAT_COLOURS[correct];
     // Fly from landing position back to the exact gap coordinates
@@ -1262,6 +1347,7 @@ function landBlock(colIdx) {
     SFX.loseLife();
     streak = 0;
     mistakes.push({ sent:savedSentence, word:savedWord, given:chosen, correct });
+    roundWrong.push({ word:savedWord, pos:correct, given:chosen, sent:savedSentence });
     updateDot(wordsDone, 'wrong');
 
     // Flash the correct column label
@@ -1291,7 +1377,7 @@ function landBlock(colIdx) {
   wordsDone++;
 
   if (wordsDone >= ROUND_CONFIG[round].words) {
-    clearInterval(dropInterval);
+    if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;}
     setTimeout(showRoundComplete, isRight ? 1400 : 800);
   }
 }
@@ -1384,24 +1470,79 @@ function buildCatPreview() {
 // ══════════════════════════════════════════════════════════
 // ROUND COMPLETE
 // ══════════════════════════════════════════════════════════
+// ── Round summary helpers ─────────────────────────────────
+let openPopup = null;
+
+function getWordInfo(word) {
+  return WORD_BANK.find(([,w]) => w === word) || null;
+}
+
+function buildRoundSummary() {
+  const el = document.getElementById('roSummary');
+  el.innerHTML = '';
+
+  if (roundCorrect.length) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-family:"Space Mono",monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(72,187,120,.8);margin-bottom:.15rem';
+    hdr.textContent = `✓ Correct — ${roundCorrect.length}`;
+    el.appendChild(hdr);
+    roundCorrect.forEach(item => el.appendChild(makeRoChip(item, true)));
+  }
+  if (roundWrong.length) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-family:"Space Mono",monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(192,57,43,.8);margin-top:.4rem;margin-bottom:.15rem';
+    hdr.textContent = `✗ Incorrect — ${roundWrong.length}`;
+    el.appendChild(hdr);
+    roundWrong.forEach(item => el.appendChild(makeRoChip(item, false)));
+  }
+}
+
+function makeRoChip(item, wasCorrect) {
+  const chip = document.createElement('div');
+  chip.className = 'ro-chip ' + (wasCorrect ? 'ro-correct' : 'ro-wrong');
+  const correctLabel = CAT_LABELS[item.pos] || item.pos;
+  const givenLabel   = item.given ? (CAT_LABELS[item.given] || item.given) : '';
+  chip.innerHTML = `<div class="ro-word">${item.word.toUpperCase()}</div>
+    <div class="ro-cat">${wasCorrect ? correctLabel : `${givenLabel} → ${correctLabel}`}</div>`;
+  chip.addEventListener('click', () => showWordPopup(item.word, item.pos, chip));
+  return chip;
+}
+
+function showWordPopup(word, pos, anchorEl) {
+  if (openPopup) { openPopup.remove(); openPopup = null; }
+  const entry = getWordInfo(word);
+  const def = entry ? entry[3] : '';
+  const ex  = entry ? entry[4] : '';
+  const popup = document.createElement('div');
+  popup.className = 'word-popup';
+  popup.innerHTML = `
+    <div class="wp-word">${word}</div>
+    <div class="wp-pos" style="color:${CAT_COLOURS[pos]||'#aaa'}">${CAT_LABELS[pos]||pos}</div>
+    <div class="wp-def">${escHtml(def)}</div>
+    <div class="wp-ex">${ex ? '"' + escHtml(ex) + '"' : ''}</div>
+    <div class="wp-close" onclick="this.parentElement.remove();openPopup=null">Close ✕</div>`;
+  anchorEl.parentNode.insertBefore(popup, anchorEl.nextSibling);
+  openPopup = popup;
+  setTimeout(() => popup.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+}
+
 function showRoundComplete() {
-  clearInterval(dropInterval);
+  if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;}
   SFX.roundEnd();
 
   document.getElementById('roTitle').textContent =
     round + 1 < MAX_ROUNDS ? `Round ${round+1} complete! 🎉` : 'Final round done! 🏆';
-  document.getElementById('roScore').textContent = `Score so far: ${score} pts`;
+  document.getElementById('roScore').textContent =
+    `Score: ${score} pts · ${roundCorrect.length} correct · ${roundWrong.length} wrong`;
 
   const unlockEl = document.getElementById('roUnlock');
   unlockEl.style.display = 'none';
 
-  // Check if next round is a bonus round
   if (round + 1 < MAX_ROUNDS && BONUS_ROUNDS.has(round + 1)) {
     const added = ROUND_CONFIG[round+1].cats.filter(c => !ROUND_CONFIG[round].cats.includes(c));
     const newCat = added[0];
     if (newCat) {
-      // Grant extra life
-      lives = Math.min(MAX_LIVES + 1, lives + 1); // allow up to 4 temporarily
+      lives = Math.min(MAX_LIVES + 1, lives + 1);
       SFX.gainLife();
       unlockEl.style.display = 'block';
       unlockEl.innerHTML = `
@@ -1409,7 +1550,6 @@ function showRoundComplete() {
         <strong>+1 Life!</strong><br>
         New category unlocked:<br>
         <strong style="color:${CAT_COLOURS[newCat]}">${CAT_LABELS[newCat]}</strong>`;
-      // Animate the life in the HUD
       renderLives();
       setTimeout(() => {
         const row = document.getElementById('livesRow');
@@ -1421,6 +1561,10 @@ function showRoundComplete() {
       }, 250);
     }
   }
+
+  // Build per-round word summary
+  buildRoundSummary();
+  openPopup = null;
 
   document.getElementById('roundOverlay').style.display = 'flex';
 }
@@ -1436,6 +1580,7 @@ function startRound() {
   const cfg   = ROUND_CONFIG[round];
   activeCats  = cfg.cats;
   wordsDone   = 0;
+  roundCorrect = []; roundWrong = [];
   block       = null;
   flyAnim     = null;
   sentTokens  = [];
@@ -1490,14 +1635,14 @@ document.addEventListener('keydown', e=>{
 function togglePause() {
   paused = !paused;
   document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
-  if (!paused && block && block.slotState !== 'preview') startDrop();
+  if (!paused && block && block.phase !== 'preview') startDropRAF();
 }
 
 // ══════════════════════════════════════════════════════════
 // GAME FLOW
 // ══════════════════════════════════════════════════════════
 function goToIntro() {
-  clearInterval(dropInterval); clearTimeout(previewTimer);
+  if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;} clearTimeout(previewTimer);
   gameActive=false; block=null; flyAnim=null;
   ['pauseOverlay','roundOverlay','livesOverlay'].forEach(id=>{
     document.getElementById(id).style.display='none';
@@ -1520,7 +1665,7 @@ function startGame() {
   round=0; score=0; streak=0; correctCount=0; mistakes=[];
   lives=MAX_LIVES; paused=false; gameActive=true;
   block=null; flyAnim=null; sentTokens=[];
-  clearInterval(dropInterval); clearTimeout(previewTimer);
+  if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;} clearTimeout(previewTimer);
 
   document.getElementById('phase-intro').style.display='none';
   document.getElementById('phase-result').style.display='none';
@@ -1543,7 +1688,7 @@ function startGame() {
 }
 
 function endGame() {
-  clearInterval(dropInterval); clearTimeout(previewTimer);
+  if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;} clearTimeout(previewTimer);
   gameActive=false; block=null; flyAnim=null;
   SFX.gameOver();
   document.getElementById('phase-game').style.display='none';
@@ -1593,7 +1738,7 @@ const ro = new ResizeObserver(()=>{
       layoutSentence(block.sentence, block.word, block.slotState, block.slotColour);
     }
     draw();
-    if (block && block.slotState==='empty') startDrop();
+    if (block && block.slotState==='empty') startDropRAF();
   }
 });
 ro.observe(canvas);
