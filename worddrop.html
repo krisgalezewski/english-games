@@ -2,162 +2,189 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>WordDrop — English Games</title>
 <link rel="stylesheet" href="theme.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
-main { max-width:600px; margin:0 auto; padding:1rem 1rem 2rem; display:flex; flex-direction:column; gap:.75rem; align-items:center; }
+/* ── Reset game chrome ── */
+body { overflow-x:hidden; }
+main { max-width:none; margin:0; padding:0; }
 
-/* ── HUD ── */
-.hud { display:flex; align-items:center; justify-content:space-between; width:100%; gap:.5rem; }
-.hud-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .8rem; text-align:center; min-width:3.5rem; }
-.hud-val { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--gold); line-height:1; }
-.hud-lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-.hud-center { flex:1; text-align:center; }
-.round-label { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-.round-val   { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--text); }
+/* ── INTRO / RESULT screens — centred, readable ── */
+.screen {
+  max-width:520px; margin:0 auto;
+  padding:1.25rem 1rem 2.5rem;
+  display:flex; flex-direction:column; align-items:center; gap:1rem;
+}
+.intro-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; width:100%; }
+.intro-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:.6rem; }
+.intro-card p  { font-size:.87rem; color:var(--muted); line-height:1.7; margin-bottom:.4rem; }
+.cat-pill { display:inline-block; padding:.2rem .65rem; border-radius:99px; font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin:.15rem; }
 
-/* ── Sentence strip ── */
-.sentence-strip {
-  width:100%; background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; padding:.75rem 1rem; text-align:center;
-  font-family:'DM Sans',sans-serif; font-size:1rem; line-height:1.7;
-  min-height:3.2rem; position:relative; overflow:hidden;
+/* ── GAME SCREEN — full viewport height, two-column on wide, stacked on narrow ── */
+#phase-game {
+  width:100vw; min-height:100dvh;
+  display:none; flex-direction:column;
+  background:#0d0d0d;
 }
-.sentence-strip .gap {
-  display:inline-block; min-width:3rem; border-bottom:2px solid var(--gold);
-  vertical-align:bottom; margin:0 .2rem;
-}
-.sentence-strip .gap.filled { border-bottom-color:var(--correct); }
 
-/* ── Game canvas ── */
-.game-canvas-wrap {
-  position:relative; width:100%; border:1px solid var(--border);
-  border-radius:10px; overflow:hidden; background:#0a0a0a;
-  touch-action:none; user-select:none;
+/* Top bar: sentence + HUD side by side */
+.game-topbar {
+  display:flex; align-items:flex-start; gap:.75rem;
+  padding:.6rem .75rem .4rem;
+  background:#111; border-bottom:1px solid #222;
+  flex-shrink:0;
 }
-canvas { display:block; width:100%; height:auto; }
+.sentence-panel {
+  flex:1; min-width:0;
+}
+.sentence-label {
+  font-family:'Space Mono',monospace; font-size:.55rem;
+  letter-spacing:.1em; text-transform:uppercase; color:#555;
+  margin-bottom:.3rem;
+}
+.sentence-text {
+  font-family:'DM Sans',sans-serif; font-size:.95rem;
+  color:#aaa; line-height:1.65;
+}
+/* The highlighted word slot in the sentence */
+.sentence-text .slot {
+  font-family:'Space Mono',monospace; font-weight:700;
+  font-size:1.05rem; letter-spacing:.05em; text-transform:uppercase;
+  color:#fff; background:rgba(255,255,255,.08);
+  border-radius:4px; padding:.05rem .35rem;
+  display:inline-block; vertical-align:middle;
+  border-bottom:2px solid rgba(255,255,255,.3);
+  transition:color .3s, border-color .3s;
+}
+.sentence-text .slot.slot-correct {
+  /* colour applied via JS — glows in POS colour when word flies back */
+}
+.sentence-text .slot.slot-empty {
+  color:transparent; border-bottom:2px solid #555;
+  min-width:2.5rem;
+}
 
-/* ── Column labels ── */
-.col-labels {
-  display:flex; width:100%;
-}
-.col-label {
-  flex:1; text-align:center; padding:.4rem .2rem;
-  font-family:'Space Mono',monospace; font-size:.6rem;
-  letter-spacing:.08em; text-transform:uppercase; font-weight:700;
-  border:1px solid var(--border); border-top:none;
-  cursor:pointer; transition:background .15s;
-  -webkit-tap-highlight-color:transparent;
-}
-.col-label:first-child { border-radius:0 0 0 8px; }
-.col-label:last-child  { border-radius:0 0 8px 0; }
-.col-label:hover { background:var(--surface); }
-.col-label.flash-good { animation:colFlashGood .35s; }
-.col-label.flash-bad  { animation:colFlashBad  .35s; }
-@keyframes colFlashGood { 0%,100%{background:transparent} 50%{background:var(--correct-dim)} }
-@keyframes colFlashBad  { 0%,100%{background:transparent} 50%{background:var(--wrong-dim)} }
+/* HUD pills — right side of topbar */
+.hud-pills { display:flex; flex-direction:column; gap:.3rem; flex-shrink:0; align-items:flex-end; }
+.hud-pill  { text-align:right; }
+.hud-pill .v { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); line-height:1; }
+.hud-pill .l { font-family:'Space Mono',monospace; font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; color:#555; }
+.sound-pill { background:none; border:1px solid #333; border-radius:4px; padding:.2rem .5rem; font-size:.75rem; cursor:pointer; color:#555; margin-top:.15rem; -webkit-tap-highlight-color:transparent; }
+.sound-pill:hover { color:#aaa; }
 
-/* ── Arrow controls (mobile) ── */
-.arrow-controls { display:flex; gap:.5rem; width:100%; justify-content:center; }
-.arrow-btn {
-  flex:1; max-width:100px; padding:.75rem; background:var(--surface);
-  border:1px solid var(--border2); border-radius:8px;
-  font-size:1.4rem; text-align:center; cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  transition:background .1s;
-}
-.arrow-btn:active { background:var(--gold-dim); }
-.drop-btn {
-  flex:1; max-width:160px; padding:.75rem; background:var(--surface);
-  border:1px solid var(--border2); border-radius:8px;
-  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.08em;
-  text-transform:uppercase; text-align:center; cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  transition:background .1s;
-}
-.drop-btn:active { background:var(--gold-dim); }
-
-/* ── Progress dots ── */
-.progress-dots { display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap; }
-.pdot { width:.45rem; height:.45rem; border-radius:50%; background:var(--border2); transition:background .2s; }
+/* Progress dots */
+.dots-bar { display:flex; gap:.28rem; justify-content:center; padding:.35rem .75rem; flex-shrink:0; flex-wrap:wrap; }
+.pdot { width:.38rem; height:.38rem; border-radius:50%; background:#2a2a2a; transition:background .2s; }
 .pdot.done-correct { background:var(--correct); }
 .pdot.done-wrong   { background:var(--wrong); }
 .pdot.current      { background:var(--gold); }
 
-/* ── Pause overlay ── */
-.pause-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.75);
+/* ── CANVAS AREA ── */
+.canvas-area {
+  flex:1; position:relative; overflow:hidden;
+  background:#0a0a0a;
+}
+canvas { display:block; width:100%; height:100%; }
+
+/* Column labels at the bottom of the canvas area */
+.col-labels {
+  display:flex; width:100%; position:absolute; bottom:0; left:0;
+  z-index:5;
+}
+.col-label {
+  flex:1; text-align:center; padding:.45rem .2rem;
+  font-family:'Space Mono',monospace; font-size:.58rem;
+  letter-spacing:.07em; text-transform:uppercase; font-weight:700;
+  background:rgba(10,10,10,.92); border-top:1px solid #222;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:background .12s;
+}
+.col-label:hover { background:rgba(30,30,30,.95); }
+.col-label.flash-good { animation:colFlashGood .4s; }
+.col-label.flash-bad  { animation:colFlashBad  .4s; }
+@keyframes colFlashGood { 0%,100%{background:rgba(10,10,10,.92)} 40%{background:rgba(72,187,120,.22)} }
+@keyframes colFlashBad  { 0%,100%{background:rgba(10,10,10,.92)} 40%{background:rgba(192,57,43,.22)} }
+
+/* ── Arrow controls ── */
+.arrow-bar {
+  display:flex; gap:.5rem; padding:.5rem .75rem;
+  background:#111; border-top:1px solid #222;
+  flex-shrink:0; justify-content:center;
+}
+.arrow-btn {
+  flex:1; max-width:90px; padding:.65rem .5rem;
+  background:#1a1a1a; border:1px solid #333; border-radius:8px;
+  font-size:1.3rem; text-align:center; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; transition:background .1s;
+}
+.arrow-btn:active { background:#2a2a2a; }
+.drop-btn {
+  flex:1; max-width:140px; padding:.65rem;
+  background:#1a1a1a; border:1px solid #333; border-radius:8px;
+  font-family:'Space Mono',monospace; font-size:.6rem;
+  letter-spacing:.08em; text-transform:uppercase;
+  text-align:center; cursor:pointer; color:#666;
+  -webkit-tap-highlight-color:transparent; transition:background .1s;
+}
+.drop-btn:active { background:#2a2a2a; }
+
+/* ── Overlays ── */
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.82);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:1.5rem; z-index:100;
+  gap:1rem; z-index:200; padding:1.5rem;
 }
-.pause-overlay h2 { font-family:'Playfair Display',serif; font-size:2rem; color:var(--text); }
-.pause-overlay p  { color:var(--muted); font-size:.9rem; text-align:center; }
+.overlay h2 { font-family:'Playfair Display',serif; font-size:1.7rem; color:#fff; text-align:center; }
+.overlay p  { color:#888; font-size:.88rem; text-align:center; max-width:300px; }
+.overlay-btns { display:flex; flex-direction:column; gap:.5rem; width:100%; max-width:280px; }
 
-/* ── Sound toggle ── */
-.sound-btn {
-  background:none; border:1px solid var(--border); border-radius:6px;
-  padding:.3rem .7rem; font-size:.85rem; cursor:pointer; color:var(--muted);
-  -webkit-tap-highlight-color:transparent;
+/* New-cat badge in round overlay */
+.new-cat-badge {
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+  border-radius:10px; padding:.75rem 1.25rem; text-align:center; font-size:.9rem;
 }
-.sound-btn:hover { color:var(--text); }
+.new-cat-badge strong { font-size:1rem; }
 
-/* ── Intro ── */
-.intro-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; width:100%; }
-.intro-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:.75rem; }
-.intro-card p  { font-size:.87rem; color:var(--muted); line-height:1.7; margin-bottom:.5rem; }
-.category-preview { display:flex; gap:.4rem; flex-wrap:wrap; margin:.5rem 0; }
-.cat-pill { padding:.25rem .7rem; border-radius:99px; font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; }
-
-/* ── Round complete overlay ── */
-.round-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.8);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:1rem; z-index:100; padding:1.5rem;
-}
-.round-overlay h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--gold); }
-.round-overlay .new-cat { background:var(--gold-dim); border:1px solid rgba(212,175,55,.3); border-radius:10px; padding:.75rem 1.25rem; font-size:.9rem; text-align:center; }
-.round-overlay .new-cat strong { color:var(--gold); }
-
-/* ── Result ── */
-.result-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.75rem; text-align:center; width:100%; animation:fadeIn .4s; }
-.result-card h2 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; margin-bottom:.4rem; }
-.result-msg { color:var(--muted); font-size:.88rem; margin-bottom:1rem; }
-.mistakes-list { display:flex; flex-direction:column; gap:.5rem; text-align:left; margin:.75rem 0; max-height:200px; overflow-y:auto; }
-.mistake-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .75rem; font-size:.83rem; }
-.mistake-item .mi-sent { color:var(--muted); font-size:.78rem; margin-bottom:.2rem; }
+/* ── Result card ── */
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; text-align:center; width:100%; animation:fadeIn .4s; }
+.result-card h2 { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; margin-bottom:.4rem; }
+.result-msg { color:var(--muted); font-size:.87rem; margin-bottom:1rem; }
+.stats-row { display:flex; gap:.75rem; justify-content:center; margin:.5rem 0; }
+.stat-box { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .9rem; text-align:center; }
+.stat-box .sv { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:var(--gold); }
+.stat-box .sl { font-family:'Space Mono',monospace; font-size:.52rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.mistakes-list { display:flex; flex-direction:column; gap:.5rem; text-align:left; margin:.75rem 0; max-height:180px; overflow-y:auto; }
+.mistake-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .75rem; font-size:.82rem; }
+.mistake-item .mi-sent { color:var(--muted); font-size:.76rem; margin-bottom:.2rem; }
 .mistake-item .mi-word { font-weight:700; color:var(--wrong); }
-.mistake-item .mi-pos  { color:var(--correct); font-size:.75rem; }
-
-.lb-section { width:100%; max-width:600px; padding:0 1rem 2.5rem; }
-#phase-intro, #phase-game, #phase-result { width:100%; display:flex; flex-direction:column; align-items:center; gap:.75rem; }
+.mistake-item .mi-pos  { color:var(--correct); font-size:.74rem; }
 
 @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-@keyframes shake  { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+@keyframes shake  { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-5px)} 50%{transform:translateX(5px)} }
 </style>
 </head>
 <body>
 <nav class="site-nav">
   <a href="index.html" class="back">← Games</a>
   <span class="game-title">⬇ WordDrop</span>
-  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇 Off</button>
+  <span></span>
 </nav>
 
-<main>
-<!-- ── INTRO ── -->
-<div id="phase-intro">
+<!-- ══ INTRO ══ -->
+<div id="phase-intro" class="screen">
   <div class="intro-card">
     <h2>⬇ WordDrop</h2>
-    <p>A word falls from its sentence — steer it into the correct <strong>part of speech</strong> column before it lands!</p>
-    <p>Swipe left/right or use the arrow buttons to move. Tap to drop instantly. Double-tap anywhere to pause.</p>
+    <p>A word detaches from its sentence and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
+    <p>Use the <strong>← →</strong> buttons or swipe left/right to move. Tap the column label to jump directly. <strong>↓</strong> or tap to drop. <strong>Space / double-tap</strong> to pause.</p>
     <p>New categories unlock every 5 rounds. Speed increases as you progress.</p>
-    <div style="margin:.75rem 0">
-      <div class="eyebrow" style="margin-bottom:.4rem">Starting categories</div>
-      <div class="category-preview" id="catPreview"></div>
+    <div style="margin:.6rem 0">
+      <div class="eyebrow" style="margin-bottom:.35rem">Starting categories</div>
+      <div id="catPreview"></div>
     </div>
-    <p style="font-size:.8rem">20 rounds · Up to 5 categories · Words in context</p>
+    <p style="font-size:.79rem;color:var(--muted)">20 rounds · Up to 5 categories · Words in context</p>
   </div>
   <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-wrap" style="width:100%">
@@ -167,48 +194,48 @@ canvas { display:block; width:100%; height:auto; }
   </div>
 </div>
 
-<!-- ── GAME ── -->
-<div id="phase-game" style="display:none">
-  <div class="hud" style="width:100%">
-    <div class="hud-box">
-      <div class="hud-val" id="scoreVal">0</div>
-      <div class="hud-lbl">Score</div>
+<!-- ══ GAME ══ -->
+<div id="phase-game">
+  <!-- Top bar: sentence + HUD -->
+  <div class="game-topbar">
+    <div class="sentence-panel">
+      <div class="sentence-label">Find the word's part of speech</div>
+      <div class="sentence-text" id="sentenceText">—</div>
     </div>
-    <div class="hud-center">
-      <div class="round-label">Round</div>
-      <div class="round-val" id="roundVal">1 / 20</div>
-    </div>
-    <div class="hud-box">
-      <div class="hud-val" id="streakVal">0</div>
-      <div class="hud-lbl">Streak</div>
+    <div class="hud-pills">
+      <div class="hud-pill"><div class="v" id="scoreVal">0</div><div class="l">Score</div></div>
+      <div class="hud-pill"><div class="v" id="streakVal" style="color:#aaa">0</div><div class="l">Streak</div></div>
+      <div class="hud-pill"><div class="v" id="roundVal" style="font-size:.9rem;color:#aaa">1/20</div><div class="l">Round</div></div>
+      <button class="sound-pill" id="soundBtn" onclick="toggleSound()">🔇</button>
     </div>
   </div>
 
-  <div class="sentence-strip" id="sentenceStrip">Ready…</div>
-  <div class="progress-dots" id="progressDots"></div>
+  <!-- Progress dots -->
+  <div class="dots-bar" id="progressDots"></div>
 
-  <div class="game-canvas-wrap" id="canvasWrap">
+  <!-- Canvas area — fills remaining height, column labels overlay at bottom -->
+  <div class="canvas-area" id="canvasArea">
     <canvas id="gameCanvas"></canvas>
+    <div class="col-labels" id="colLabels"></div>
   </div>
 
-  <div class="col-labels" id="colLabels"></div>
-
-  <div class="arrow-controls">
-    <div class="arrow-btn" id="btnLeft"  ontouchstart="onArrow(-1)" onmousedown="onArrow(-1)">←</div>
-    <div class="drop-btn"                ontouchstart="onDrop()"    onmousedown="onDrop()">Drop ↓</div>
-    <div class="arrow-btn" id="btnRight" ontouchstart="onArrow(1)"  onmousedown="onArrow(1)">→</div>
+  <!-- Arrow controls -->
+  <div class="arrow-bar">
+    <div class="arrow-btn" ontouchstart="onArrow(-1);event.preventDefault()" onmousedown="onArrow(-1)">←</div>
+    <div class="drop-btn"  ontouchstart="onDrop();event.preventDefault()"    onmousedown="onDrop()">Drop ↓</div>
+    <div class="arrow-btn" ontouchstart="onArrow(1);event.preventDefault()"  onmousedown="onArrow(1)">→</div>
   </div>
 </div>
 
-<!-- ── RESULT ── -->
-<div id="phase-result" style="display:none">
+<!-- ══ RESULT ══ -->
+<div id="phase-result" class="screen" style="display:none">
   <div class="result-card">
     <h2 id="resultHeadline"></h2>
     <div class="result-msg" id="resultMsg"></div>
-    <div style="display:flex;gap:1rem;justify-content:center;margin:.5rem 0">
-      <div class="hud-box"><div class="hud-val" id="finalScore">0</div><div class="hud-lbl">Score</div></div>
-      <div class="hud-box"><div class="hud-val" id="finalCorrect">0</div><div class="hud-lbl">Correct</div></div>
-      <div class="hud-box"><div class="hud-val" id="finalRound">0</div><div class="hud-lbl">Rounds</div></div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="sv" id="finalScore">0</div><div class="sl">Score</div></div>
+      <div class="stat-box"><div class="sv" id="finalCorrect">0</div><div class="sl">Correct</div></div>
+      <div class="stat-box"><div class="sv" id="finalRound">0</div><div class="sl">Rounds</div></div>
     </div>
     <div id="mistakesList" class="mistakes-list"></div>
   </div>
@@ -220,7 +247,7 @@ canvas { display:block; width:100%; height:auto; }
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
     <button class="btn-ghost" onclick="startGame()">Play again</button>
-    <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    <button class="btn-ghost" onclick="goToIntro()">← WordDrop menu</button>
   </div>
   <div class="lb-wrap" style="width:100%;margin-top:.5rem">
     <h2>🏆 Leaderboard</h2>
@@ -228,37 +255,31 @@ canvas { display:block; width:100%; height:auto; }
     <tbody id="lbBodyResult"></tbody></table>
   </div>
 </div>
-</main>
 
-<!-- Pause overlay -->
-<div class="pause-overlay" id="pauseOverlay" style="display:none">
+<!-- ══ PAUSE OVERLAY ══ -->
+<div class="overlay" id="pauseOverlay" style="display:none">
   <h2>⏸ Paused</h2>
-  <p>Double-tap or press Escape to resume</p>
-  <button class="btn-primary" onclick="togglePause()">Resume →</button>
+  <p>Press Space, Escape, or double-tap to resume</p>
+  <div class="overlay-btns">
+    <button class="btn-primary" onclick="togglePause()">Resume →</button>
+    <button class="btn-ghost"   onclick="endGameEarly()">End game & save score</button>
+    <button class="btn-ghost"   onclick="goToIntro()">← WordDrop menu</button>
+  </div>
 </div>
 
-<!-- Round-complete overlay -->
-<div class="round-overlay" id="roundOverlay" style="display:none">
-  <h2 id="roundOverlayTitle">Round complete!</h2>
-  <div id="roundOverlayScore" style="color:var(--muted);font-size:.9rem"></div>
-  <div class="new-cat" id="roundOverlayNewCat" style="display:none"></div>
-  <button class="btn-primary" onclick="nextRound()">Next round →</button>
-</div>
-
-<div class="lb-section" style="display:none" id="lbSection">
-  <div class="lb-wrap">
-    <h2>🏆 Leaderboard</h2>
-    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-    <tbody id="lbBody"></tbody></table>
+<!-- ══ ROUND COMPLETE OVERLAY ══ -->
+<div class="overlay" id="roundOverlay" style="display:none">
+  <h2 id="roundOverlayTitle">Round complete! 🎉</h2>
+  <div id="roundOverlayScore" style="color:#888;font-size:.9rem"></div>
+  <div class="new-cat-badge" id="roundOverlayNewCat" style="display:none"></div>
+  <div class="overlay-btns">
+    <button class="btn-primary" onclick="nextRound()">Next round →</button>
+    <button class="btn-ghost"   onclick="endGameEarly()">Save score &amp; finish</button>
   </div>
 </div>
 
 <script src="shared.js"></script>
 <script>
-
-// ══════════════════════════════════════════════════════════
-// WORD BANK
-// ══════════════════════════════════════════════════════════
 const WORD_BANK = [
   ['The ___dog___ barked all night.', 'dog', 'noun', 1],
   ['She put the ___book___ on the shelf.', 'book', 'noun', 1],
@@ -657,174 +678,134 @@ const WORD_BANK = [
   ['She worked ___while___ he cooked.', 'while', 'conjunction', 2],
   ['He stayed ___since___ he had nowhere else to go.', 'since', 'conjunction', 2]
 ];
+
 // ══════════════════════════════════════════════════════════
-// GAME CONFIG
+// CONFIG
 // ══════════════════════════════════════════════════════════
 const ROUND_CONFIG = [
-  // [words_in_round, drop_interval_ms, active_categories]
-  { words:8,  interval:2800, cats:['noun','verb','adjective'] },           // R1
-  { words:8,  interval:2600, cats:['noun','verb','adjective'] },           // R2
-  { words:8,  interval:2400, cats:['noun','verb','adjective'] },           // R3
-  { words:9,  interval:2200, cats:['noun','verb','adjective'] },           // R4
-  { words:9,  interval:2000, cats:['noun','verb','adjective'] },           // R5
-  { words:10, interval:2000, cats:['noun','verb','adjective','adverb'] },  // R6  +adverb
-  { words:10, interval:1900, cats:['noun','verb','adjective','adverb'] },  // R7
-  { words:10, interval:1800, cats:['noun','verb','adjective','adverb'] },  // R8
-  { words:11, interval:1700, cats:['noun','verb','adjective','adverb'] },  // R9
-  { words:11, interval:1600, cats:['noun','verb','adjective','adverb'] },  // R10
-  { words:12, interval:1600, cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep
-  { words:12, interval:1500, cats:['noun','verb','adjective','adverb','preposition'] }, // R12
-  { words:12, interval:1400, cats:['noun','verb','adjective','adverb','preposition'] }, // R13
-  { words:13, interval:1300, cats:['noun','verb','adjective','adverb','preposition'] }, // R14
-  { words:13, interval:1200, cats:['noun','verb','adjective','adverb','preposition'] }, // R15
-  { words:14, interval:1200, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj
-  { words:14, interval:1100, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R17
-  { words:15, interval:1000, cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R18
-  { words:15, interval:900,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R19
-  { words:15, interval:800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R20
+  { words:8,  interval:5500, cats:['noun','verb','adjective'] },
+  { words:8,  interval:5000, cats:['noun','verb','adjective'] },
+  { words:8,  interval:4600, cats:['noun','verb','adjective'] },
+  { words:9,  interval:4200, cats:['noun','verb','adjective'] },
+  { words:9,  interval:3800, cats:['noun','verb','adjective'] },
+  { words:10, interval:3800, cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:3400, cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:3100, cats:['noun','verb','adjective','adverb'] },
+  { words:11, interval:2800, cats:['noun','verb','adjective','adverb'] },
+  { words:11, interval:2600, cats:['noun','verb','adjective','adverb'] },
+  { words:12, interval:2600, cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:2400, cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:2200, cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:2000, cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:1800, cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:14, interval:1800, cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:14, interval:1600, cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:1400, cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:1200, cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:1000, cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
 ];
+const MAX_ROUNDS = ROUND_CONFIG.length;
 
-const MAX_ROUNDS = ROUND_CONFIG.length; // 20
-
-// Colour per POS — drawn from theme vars where possible, else hardcoded
 const CAT_COLOURS = {
-  noun:        '#4fc3f7', // cyan
-  verb:        '#d4af37', // gold
-  adjective:   '#81c784', // green
-  adverb:      '#ff8a65', // orange
-  preposition: '#ce93d8', // purple
-  conjunction: '#f48fb1', // pink
+  noun:'#4fc3f7', verb:'#d4af37', adjective:'#81c784',
+  adverb:'#ff8a65', preposition:'#ce93d8', conjunction:'#f48fb1',
 };
-
 const CAT_LABELS = {
-  noun:        'Noun',
-  verb:        'Verb',
-  adjective:   'Adjective',
-  adverb:      'Adverb',
-  preposition: 'Preposition',
-  conjunction: 'Conjunction',
+  noun:'Noun', verb:'Verb', adjective:'Adjective',
+  adverb:'Adverb', preposition:'Preposition', conjunction:'Conjunction',
 };
-
-const POINTS = { correct: 10, wrong: 0, streak3: 5, streak5: 10 };
 
 // ══════════════════════════════════════════════════════════
-// CANVAS SETUP
+// STATE
 // ══════════════════════════════════════════════════════════
 const canvas  = document.getElementById('gameCanvas');
 const ctx     = canvas.getContext('2d');
-const COLS    = 3; // starts at 3, increases with categories
-const BLOCK_H = 56; // px on the logical canvas
-let   canvasW, canvasH, colW;
 
+let canvasW, canvasH, colW, COL_LABEL_H;
+let round = 0, activeCats = [], score = 0, streak = 0;
+let correctCount = 0, mistakes = [], wordsDone = 0;
+let block = null, dropInterval = null, paused = false, gameActive = false;
+let roundPool = [], roundPoolIdx = 0;
+let soundOn = false, audioCtx = null;
+
+// fly-back animation state
+let flyAnim = null; // { word, colour, startY, endY, progress, sentence, word }
+
+// ══════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn && !audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playTone(freq, type, dur, vol=0.15) {
+  if (!soundOn || !audioCtx) return;
+  try {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type=type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  } catch(e) {}
+}
+const SFX = {
+  correct()  { playTone(523,'sine',.1); setTimeout(()=>playTone(659,'sine',.1),70); },
+  wrong()    { playTone(220,'sawtooth',.15,.1); },
+  streak()   { [523,659,784,988].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.15),i*60)); },
+  roundEnd() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.18),i*80)); },
+  gameOver() { [330,294,247,220].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.2,.1),i*90)); },
+};
+
+// ══════════════════════════════════════════════════════════
+// CANVAS / LAYOUT
+// ══════════════════════════════════════════════════════════
 function resizeCanvas() {
-  const wrap = document.getElementById('canvasWrap');
-  canvasW = wrap.clientWidth;
-  canvasH = Math.min(380, Math.round(canvasW * 0.72));
+  const area = document.getElementById('canvasArea');
+  canvasW = area.clientWidth;
+  canvasH = area.clientHeight;
+  COL_LABEL_H = 36;
   canvas.width  = canvasW;
   canvas.height = canvasH;
   colW = canvasW / activeCats.length;
 }
 
 // ══════════════════════════════════════════════════════════
-// GAME STATE
+// SENTENCE DISPLAY
 // ══════════════════════════════════════════════════════════
-let round      = 0;         // 0-indexed
-let activeCats = [];
-let score      = 0;
-let streak     = 0;
-let bestStreak = 0;
-let wordsThisRound = 0;
-let wordsDone  = 0;
-let mistakes   = [];        // { sent, word, givenCat, correctCat }
-let correctCount = 0;
-
-// Block state
-let block = null;
-/*  block = { x, y, word, pos, sentence, colIdx, falling, speed, opacity }
-    x, y in canvas pixels (top-left of block)
-    colIdx: which column the block is currently in (0-based) */
-let dropInterval   = null;  // setInterval for gravity
-let paused         = false;
-let gameActive     = false;
-let lastUsedIndices = [];   // per-tier randomisation
-
-// Per-round word pool (freshly shuffled each round from appropriate tiers)
-let roundPool = [];
-let roundPoolIdx = 0;
+function showSentence(sentence, word, state) {
+  // state: 'falling' (slot empty) | 'correct' (slot filled, coloured) | 'wrong' (slot empty, red)
+  const colour = CAT_COLOURS[block ? block.pos : ''] || '#fff';
+  const slotClass = state === 'falling' ? 'slot slot-empty' : 'slot';
+  const slotStyle = state === 'correct' ? `color:${colour};border-color:${colour};background:${colour}18` : '';
+  const slotContent = state === 'falling' ? '&nbsp;&nbsp;&nbsp;' : escHtml(word).toUpperCase();
+  const highlighted = sentence.replace(
+    '___' + word + '___',
+    `<span class="${slotClass}" style="${slotStyle}">${slotContent}</span>`
+  );
+  document.getElementById('sentenceText').innerHTML = highlighted;
+}
 
 // ══════════════════════════════════════════════════════════
-// AUDIO (Web Audio API — no external files)
+// PROGRESS DOTS
 // ══════════════════════════════════════════════════════════
-let audioCtx = null;
-let soundOn  = false;
-
-document.getElementById('soundBtn').textContent = '🔇 Off';
-
-function toggleSound() {
-  soundOn = !soundOn;
-  document.getElementById('soundBtn').textContent = soundOn ? '🔊 On' : '🔇 Off';
-  if (soundOn && !audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function buildDots() {
+  const el = document.getElementById('progressDots');
+  el.innerHTML = '';
+  const n = ROUND_CONFIG[round].words;
+  for (let i=0; i<n; i++) {
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i===0?' current':'');
+    d.id = 'pdot'+i;
+    el.appendChild(d);
   }
 }
-
-function playTone(freq, type, duration, vol = 0.18) {
-  if (!soundOn || !audioCtx) return;
-  try {
-    const osc  = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    osc.start(); osc.stop(audioCtx.currentTime + duration);
-  } catch(e) {}
-}
-
-const SFX = {
-  correct()  { playTone(523, 'sine', 0.12); setTimeout(()=>playTone(659,'sine',0.12), 80); },
-  wrong()    { playTone(220, 'sawtooth', 0.18, 0.12); },
-  land()     { playTone(330, 'triangle', 0.08, 0.1); },
-  streak()   { playTone(784, 'sine', 0.2); setTimeout(()=>playTone(988,'sine',0.15),100); },
-  roundEnd() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.18),i*90)); },
-  gameOver() { [330,294,247,220].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.2,0.1),i*100)); },
-};
-
-// ══════════════════════════════════════════════════════════
-// RANDOMISATION
-// ══════════════════════════════════════════════════════════
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-  return a;
-}
-
-function buildRoundPool(roundIdx) {
-  const cfg  = ROUND_CONFIG[roundIdx];
-  const cats = cfg.cats;
-  const tier = roundIdx < 5 ? 1 : roundIdx < 14 ? 2 : 3;
-
-  // Filter word bank: right tier AND pos must be one of the active cats
-  const eligible = WORD_BANK.filter(([,, pos, t]) => t <= tier && cats.includes(pos));
-
-  // Ensure each active cat has at least 1 word
-  // Shuffle and pick enough for this round (words * 1.5 for variety buffer)
-  const needed = cfg.words * 2;
-  const pool   = shuffle(eligible);
-  // Ensure balance: at least 1 per category
-  const perCat = {};
-  cats.forEach(c => perCat[c] = []);
-  pool.forEach(w => { if (perCat[w[2]]) perCat[w[2]].push(w); });
-  
-  let balanced = [];
-  cats.forEach(c => balanced.push(...perCat[c].slice(0, Math.ceil(needed / cats.length))));
-  balanced = shuffle(balanced).slice(0, Math.max(needed, cfg.words));
-  
-  return balanced;
+function updateDot(idx, status) {
+  const d = document.getElementById('pdot'+idx);
+  if (d) d.className = 'pdot ' + (status==='correct'?'done-correct':'done-wrong');
+  const n = document.getElementById('pdot'+(idx+1));
+  if (n) n.classList.add('current');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -839,255 +820,267 @@ function buildColLabels() {
     div.id = 'colLabel_' + i;
     div.textContent = CAT_LABELS[cat];
     div.style.color = CAT_COLOURS[cat];
-    div.style.borderColor = 'var(--border)';
-    // Tap column label = move block to that column
     div.addEventListener('click', () => moveToCol(i));
     div.addEventListener('touchend', e => { e.preventDefault(); moveToCol(i); });
     el.appendChild(div);
   });
 }
 
+// ══════════════════════════════════════════════════════════
+// INTRO CATEGORY PREVIEW
+// ══════════════════════════════════════════════════════════
 function buildCatPreview() {
   const el = document.getElementById('catPreview');
-  el.innerHTML = '';
   ['noun','verb','adjective'].forEach(cat => {
-    const span = document.createElement('span');
-    span.className = 'cat-pill';
-    span.textContent = CAT_LABELS[cat];
-    span.style.background = CAT_COLOURS[cat] + '22';
-    span.style.color = CAT_COLOURS[cat];
-    span.style.border = '1px solid ' + CAT_COLOURS[cat] + '44';
-    el.appendChild(span);
+    const s = document.createElement('span');
+    s.className = 'cat-pill';
+    s.textContent = CAT_LABELS[cat];
+    s.style.cssText = `background:${CAT_COLOURS[cat]}18;color:${CAT_COLOURS[cat]};border:1px solid ${CAT_COLOURS[cat]}44`;
+    el.appendChild(s);
   });
 }
 
 // ══════════════════════════════════════════════════════════
-// SENTENCE STRIP
+// WORD POOL
 // ══════════════════════════════════════════════════════════
-function updateSentenceStrip(sentence, word, filled = false) {
-  const el = document.getElementById('sentenceStrip');
-  // Replace ___word___ with a gap span
-  const marked = sentence.replace(
-    '___' + word + '___',
-    `<span class="gap${filled?' filled':''}">${filled ? word : '&nbsp;'.repeat(Math.max(word.length, 3))}</span>`
-  );
-  el.innerHTML = marked;
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
 }
-
-// ══════════════════════════════════════════════════════════
-// PROGRESS DOTS
-// ══════════════════════════════════════════════════════════
-function buildDots() {
-  const el = document.getElementById('progressDots');
-  el.innerHTML = '';
-  const cfg = ROUND_CONFIG[round];
-  for (let i = 0; i < cfg.words; i++) {
-    const d = document.createElement('div');
-    d.className = 'pdot' + (i === 0 ? ' current' : '');
-    d.id = 'pdot' + i;
-    el.appendChild(d);
-  }
-}
-
-function updateDot(idx, status) {
-  const d = document.getElementById('pdot' + idx);
-  if (!d) return;
-  d.className = 'pdot ' + (status === 'correct' ? 'done-correct' : status === 'wrong' ? 'done-wrong' : 'current');
-  const next = document.getElementById('pdot' + (idx + 1));
-  if (next) next.classList.add('current');
+function buildRoundPool(rIdx) {
+  const cfg  = ROUND_CONFIG[rIdx];
+  const tier = rIdx < 5 ? 1 : rIdx < 14 ? 2 : 3;
+  const eligible = WORD_BANK.filter(([,,pos,t]) => t<=tier && cfg.cats.includes(pos));
+  const perCat = {};
+  cfg.cats.forEach(c => perCat[c]=[]);
+  shuffle(eligible).forEach(w => { if(perCat[w[2]]) perCat[w[2]].push(w); });
+  const needed = cfg.words * 2;
+  let pool = [];
+  cfg.cats.forEach(c => pool.push(...perCat[c].slice(0, Math.ceil(needed/cfg.cats.length))));
+  return shuffle(pool);
 }
 
 // ══════════════════════════════════════════════════════════
 // DRAWING
 // ══════════════════════════════════════════════════════════
+let rafId = null;
+
 function draw() {
   ctx.clearRect(0, 0, canvasW, canvasH);
+  const dropZoneY = canvasH - COL_LABEL_H;
 
-  // Column dividers
+  // Column backgrounds and dividers
   activeCats.forEach((cat, i) => {
     const x = i * colW;
-    // Faint column background
-    ctx.fillStyle = CAT_COLOURS[cat] + '0a';
-    ctx.fillRect(x, 0, colW, canvasH);
-    // Divider line
+    const col = CAT_COLOURS[cat];
+    // Very subtle column tint
+    ctx.fillStyle = col + '09';
+    ctx.fillRect(x, 0, colW, dropZoneY);
+    // Divider
     if (i > 0) {
-      ctx.strokeStyle = CAT_COLOURS[cat] + '33';
+      ctx.strokeStyle = col + '25';
       ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x,.5); ctx.lineTo(x, dropZoneY); ctx.stroke();
     }
-    // Landing zone indicator (bottom 8px)
-    ctx.fillStyle = CAT_COLOURS[cat] + '44';
-    ctx.fillRect(x + 2, canvasH - 8, colW - 4, 6);
+    // Landing zone glow at bottom
+    const grad = ctx.createLinearGradient(0, dropZoneY-30, 0, dropZoneY);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, col + '28');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, dropZoneY-30, colW, 30);
   });
 
-  // Falling block
-  if (block) {
-    const bx = block.colIdx * colW;
-    const by = block.y;
-    const bw = colW;
-    const bh = BLOCK_H;
-    const cat = block.pos;
-    const col = CAT_COLOURS[cat];
-
-    // Block background
+  // Fly-back animation
+  if (flyAnim) {
+    const y = flyAnim.startY + (flyAnim.endY - flyAnim.startY) * flyAnim.progress;
+    const alpha = 1 - flyAnim.progress * 0.4;
+    const col = flyAnim.colour;
     ctx.save();
-    ctx.globalAlpha = block.opacity || 1;
-    // Rounded rect
-    const r = 8;
-    ctx.beginPath();
-    ctx.moveTo(bx + r, by);
-    ctx.lineTo(bx + bw - r, by);
-    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
-    ctx.lineTo(bx + bw, by + bh - r);
-    ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
-    ctx.lineTo(bx + r, by + bh);
-    ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
-    ctx.lineTo(bx, by + r);
-    ctx.quadraticCurveTo(bx, by, bx + r, by);
-    ctx.closePath();
-    ctx.fillStyle = col + '22';
-    ctx.fill();
-    ctx.strokeStyle = col + 'bb';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Word text
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = col;
-    ctx.font = 'bold 16px "DM Sans", sans-serif';
+    ctx.font = `bold ${flyAnim.fontSize}px "Space Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Clip long words
-    const maxW = bw - 12;
-    let fontSize = 16;
-    while (ctx.measureText(block.word).width > maxW && fontSize > 9) {
-      fontSize--;
-      ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
-    }
-    ctx.fillText(block.word, bx + bw / 2, by + bh / 2);
+    // Subtle glow
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 18;
+    ctx.fillText(flyAnim.word, flyAnim.x, y);
     ctx.restore();
+    flyAnim.progress += 0.045;
+    if (flyAnim.progress >= 1) {
+      const finSentence = flyAnim_sentence;
+      const finWord     = flyAnim_word;
+      flyAnim = null;
+      // Show correct filled slot in category colour
+      showSentence(finSentence, finWord, 'correct');
+      setTimeout(spawnNext, 400);
+      return;
+    }
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  // Falling word — white bold uppercase text only, NO category colour
+  if (block) {
+    const cx = block.colIdx * colW + colW / 2;
+    const cy = block.y;
+
+    // Pick font size based on word length and column width
+    let fs = Math.min(28, Math.floor(colW * 0.28));
+    ctx.font = `bold ${fs}px "Space Mono", monospace`;
+    while (ctx.measureText(block.word.toUpperCase()).width > colW - 16 && fs > 11) {
+      fs--;
+      ctx.font = `bold ${fs}px "Space Mono", monospace`;
+    }
+    block._fontSize = fs;
+
+    // White text, no colour hint
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(255,255,255,0.35)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(block.word.toUpperCase(), cx, cy);
+    ctx.shadowBlur = 0;
   }
 }
+
+// Fly-back animation helpers (need to store sentence/word outside flyAnim to avoid overwrite)
+let flyAnim_sentence = '', flyAnim_word = '';
 
 // ══════════════════════════════════════════════════════════
 // BLOCK PHYSICS
 // ══════════════════════════════════════════════════════════
-let rafId = null;
-let lastTick = 0;
-
 function spawnBlock(entry) {
   const [sentence, word, pos] = entry;
   block = {
-    colIdx: Math.floor(activeCats.length / 2), // start in middle column
-    y: -BLOCK_H,
+    colIdx: Math.floor(activeCats.length / 2),
+    y: 0,
     word, pos, sentence,
-    opacity: 1,
-    speed: ROUND_CONFIG[round].interval / 1000, // seconds to cross full height
+    _fontSize: 22,
   };
-  updateSentenceStrip(sentence, word, false);
+  showSentence(sentence, word, 'falling');
+  clearInterval(dropInterval);
   startDrop();
+  draw();
 }
 
 function startDrop() {
   clearInterval(dropInterval);
   const cfg = ROUND_CONFIG[round];
-  // Move block down by one step every tick
-  const stepsToBottom = canvasH / 8; // ~8px per step
-  const msPerStep = (cfg.interval / stepsToBottom);
-  
+  const dropZoneY = canvasH - COL_LABEL_H - 4;
+  const stepPx = 6;
+  const steps   = dropZoneY / stepPx;
+  const msPerStep = cfg.interval / steps;
+
   dropInterval = setInterval(() => {
     if (paused || !block) return;
-    block.y += 8;
-    if (block.y >= canvasH - BLOCK_H) {
-      block.y = canvasH - BLOCK_H;
+    block.y += stepPx;
+    if (block.y >= dropZoneY) {
+      block.y = dropZoneY;
       clearInterval(dropInterval);
+      draw();
       landBlock(block.colIdx);
+    } else {
+      draw();
     }
-    draw();
-  }, msPerStep);
+  }, Math.max(16, msPerStep));
 }
 
 function moveToCol(col) {
   if (!block || !gameActive || paused) return;
-  block.colIdx = Math.max(0, Math.min(activeCats.length - 1, col));
+  block.colIdx = Math.max(0, Math.min(activeCats.length-1, col));
   draw();
 }
-
 function onArrow(dir) {
   if (!block || !gameActive || paused) return;
-  block.colIdx = Math.max(0, Math.min(activeCats.length - 1, block.colIdx + dir));
+  block.colIdx = Math.max(0, Math.min(activeCats.length-1, block.colIdx+dir));
   draw();
 }
-
 function onDrop() {
   if (!block || !gameActive || paused) return;
-  // Hard drop — move to bottom immediately
   clearInterval(dropInterval);
-  block.y = canvasH - BLOCK_H;
+  const dropZoneY = canvasH - COL_LABEL_H - 4;
+  block.y = dropZoneY;
   draw();
-  SFX.land();
-  setTimeout(() => landBlock(block.colIdx), 80);
+  setTimeout(() => landBlock(block.colIdx), 60);
 }
 
+// ══════════════════════════════════════════════════════════
+// LAND + FEEDBACK
+// ══════════════════════════════════════════════════════════
 function landBlock(colIdx) {
   if (!block) return;
   const chosen  = activeCats[colIdx];
   const correct = block.pos;
   const isRight = chosen === correct;
 
-  // Flash column label
   const labelEl = document.getElementById('colLabel_' + colIdx);
   if (labelEl) {
-    labelEl.classList.remove('flash-good','flash-bad');
     void labelEl.offsetWidth;
     labelEl.classList.add(isRight ? 'flash-good' : 'flash-bad');
-    setTimeout(() => labelEl.classList.remove('flash-good','flash-bad'), 380);
+    setTimeout(() => labelEl.classList.remove('flash-good','flash-bad'), 420);
   }
-
-  // Update sentence strip
-  updateSentenceStrip(block.sentence, block.word, true);
 
   if (isRight) {
     SFX.correct();
-    score += POINTS.correct;
+    score += 10;
     streak++;
-    if (streak >= 5) { score += POINTS.streak5; SFX.streak(); }
-    else if (streak >= 3) score += POINTS.streak3;
-    if (streak > bestStreak) bestStreak = streak;
+    if (streak >= 5) { score += 10; SFX.streak(); }
+    else if (streak >= 3) score += 5;
     correctCount++;
     updateDot(wordsDone, 'correct');
+
+    // Trigger fly-back animation: word rises from landing position back toward top
+    const landX   = block.colIdx * colW + colW / 2;
+    const landY   = block.y;
+    const topY    = 30;
+    flyAnim_sentence = block.sentence;
+    flyAnim_word     = block.word;
+    flyAnim = {
+      word: block.word.toUpperCase(),
+      colour: CAT_COLOURS[correct],
+      x: landX,
+      startY: landY,
+      endY: topY,
+      progress: 0,
+      fontSize: block._fontSize || 22,
+    };
+    block = null;
+    showSentence(flyAnim_sentence, flyAnim_word, 'falling');
+    requestAnimationFrame(draw);
+    // spawnNext called from inside draw() once flyAnim finishes
   } else {
     SFX.wrong();
     streak = 0;
     mistakes.push({ sent: block.sentence, word: block.word, given: chosen, correct });
     updateDot(wordsDone, 'wrong');
-    // Show correct column briefly
-    const correctColIdx = activeCats.indexOf(correct);
-    const correctLabel  = document.getElementById('colLabel_' + correctColIdx);
-    if (correctLabel) {
-      correctLabel.classList.add('flash-good');
-      setTimeout(() => correctLabel.classList.remove('flash-good'), 600);
-    }
+    // Flash correct column
+    const ci = activeCats.indexOf(correct);
+    const cl = document.getElementById('colLabel_' + ci);
+    if (cl) { cl.classList.add('flash-good'); setTimeout(()=>cl.classList.remove('flash-good'),600); }
+    // Show wrong slot briefly, then proceed
+    showSentence(block.sentence, block.word, 'falling');
+    block = null;
+    draw();
+    setTimeout(spawnNext, 700);
   }
 
   document.getElementById('scoreVal').textContent  = score;
   document.getElementById('streakVal').textContent = streak;
-  block = null;
-  draw();
-
   wordsDone++;
-  const cfg = ROUND_CONFIG[round];
 
-  if (wordsDone >= cfg.words) {
-    setTimeout(showRoundComplete, 500);
-  } else {
-    setTimeout(spawnNext, 900);
+  if (wordsDone >= ROUND_CONFIG[round].words) {
+    clearInterval(dropInterval);
+    setTimeout(showRoundComplete, isRight ? 1400 : 800);
   }
 }
 
 function spawnNext() {
   if (!gameActive) return;
+  if (wordsDone >= ROUND_CONFIG[round].words) return; // round already ending
   if (roundPoolIdx >= roundPool.length) {
-    // Rebuild pool (unlikely but safe)
     roundPool = buildRoundPool(round);
     roundPoolIdx = 0;
   }
@@ -1100,120 +1093,84 @@ function spawnNext() {
 function showRoundComplete() {
   clearInterval(dropInterval);
   SFX.roundEnd();
-
   const overlay = document.getElementById('roundOverlay');
-  const title   = document.getElementById('roundOverlayTitle');
-  const scoreEl = document.getElementById('roundOverlayScore');
-  const newCat  = document.getElementById('roundOverlayNewCat');
+  document.getElementById('roundOverlayTitle').textContent =
+    round + 1 < MAX_ROUNDS ? `Round ${round+1} complete! 🎉` : 'Final round done! 🏆';
+  document.getElementById('roundOverlayScore').textContent = `Score so far: ${score} pts`;
 
-  title.textContent = round + 1 < MAX_ROUNDS
-    ? `Round ${round + 1} complete! 🎉`
-    : 'Final round complete! 🏆';
-  scoreEl.textContent = `Score: ${score} pts`;
-
-  // Check if next round unlocks a new category
-  newCat.style.display = 'none';
+  const newCatEl = document.getElementById('roundOverlayNewCat');
+  newCatEl.style.display = 'none';
   if (round + 1 < MAX_ROUNDS) {
-    const curCats  = ROUND_CONFIG[round].cats;
-    const nextCats = ROUND_CONFIG[round + 1].cats;
-    const added    = nextCats.filter(c => !curCats.includes(c));
-    if (added.length > 0) {
-      newCat.style.display = 'block';
-      newCat.innerHTML = `New category unlocked: <strong style="color:${CAT_COLOURS[added[0]]}">${CAT_LABELS[added[0]]}</strong>`;
+    const added = ROUND_CONFIG[round+1].cats.filter(c => !ROUND_CONFIG[round].cats.includes(c));
+    if (added.length) {
+      newCatEl.style.display = 'block';
+      newCatEl.innerHTML = `New category unlocked: <strong style="color:${CAT_COLOURS[added[0]]}">${CAT_LABELS[added[0]]}</strong>`;
     }
   }
-
   overlay.style.display = 'flex';
 }
 
 function nextRound() {
   document.getElementById('roundOverlay').style.display = 'none';
   round++;
-  if (round >= MAX_ROUNDS) {
-    endGame();
-    return;
-  }
+  if (round >= MAX_ROUNDS) { endGame(); return; }
   startRound();
 }
 
 function startRound() {
-  const cfg  = ROUND_CONFIG[round];
-  activeCats = cfg.cats;
-  wordsThisRound = cfg.words;
-  wordsDone  = 0;
-  block      = null;
+  const cfg = ROUND_CONFIG[round];
+  activeCats  = cfg.cats;
+  wordsDone   = 0;
+  block       = null;
+  flyAnim     = null;
 
-  document.getElementById('roundVal').textContent = `${round + 1} / ${MAX_ROUNDS}`;
+  document.getElementById('roundVal').textContent = `${round+1}/${MAX_ROUNDS}`;
   resizeCanvas();
   buildColLabels();
   buildDots();
-  draw();
-
   roundPool    = buildRoundPool(round);
   roundPoolIdx = 0;
-
-  spawnNext();
+  draw();
+  setTimeout(spawnNext, 600);
 }
 
 // ══════════════════════════════════════════════════════════
-// SWIPE HANDLING
+// TOUCH + SWIPE
 // ══════════════════════════════════════════════════════════
-let touchStartX = null, touchStartY = null, touchStartTime = 0;
-let lastTapTime = 0;
+let touchStartX=null, touchStartY=null, touchStartTime=0, lastTapTime=0;
 
 document.getElementById('gameCanvas').addEventListener('touchstart', e => {
   const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
+  touchStartX = t.clientX; touchStartY = t.clientY;
   touchStartTime = Date.now();
-  // Double-tap to pause
   const now = Date.now();
-  if (now - lastTapTime < 300) { togglePause(); }
+  if (now - lastTapTime < 280) togglePause();
   lastTapTime = now;
-}, { passive: true });
+}, {passive:true});
 
 document.getElementById('gameCanvas').addEventListener('touchend', e => {
-  if (touchStartX === null) return;
-  const t   = e.changedTouches[0];
-  const dx  = t.clientX - touchStartX;
-  const dy  = t.clientY - touchStartY;
-  const dt  = Date.now() - touchStartTime;
+  if (touchStartX===null) return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY, dt=Date.now()-touchStartTime;
+  if (Math.abs(dx)>35 && Math.abs(dx)>Math.abs(dy) && dt<400) onArrow(dx>0?1:-1);
+  else if (Math.abs(dx)<20 && Math.abs(dy)<20 && dt<220) onDrop();
+  touchStartX=null;
+}, {passive:true});
 
-  if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) && dt < 400) {
-    // Swipe — move block one column left or right
-    onArrow(dx > 0 ? 1 : -1);
-  } else if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 250) {
-    // Short tap — drop
-    onDrop();
-  }
-  touchStartX = null;
-}, { passive: true });
-
-// Also handle swipe on the whole canvas wrap for wider target
-document.getElementById('canvasWrap').addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
-  touchStartTime = Date.now();
-}, { passive: true });
-
-// Double-tap anywhere to pause
-document.body.addEventListener('dblclick', () => {
-  if (gameActive) togglePause();
-});
+document.body.addEventListener('dblclick', () => { if (gameActive) togglePause(); });
 
 // ══════════════════════════════════════════════════════════
 // KEYBOARD
 // ══════════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (!gameActive) return;
-  if (e.key === 'ArrowLeft')  { e.preventDefault(); onArrow(-1); }
-  if (e.key === 'ArrowRight') { e.preventDefault(); onArrow(1); }
-  if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); onDrop(); }
-  if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') togglePause();
-  // Number keys 1-6 to select column directly
-  const n = parseInt(e.key);
-  if (n >= 1 && n <= activeCats.length) moveToCol(n - 1);
+  if (e.key==='ArrowLeft')  { e.preventDefault(); onArrow(-1); }
+  if (e.key==='ArrowRight') { e.preventDefault(); onArrow(1); }
+  if (e.key==='ArrowDown')  { e.preventDefault(); onDrop(); }
+  if (e.key===' ')          { e.preventDefault(); togglePause(); }  // Space = pause
+  if (e.key==='Escape'||e.key==='p'||e.key==='P') togglePause();
+  const n=parseInt(e.key);
+  if (n>=1&&n<=activeCats.length) moveToCol(n-1);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -1226,37 +1183,45 @@ function togglePause() {
 }
 
 // ══════════════════════════════════════════════════════════
-// START / END GAME
+// GAME FLOW
 // ══════════════════════════════════════════════════════════
+function goToIntro() {
+  clearInterval(dropInterval);
+  gameActive = false; block = null; flyAnim = null;
+  document.getElementById('pauseOverlay').style.display  = 'none';
+  document.getElementById('roundOverlay').style.display  = 'none';
+  document.getElementById('phase-game').style.display    = 'none';
+  document.getElementById('phase-result').style.display  = 'none';
+  document.getElementById('phase-intro').style.display   = 'flex';
+  renderLeaderboard('worddrop','lbBodyIntro');
+}
+
+function endGameEarly() {
+  // Close any overlay, go to result with current score
+  document.getElementById('pauseOverlay').style.display = 'none';
+  document.getElementById('roundOverlay').style.display = 'none';
+  endGame();
+}
+
 function startGame() {
-  // Reset all state
-  round       = 0;
-  score       = 0;
-  streak      = 0;
-  bestStreak  = 0;
-  correctCount= 0;
-  mistakes    = [];
-  paused      = false;
-  gameActive  = true;
-  block       = null;
+  round=0; score=0; streak=0; correctCount=0; mistakes=[];
+  paused=false; gameActive=true; block=null; flyAnim=null;
   clearInterval(dropInterval);
 
   document.getElementById('phase-intro').style.display  = 'none';
   document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('pauseOverlay').style.display = 'none';
+  document.getElementById('roundOverlay').style.display = 'none';
   document.getElementById('phase-game').style.display   = 'flex';
-  document.getElementById('pauseOverlay').style.display  = 'none';
-  document.getElementById('roundOverlay').style.display  = 'none';
 
-  document.getElementById('scoreVal').textContent  = '0';
-  document.getElementById('streakVal').textContent = '0';
-
-  // Reset submit area
   document.getElementById('submitArea').innerHTML = `
     <div class="submit-row">
       <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
       <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
     </div>`;
 
+  document.getElementById('scoreVal').textContent  = '0';
+  document.getElementById('streakVal').textContent = '0';
   activeCats = ROUND_CONFIG[0].cats;
   resizeCanvas();
   startRound();
@@ -1264,73 +1229,64 @@ function startGame() {
 
 function endGame() {
   clearInterval(dropInterval);
-  gameActive = false;
-  block      = null;
+  gameActive=false; block=null; flyAnim=null;
   SFX.gameOver();
 
   document.getElementById('phase-game').style.display   = 'none';
-  document.getElementById('roundOverlay').style.display  = 'none';
   document.getElementById('phase-result').style.display = 'flex';
 
-  const totalWords = ROUND_CONFIG.slice(0, round).reduce((s, c) => s + c.words, 0) + wordsDone;
   document.getElementById('resultHeadline').textContent =
-    round >= MAX_ROUNDS ? '🏆 Game complete!' : `Round ${round + 1} — Game over`;
+    round>=MAX_ROUNDS ? '🏆 Game complete!' : `Round ${round+1} — Game over`;
   document.getElementById('resultMsg').textContent =
-    score >= 1500 ? '🎉 Outstanding! You clearly know your grammar!' :
-    score >= 900  ? '👏 Really impressive — well done!' :
-    score >= 500  ? 'Good effort — keep practising!' :
+    score>=1500 ? '🎉 Outstanding! Brilliant grammatical instinct!' :
+    score>=900  ? '👏 Really impressive — well done!' :
+    score>=500  ? 'Good effort — keep practising!' :
     'Every drop teaches you something — try again!';
 
   document.getElementById('finalScore').textContent   = score;
   document.getElementById('finalCorrect').textContent = correctCount;
-  document.getElementById('finalRound').textContent   = round + (wordsDone > 0 ? 1 : 0);
-
+  document.getElementById('finalRound').textContent   = Math.max(1, round + (wordsDone>0?1:0));
   document.getElementById('submitArea').dataset.score = score;
 
-  // Show mistakes
   const ml = document.getElementById('mistakesList');
   ml.innerHTML = '';
-  if (mistakes.length === 0) {
-    ml.innerHTML = '<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>';
+  if (mistakes.length===0) {
+    ml.innerHTML='<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>';
   } else {
-    mistakes.slice(-10).forEach(m => {
-      const div = document.createElement('div');
-      div.className = 'mistake-item';
-      const display = m.sent.replace('___' + m.word + '___', `<strong>${m.word}</strong>`);
-      div.innerHTML = `
-        <div class="mi-sent">${display}</div>
-        <div><span class="mi-word">You chose: ${CAT_LABELS[m.given] || m.given}</span>
+    mistakes.slice(-8).forEach(m => {
+      const div=document.createElement('div'); div.className='mistake-item';
+      const display=m.sent.replace('___'+m.word+'___',`<strong>${m.word}</strong>`);
+      div.innerHTML=`<div class="mi-sent">${display}</div>
+        <div><span class="mi-word">You chose: ${CAT_LABELS[m.given]||m.given}</span>
         &nbsp;→&nbsp;<span class="mi-pos">Correct: ${CAT_LABELS[m.correct]}</span></div>`;
       ml.appendChild(div);
     });
   }
-
-  renderLeaderboard('worddrop', 'lbBodyResult');
+  renderLeaderboard('worddrop','lbBodyResult');
 }
 
 async function doSubmit() {
-  const score = parseInt(document.getElementById('submitArea').dataset.score || '0');
-  await handleScoreSubmit('worddrop', score, 'nameInput', 'submitArea', 'lbBodyResult');
-  renderLeaderboard('worddrop', 'lbBodyResult');
+  const s=parseInt(document.getElementById('submitArea').dataset.score||'0');
+  await handleScoreSubmit('worddrop',s,'nameInput','submitArea','lbBodyResult');
+  renderLeaderboard('worddrop','lbBodyResult');
 }
 
 // ══════════════════════════════════════════════════════════
-// RESIZE OBSERVER
+// RESIZE
 // ══════════════════════════════════════════════════════════
 const ro = new ResizeObserver(() => {
-  if (document.getElementById('phase-game').style.display !== 'none') {
-    resizeCanvas();
-    buildColLabels();
-    draw();
+  if (document.getElementById('phase-game').style.display==='flex') {
+    resizeCanvas(); buildColLabels(); draw();
+    if (block) startDrop();
   }
 });
-ro.observe(document.getElementById('canvasWrap'));
+ro.observe(document.getElementById('canvasArea'));
 
 // ══════════════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════════════
 buildCatPreview();
-renderLeaderboard('worddrop', 'lbBodyIntro');
+renderLeaderboard('worddrop','lbBodyIntro');
 </script>
 </body>
 </html>
