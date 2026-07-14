@@ -36,8 +36,12 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
 
 /* option buttons */
 .options-grid { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; width:100%; max-width:500px; }
-.opt { background:var(--surface2); border:1px solid var(--border2); border-radius:6px; padding:.5rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:600; color:var(--text); cursor:pointer; transition:all .16s; min-width:5rem; text-align:center; }
+.opt { background:var(--surface2); border:1px solid var(--border2); border-radius:6px; padding:.5rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:600; color:var(--text); cursor:pointer; transition:all .16s; min-width:5rem; text-align:center; -webkit-tap-highlight-color: transparent; }
 .opt:hover { border-color:var(--gold); background:var(--gold-dim); }
+/* On touch-only devices (no real hover), disable the :hover rule entirely —
+   iOS Safari keeps :hover active after a tap and it bleeds onto the next
+   button rendered in the same screen position, showing as yellow. */
+@media (hover: none) { .opt:hover { border-color:var(--border2); background:var(--surface2); } }
 .opt.correct { background:var(--correct-dim); border-color:var(--correct); color:var(--correct); pointer-events:none; }
 .opt.wrong   { background:var(--wrong-dim);   border-color:var(--wrong);   color:var(--wrong);   pointer-events:none; animation:shake .35s; }
 .opt.used    { opacity:.3; pointer-events:none; }
@@ -729,9 +733,11 @@ function pickNextWord() {
 function buildMode1() {
   document.getElementById('gameInstruction').textContent = 'Find the synonym →';
   const grid = document.getElementById('m1grid');
-  // Explicitly strip all state classes from any lingering buttons before
-  // clearing — prevents iOS Safari from carrying over touch/focus highlight
-  [...grid.querySelectorAll('.opt')].forEach(b => b.className = 'opt');
+  // Blur focus away from the grid before rebuilding — this clears iOS Safari's
+  // persistent touch/hover state so no button in the new grid starts highlighted.
+  if (document.activeElement && grid.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   grid.innerHTML = '';
 
   const available = currentWord.syn.filter(s => !found.has('syn:'+s));
@@ -757,8 +763,8 @@ function handleOpt1(chosen, correct, btn, parentRef) {
     if (!allFound.has('syn:'+correct)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, false, parentRef);
     setTimeout(() => {
-      // Remove the class before navigating so iOS doesn't carry it forward
       btn.classList.remove('correct');
+      btn.blur(); // explicitly release focus before the grid is rebuilt
       pickNextWord();
     }, 700);
   } else {
@@ -772,7 +778,9 @@ function handleOpt1(chosen, correct, btn, parentRef) {
 function buildMode2() {
   document.getElementById('gameInstruction').textContent = 'Find the antonym ↔';
   const grid = document.getElementById('m2grid');
-  [...grid.querySelectorAll('.opt')].forEach(b => b.className = 'opt');
+  if (document.activeElement && grid.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   grid.innerHTML = '';
 
   const available = currentWord.ant.filter(a => !found.has('ant:'+a));
@@ -799,6 +807,7 @@ function handleOpt2(chosen, correct, btn, parentRef) {
     addFoundChip(correct, true, parentRef);
     setTimeout(() => {
       btn.classList.remove('correct');
+      btn.blur();
       pickNextWord();
     }, 700);
   } else {
