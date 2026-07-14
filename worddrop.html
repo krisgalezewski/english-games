@@ -8,12 +8,10 @@
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
-/* ── Prevent any scrolling during gameplay ── */
-html, body { height:100%; overflow:hidden; }
-body { overflow-x:hidden; }
+html,body { height:100%; overflow:hidden; }
 main { max-width:none; margin:0; padding:0; }
 
-/* ── INTRO / RESULT: normal scrollable centred layout ── */
+/* ── INTRO / RESULT ── */
 .screen {
   max-width:520px; margin:0 auto;
   padding:1.25rem 1rem 2.5rem;
@@ -24,109 +22,6 @@ main { max-width:none; margin:0; padding:0; }
 .intro-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:.6rem; }
 .intro-card p  { font-size:.87rem; color:var(--muted); line-height:1.7; margin-bottom:.4rem; }
 .cat-pill { display:inline-block; padding:.2rem .65rem; border-radius:99px; font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin:.15rem; }
-
-/* ── GAME SCREEN: exact viewport, no scroll ── */
-#phase-game {
-  position:fixed; inset:0;
-  display:none; flex-direction:row;
-  background:#0d0d0d;
-  /* shown as flex when active */
-}
-
-/* Left side: full canvas column */
-.game-left {
-  flex:1; display:flex; flex-direction:column;
-  min-width:0; overflow:hidden;
-}
-
-/* Canvas fills all remaining space between arrow bar and top */
-#gameCanvas {
-  display:block; flex:1;
-  width:100%; min-height:0;
-  touch-action:none; user-select:none;
-}
-
-/* Column labels — fixed height below canvas */
-.col-labels {
-  display:flex; flex-shrink:0;
-  border-top:1px solid #1e1e1e;
-}
-.col-label {
-  flex:1; text-align:center; padding:.45rem .1rem;
-  font-family:'Space Mono',monospace; font-size:clamp(.48rem,.9vw,.62rem);
-  letter-spacing:.06em; text-transform:uppercase; font-weight:700;
-  background:#0d0d0d; cursor:pointer;
-  -webkit-tap-highlight-color:transparent; transition:background .12s;
-}
-.col-label:hover { background:#1a1a1a; }
-.col-label.flash-good { animation:colGood .4s; }
-.col-label.flash-bad  { animation:colBad  .4s; }
-@keyframes colGood { 0%,100%{background:#0d0d0d} 40%{background:rgba(72,187,120,.22)} }
-@keyframes colBad  { 0%,100%{background:#0d0d0d} 40%{background:rgba(192,57,43,.22)} }
-
-/* Arrow bar — fixed height at bottom */
-.arrow-bar {
-  display:flex; gap:.4rem; padding:.45rem .6rem;
-  background:#111; border-top:1px solid #222;
-  flex-shrink:0; justify-content:center;
-}
-.arrow-btn {
-  flex:1; max-width:80px; padding:.55rem .4rem;
-  background:#1a1a1a; border:1px solid #2a2a2a; border-radius:7px;
-  font-size:1.2rem; text-align:center; cursor:pointer;
-  -webkit-tap-highlight-color:transparent; transition:background .1s;
-}
-.arrow-btn:active { background:#2a2a2a; }
-.drop-btn {
-  flex:1; max-width:120px; padding:.55rem;
-  background:#1a1a1a; border:1px solid #2a2a2a; border-radius:7px;
-  font-family:'Space Mono',monospace; font-size:.55rem;
-  letter-spacing:.07em; text-transform:uppercase;
-  text-align:center; cursor:pointer; color:#555;
-  -webkit-tap-highlight-color:transparent; transition:background .1s;
-}
-.drop-btn:active { background:#2a2a2a; }
-
-/* Right side: HUD panel */
-.game-right {
-  width:clamp(68px,18vw,100px);
-  flex-shrink:0; display:flex; flex-direction:column;
-  align-items:flex-end; padding:.6rem .5rem .5rem;
-  background:#111; border-left:1px solid #1e1e1e;
-  gap:.6rem;
-}
-.hud-item { text-align:right; }
-.hud-val  { font-family:'Playfair Display',serif; font-size:clamp(.95rem,2.2vw,1.2rem); font-weight:700; color:var(--gold); line-height:1.1; }
-.hud-lbl  { font-family:'Space Mono',monospace; font-size:.48rem; letter-spacing:.1em; text-transform:uppercase; color:#444; }
-.sound-btn {
-  background:none; border:1px solid #2a2a2a; border-radius:4px;
-  padding:.2rem .4rem; font-size:.8rem; cursor:pointer; color:#444;
-  -webkit-tap-highlight-color:transparent; margin-top:auto;
-}
-.sound-btn:hover { color:#aaa; }
-
-/* Progress dots — inside the HUD panel */
-.dots-col { display:flex; flex-direction:column; gap:.22rem; align-items:flex-end; }
-.pdot { width:.36rem; height:.36rem; border-radius:50%; background:#2a2a2a; transition:background .2s; }
-.pdot.done-correct { background:var(--correct); }
-.pdot.done-wrong   { background:var(--wrong); }
-.pdot.current      { background:var(--gold); }
-
-/* ── Overlays ── */
-.overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.85);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:.9rem; z-index:300; padding:1.5rem;
-}
-.overlay h2 { font-family:'Playfair Display',serif; font-size:1.6rem; color:#fff; text-align:center; }
-.overlay p  { color:#777; font-size:.85rem; text-align:center; max-width:280px; margin:0; }
-.overlay-btns { display:flex; flex-direction:column; gap:.45rem; width:100%; max-width:260px; }
-.new-cat-badge {
-  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
-  border-radius:8px; padding:.65rem 1rem; text-align:center; font-size:.88rem; color:#ccc;
-}
-
-/* ── Result / submit ── */
 .result-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.4rem; text-align:center; width:100%; animation:fadeIn .35s; }
 .result-card h2 { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin-bottom:.35rem; }
 .result-msg { color:var(--muted); font-size:.85rem; margin-bottom:.85rem; }
@@ -139,6 +34,143 @@ main { max-width:none; margin:0; padding:0; }
 .mistake-item .mi-s { color:var(--muted); font-size:.74rem; margin-bottom:.15rem; }
 .mistake-item .mi-w { font-weight:700; color:var(--wrong); }
 .mistake-item .mi-p { color:var(--correct); font-size:.72rem; }
+
+/* ── GAME SCREEN — fixed full viewport, two columns ── */
+#phase-game {
+  position:fixed; inset:0;
+  display:none; flex-direction:row;
+  background:#0d0d0d;
+}
+
+/* Left: canvas + col-labels */
+.game-left {
+  flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden;
+}
+#gameCanvas {
+  display:block; flex:1; width:100%; min-height:0;
+  touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.col-labels { display:flex; flex-shrink:0; }
+.col-label {
+  flex:1; text-align:center;
+  padding:.5rem .1rem;
+  font-family:'Space Mono',monospace;
+  font-size:clamp(.55rem,1.1vw,.75rem);
+  letter-spacing:.05em; text-transform:uppercase; font-weight:700;
+  background:#0d0d0d; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; transition:background .12s;
+  border-top:1px solid #222;
+}
+.col-label:hover { background:#1a1a1a; }
+.col-label.flash-good { animation:colGood .45s; }
+.col-label.flash-bad  { animation:colBad  .45s; }
+@keyframes colGood { 0%,100%{background:#0d0d0d} 45%{background:rgba(72,187,120,.25)} }
+@keyframes colBad  { 0%,100%{background:#0d0d0d} 45%{background:rgba(192,57,43,.25)} }
+
+/* Right: HUD + controls */
+.game-right {
+  width:clamp(80px,20vw,115px);
+  flex-shrink:0; display:flex; flex-direction:column;
+  align-items:center; padding:.75rem .4rem .5rem;
+  background:#111; border-left:1px solid #1e1e1e;
+  gap:0;
+  overflow:hidden;
+}
+/* Lives */
+.lives-row {
+  display:flex; gap:.35rem; justify-content:center;
+  margin-bottom:.6rem; flex-wrap:wrap;
+}
+.life {
+  font-size:1.2rem; transition:transform .3s, opacity .3s;
+  display:inline-block;
+}
+.life.lost { opacity:.18; transform:scale(.75); }
+.life.pulse { animation:lifePulse .5s ease; }
+@keyframes lifePulse { 0%{transform:scale(1)} 40%{transform:scale(1.6)} 100%{transform:scale(1)} }
+
+/* HUD stats */
+.hud-item {
+  width:100%; text-align:center;
+  padding:.45rem 0; border-bottom:1px solid #1c1c1c;
+}
+.hud-item:last-of-type { border-bottom:none; }
+.hud-val {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.1rem,2.8vw,1.5rem);
+  font-weight:700; color:var(--gold); line-height:1;
+}
+.hud-lbl {
+  font-family:'Space Mono',monospace;
+  font-size:clamp(.42rem,.8vw,.54rem);
+  letter-spacing:.1em; text-transform:uppercase; color:#444;
+  margin-top:.15rem;
+}
+
+/* Progress dots */
+.dots-col {
+  display:flex; flex-direction:column; gap:.2rem;
+  align-items:center; padding:.5rem 0; flex:1;
+  overflow:hidden;
+}
+.pdot { width:.38rem; height:.38rem; border-radius:50%; background:#2a2a2a; transition:background .2s; }
+.pdot.done-correct { background:var(--correct); }
+.pdot.done-wrong   { background:var(--wrong); }
+.pdot.current      { background:var(--gold); }
+
+/* Sound button */
+.sound-btn {
+  background:none; border:1px solid #2a2a2a; border-radius:4px;
+  padding:.25rem .45rem; font-size:.9rem; cursor:pointer; color:#555;
+  -webkit-tap-highlight-color:transparent;
+  margin-top:.35rem;
+}
+.sound-btn:hover { color:#aaa; }
+
+/* Arrow controls inside right panel */
+.arrow-panel {
+  width:100%; display:flex; flex-direction:column;
+  gap:.3rem; padding:.4rem 0;
+  border-top:1px solid #1c1c1c; margin-top:.3rem;
+}
+.arrow-row { display:flex; gap:.25rem; justify-content:center; }
+.a-btn {
+  flex:1; padding:.5rem .2rem;
+  background:#1a1a1a; border:1px solid #2a2a2a; border-radius:6px;
+  font-size:1rem; text-align:center; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; color:#aaa;
+  transition:background .1s;
+}
+.a-btn:active { background:#2a2a2a; }
+.a-drop {
+  width:100%; padding:.45rem;
+  background:#1a1a1a; border:1px solid #2a2a2a; border-radius:6px;
+  font-family:'Space Mono',monospace; font-size:.5rem;
+  letter-spacing:.06em; text-transform:uppercase;
+  text-align:center; cursor:pointer; color:#555;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.a-drop:active { background:#2a2a2a; }
+
+/* ── Overlays ── */
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.87);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.85rem; z-index:300; padding:1.5rem;
+}
+.overlay h2 { font-family:'Playfair Display',serif; font-size:1.6rem; color:#fff; text-align:center; }
+.overlay p  { color:#777; font-size:.85rem; text-align:center; max-width:280px; margin:0; }
+.overlay-btns { display:flex; flex-direction:column; gap:.45rem; width:100%; max-width:260px; }
+.new-unlock-box {
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:.8rem 1.2rem; text-align:center; color:#ddd;
+  font-size:.9rem; line-height:1.6;
+}
+.new-unlock-box .life-anim {
+  font-size:1.8rem; animation:lifePulse .6s ease .2s both;
+  display:block; margin-bottom:.3rem;
+}
 
 @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
 </style>
@@ -155,13 +187,13 @@ main { max-width:none; margin:0; padding:0; }
   <div class="intro-card">
     <h2>⬇ WordDrop</h2>
     <p>A word lifts out of its sentence and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
-    <p>← → buttons or swipe to move · ↓ or tap to drop · <strong>Space / double-tap</strong> to pause.</p>
+    <p>You have <strong>3 lives ❤️</strong>. Each wrong category costs a life. Reach rounds 6, 11 and 16 to unlock a new category <em>and</em> earn a bonus life.</p>
     <p>New categories unlock every 5 rounds. Speed increases as you progress.</p>
     <div style="margin:.5rem 0">
       <div class="eyebrow" style="margin-bottom:.3rem">Starting categories</div>
       <div id="catPreview"></div>
     </div>
-    <p style="font-size:.78rem;color:var(--muted)">20 rounds · Up to 5 categories · Words in context</p>
+    <p style="font-size:.78rem;color:var(--muted)">20 rounds · Up to 5 categories · 3 lives</p>
   </div>
   <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-wrap" style="width:100%">
@@ -173,23 +205,29 @@ main { max-width:none; margin:0; padding:0; }
 
 <!-- ══ GAME ══ -->
 <div id="phase-game">
-  <!-- Left: canvas + col labels + arrow bar -->
   <div class="game-left">
     <canvas id="gameCanvas"></canvas>
     <div class="col-labels" id="colLabels"></div>
-    <div class="arrow-bar">
-      <div class="arrow-btn" ontouchstart="onArrow(-1);event.preventDefault()" onmousedown="onArrow(-1)">←</div>
-      <div class="drop-btn"  ontouchstart="onDrop();event.preventDefault()"    onmousedown="onDrop()">Drop ↓</div>
-      <div class="arrow-btn" ontouchstart="onArrow(1);event.preventDefault()"  onmousedown="onArrow(1)">→</div>
-    </div>
   </div>
-  <!-- Right: HUD -->
   <div class="game-right">
+    <!-- Lives -->
+    <div class="lives-row" id="livesRow"></div>
+    <!-- Stats -->
     <div class="hud-item"><div class="hud-val" id="scoreVal">0</div><div class="hud-lbl">Score</div></div>
     <div class="hud-item"><div class="hud-val" id="streakVal" style="color:#aaa">0</div><div class="hud-lbl">Streak</div></div>
-    <div class="hud-item"><div class="hud-val" id="roundVal" style="font-size:.85rem;color:#aaa">1/20</div><div class="hud-lbl">Round</div></div>
+    <div class="hud-item"><div class="hud-val" id="roundVal" style="font-size:.9rem;color:#aaa">1/20</div><div class="hud-lbl">Round</div></div>
+    <!-- Dots -->
     <div class="dots-col" id="progressDots"></div>
+    <!-- Sound -->
     <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇</button>
+    <!-- Controls -->
+    <div class="arrow-panel">
+      <div class="arrow-row">
+        <div class="a-btn" ontouchstart="onArrow(-1);event.preventDefault()" onmousedown="onArrow(-1)">←</div>
+        <div class="a-btn" ontouchstart="onArrow(1);event.preventDefault()"  onmousedown="onArrow(1)">→</div>
+      </div>
+      <div class="a-drop" ontouchstart="onDrop();event.preventDefault()" onmousedown="onDrop()">Drop ↓</div>
+    </div>
   </div>
 </div>
 
@@ -222,7 +260,7 @@ main { max-width:none; margin:0; padding:0; }
   </div>
 </div>
 
-<!-- ══ PAUSE OVERLAY ══ -->
+<!-- ══ PAUSE ══ -->
 <div class="overlay" id="pauseOverlay" style="display:none">
   <h2>⏸ Paused</h2>
   <p>Space, Escape, or double-tap to resume</p>
@@ -233,14 +271,24 @@ main { max-width:none; margin:0; padding:0; }
   </div>
 </div>
 
-<!-- ══ ROUND COMPLETE OVERLAY ══ -->
+<!-- ══ ROUND COMPLETE ══ -->
 <div class="overlay" id="roundOverlay" style="display:none">
-  <h2 id="roundOverlayTitle">Round complete! 🎉</h2>
-  <div id="roundOverlayScore" style="color:#888;font-size:.88rem"></div>
-  <div class="new-cat-badge" id="roundOverlayNewCat" style="display:none"></div>
+  <h2 id="roTitle">Round complete! 🎉</h2>
+  <div id="roScore" style="color:#888;font-size:.88rem"></div>
+  <div class="new-unlock-box" id="roUnlock" style="display:none"></div>
   <div class="overlay-btns">
     <button class="btn-primary" onclick="nextRound()">Next round →</button>
     <button class="btn-ghost"   onclick="endGameEarly()">Save score &amp; finish</button>
+  </div>
+</div>
+
+<!-- ══ GAME OVER (lives) ══ -->
+<div class="overlay" id="livesOverlay" style="display:none">
+  <h2>💔 Out of lives</h2>
+  <p>You ran out of lives — but you got further each time!</p>
+  <div class="overlay-btns">
+    <button class="btn-primary" onclick="endGameEarly()">See your score</button>
+    <button class="btn-ghost"   onclick="startGame()">Try again</button>
   </div>
 </div>
 
@@ -646,31 +694,33 @@ const WORD_BANK = [
 ];
 
 // ══════════════════════════════════════════════════════════
-// CONFIG — much slower early rounds
+// CONFIG
 // ══════════════════════════════════════════════════════════
 const ROUND_CONFIG = [
-  { words:6,  interval:10000, cats:['noun','verb','adjective'] },           // R1  — very slow
-  { words:7,  interval:9200,  cats:['noun','verb','adjective'] },           // R2
-  { words:7,  interval:8500,  cats:['noun','verb','adjective'] },           // R3
-  { words:8,  interval:7800,  cats:['noun','verb','adjective'] },           // R4
-  { words:8,  interval:7200,  cats:['noun','verb','adjective'] },           // R5
-  { words:9,  interval:7200,  cats:['noun','verb','adjective','adverb'] },  // R6  +adverb
-  { words:9,  interval:6500,  cats:['noun','verb','adjective','adverb'] },  // R7
-  { words:10, interval:5900,  cats:['noun','verb','adjective','adverb'] },  // R8
-  { words:10, interval:5400,  cats:['noun','verb','adjective','adverb'] },  // R9
-  { words:10, interval:4900,  cats:['noun','verb','adjective','adverb'] },  // R10
-  { words:11, interval:4900,  cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep
-  { words:11, interval:4400,  cats:['noun','verb','adjective','adverb','preposition'] }, // R12
-  { words:12, interval:3900,  cats:['noun','verb','adjective','adverb','preposition'] }, // R13
-  { words:12, interval:3400,  cats:['noun','verb','adjective','adverb','preposition'] }, // R14
-  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition'] }, // R15
-  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj
-  { words:14, interval:2600,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R17
-  { words:14, interval:2200,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R18
-  { words:15, interval:1800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R19
-  { words:15, interval:1500,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R20
+  { words:6,  interval:10000, cats:['noun','verb','adjective'] },
+  { words:7,  interval:9200,  cats:['noun','verb','adjective'] },
+  { words:7,  interval:8500,  cats:['noun','verb','adjective'] },
+  { words:8,  interval:7800,  cats:['noun','verb','adjective'] },
+  { words:8,  interval:7200,  cats:['noun','verb','adjective'] },
+  { words:9,  interval:7200,  cats:['noun','verb','adjective','adverb'] },  // R6 +adverb +life
+  { words:9,  interval:6500,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:5900,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:5400,  cats:['noun','verb','adjective','adverb'] },
+  { words:10, interval:4900,  cats:['noun','verb','adjective','adverb'] },
+  { words:11, interval:4900,  cats:['noun','verb','adjective','adverb','preposition'] }, // R11 +prep +life
+  { words:11, interval:4400,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:3900,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:12, interval:3400,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition'] },
+  { words:13, interval:3000,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] }, // R16 +conj +life
+  { words:14, interval:2600,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:14, interval:2200,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:1800,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
+  { words:15, interval:1500,  cats:['noun','verb','adjective','adverb','preposition','conjunction'] },
 ];
-const MAX_ROUNDS = ROUND_CONFIG.length;
+const MAX_ROUNDS    = ROUND_CONFIG.length;
+const BONUS_ROUNDS  = new Set([5, 10, 15]); // 0-indexed → rounds 6, 11, 16
+const MAX_LIVES     = 3;
 
 const CAT_COLOURS = {
   noun:'#4fc3f7', verb:'#d4af37', adjective:'#81c784',
@@ -682,229 +732,268 @@ const CAT_LABELS = {
 };
 
 // ══════════════════════════════════════════════════════════
-// CANVAS & STATE
+// CANVAS & LAYOUT
 // ══════════════════════════════════════════════════════════
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 
-// Layout constants — set in resizeCanvas()
-let CW, CH;           // canvas pixel width/height
-let COL_LABEL_H = 36; // height reserved for column labels (DOM, outside canvas)
-let SENTENCE_H;       // height of the sentence zone at top of canvas
-let DROP_TOP;         // y where falling word begins (just below sentence)
-let DROP_BOT;         // y where falling word lands
-let colW;             // width of each column
+let CW, CH;          // canvas dimensions in px
+let SENT_H;          // sentence zone height (top portion of canvas)
+let DROP_BOT;        // y-coordinate of the landing zone
+let colW;            // width of each column
 
-// Game state
+// The pixel position of the gap in the sentence — set by layoutSentence()
+// These are in canvas coordinates and used for both spawn and fly-back.
+let gapX = 0, gapY = 0;
+
+// ══════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════
 let round = 0, activeCats = [], score = 0, streak = 0;
+let lives = MAX_LIVES;
 let correctCount = 0, mistakes = [], wordsDone = 0;
 let block = null, dropInterval = null, paused = false, gameActive = false;
 let roundPool = [], roundPoolIdx = 0;
-let soundOn = false, audioCtx = null;
 
-// Sentence rendering cache
-let sentWords = [];   // [{text, x, y, isSlot, slotState, colour}]
-let slotX = 0, slotY = 0; // pixel position of the gap — used for spawn & fly-back
+// Sentence word layout cache
+let sentTokens = []; // [{text, x, y, isSlot, slotState, colour, w}]
 
 // Fly-back animation
 let flyAnim = null;
-// {word, colour, x, startY, endY, t, duration, fontSize, onDone}
+// { word, colour, x, fromY, toY, toX, t, dur, onDone, fs }
 
-// Preview/hold: word shown in gap before drop
+// Preview timer (1s delay before word starts falling)
 let previewTimer = null;
 
 // ══════════════════════════════════════════════════════════
-// AUDIO
+// AUDIO — create context on first user gesture anywhere
 // ══════════════════════════════════════════════════════════
+let audioCtx = null;
+let soundOn  = false;
+
+// Create AudioContext on first touch/click anywhere — required by browsers
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(()=>{});
+  }
+}
+document.addEventListener('click',     ensureAudio, {once:false, passive:true});
+document.addEventListener('touchstart',ensureAudio, {once:false, passive:true});
+
 function toggleSound() {
   soundOn = !soundOn;
   document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
-  if (soundOn && !audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  ensureAudio();
 }
+
 function tone(freq, type, dur, vol=0.14) {
-  if (!soundOn || !audioCtx) return;
+  if (!soundOn || !audioCtx || audioCtx.state !== 'running') return;
   try {
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
     o.connect(g); g.connect(audioCtx.destination);
-    o.type=type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    o.type = type;
+    o.frequency.setValueAtTime(freq, audioCtx.currentTime);
     g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
-    o.start(); o.stop(audioCtx.currentTime+dur);
-  } catch(e){}
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
 }
+
 const SFX = {
-  correct(){ tone(523,'sine',.09); setTimeout(()=>tone(659,'sine',.09),65); },
-  wrong()  { tone(220,'sawtooth',.14,.1); },
-  streak() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.14),i*55)); },
-  roundEnd(){ [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.17),i*75)); },
-  gameOver(){ [330,294,247,220].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.18,.1),i*85)); },
+  correct()  { tone(523,'sine',.09); setTimeout(()=>tone(659,'sine',.09),65); },
+  wrong()    { tone(200,'sawtooth',.18,.12); },
+  loseLife() { tone(180,'sawtooth',.28,.15); },
+  gainLife() { [659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.15),i*70)); },
+  streak()   { [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.13),i*55)); },
+  roundEnd() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.16),i*75)); },
+  gameOver() { [330,294,247,220].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.2,.1),i*90)); },
 };
 
 // ══════════════════════════════════════════════════════════
-// LAYOUT — called whenever canvas size changes
+// LAYOUT
 // ══════════════════════════════════════════════════════════
 function resizeCanvas() {
   const el = document.getElementById('gameCanvas');
-  CW = el.clientWidth  || el.offsetWidth  || 300;
-  CH = el.clientHeight || el.offsetHeight || 500;
+  CW = el.clientWidth  || el.offsetWidth  || 280;
+  CH = el.clientHeight || el.offsetHeight || 460;
   canvas.width  = CW;
   canvas.height = CH;
-  colW = CW / Math.max(1, activeCats.length);
-  // Sentence zone: top 22% of canvas (min 80px, max 130px)
-  SENTENCE_H = Math.max(80, Math.min(130, Math.round(CH * 0.22)));
-  DROP_TOP = SENTENCE_H + 4;
-  DROP_BOT = CH - 6;
-  // Recompute sentence layout if we have one
-  if (block) layoutSentence(block.sentence, block.word, block.slotState);
+  colW    = CW / Math.max(1, activeCats.length);
+  // Sentence zone: 16% of height, min 70px, max 105px
+  SENT_H  = Math.max(70, Math.min(105, Math.round(CH * 0.16)));
+  DROP_BOT = CH - 8;
+  // Re-layout current sentence if one is loaded
+  if (block && block.sentence) {
+    layoutSentence(block.sentence, block.word, block.slotState,
+                   block.slotColour || null);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
-// SENTENCE RENDERING (on canvas)
+// SENTENCE LAYOUT — measures and positions each token
 // ══════════════════════════════════════════════════════════
-function sentenceFontSize() {
-  // Scale to canvas width
-  return Math.max(12, Math.min(18, Math.round(CW / 28)));
+function sentFS() {
+  // Larger font: min 16px, scale with canvas width
+  return Math.max(16, Math.min(24, Math.round(CW / 22)));
 }
 
-function layoutSentence(sentence, word, slotState) {
-  // Tokenise: replace ___word___ with a special slot token
-  const SLOT = '\x00';
-  const raw = sentence.replace('___' + word + '___', SLOT);
-  const tokens = raw.split(/(\x00|\s+)/).filter(t => t.length > 0);
+function layoutSentence(sentence, word, slotState, slotColour) {
+  const SLOT_TOKEN = '\x00';
+  const raw = sentence.replace('___' + word + '___', SLOT_TOKEN);
+  // Split into word-tokens preserving spaces
+  const toks = raw.split(/(\s+|\x00)/).filter(t => t !== '');
 
-  const fs   = sentenceFontSize();
-  const font = `${fs}px "DM Sans", sans-serif`;
-  ctx.font   = font;
+  const fs    = sentFS();
+  ctx.font    = `${fs}px "DM Sans", sans-serif`;
+  ctx.font    = `${fs}px "DM Sans", sans-serif`; // set twice to ensure it's applied
+  const spW   = ctx.measureText(' ').width;
+  const lineH = fs * 1.55;
+  const maxW  = CW - 20;
 
-  const slotW   = Math.max(ctx.measureText(word.toUpperCase()).width + 14, 40);
-  const spaceW  = ctx.measureText(' ').width;
-  const lineH   = fs * 1.55;
-  const maxLineW = CW - 24;
-  const cx       = CW / 2;
+  // Measure slot width using bold mono font
+  ctx.font = `bold ${fs}px "Space Mono", monospace`;
+  const slotW = Math.max(ctx.measureText(word.toUpperCase()).width + 16, 36);
+  ctx.font = `${fs}px "DM Sans", sans-serif`;
 
-  // Word-wrap
+  // Word-wrap into lines
   const lines = [];
-  let curLine = [], curW = 0;
+  let line = [], lineW = 0;
 
-  tokens.forEach(tok => {
-    if (tok.trim() === '') { curW += spaceW; return; }
-    const w = tok === SLOT ? slotW : ctx.measureText(tok).width;
-    if (curW + w > maxLineW && curLine.length > 0) {
-      lines.push(curLine); curLine = []; curW = 0;
+  toks.forEach(tok => {
+    if (/^\s+$/.test(tok)) { lineW += spW; return; }
+    let w;
+    if (tok === SLOT_TOKEN) {
+      w = slotW;
+    } else {
+      ctx.font = `${fs}px "DM Sans", sans-serif`;
+      w = ctx.measureText(tok).width;
     }
-    curLine.push({ tok, w });
-    curW += w + spaceW;
+    if (line.length > 0 && lineW + w > maxW) {
+      lines.push(line); line = []; lineW = 0;
+    }
+    line.push({ tok, w });
+    lineW += w + spW;
   });
-  if (curLine.length) lines.push(curLine);
+  if (line.length) lines.push(line);
 
   const totalH = lines.length * lineH;
-  // Vertically centre in the sentence zone
-  let y = (SENTENCE_H - totalH) / 2 + lineH * 0.5;
-  if (y < lineH * 0.5) y = lineH * 0.5;
+  // Vertically centre within SENT_H
+  let y = (SENT_H - totalH) / 2 + lineH * 0.65;
+  y = Math.max(lineH * 0.65, y);
 
-  sentWords = [];
-  slotX = CW / 2; slotY = y; // default
+  sentTokens = [];
+  // Default gap position to centre — overwritten below
+  gapX = CW / 2;
+  gapY = y;
 
-  lines.forEach(line => {
-    const lineW = line.reduce((s, {w}, i) => s + w + (i<line.length-1?spaceW:0), 0);
-    let x = cx - lineW / 2;
-    line.forEach(({tok, w}) => {
-      if (tok === SLOT) {
-        sentWords.push({ isSlot:true, x: x + w/2, y, w, slotState });
-        slotX = x + w / 2;
-        slotY = y;
+  lines.forEach(ln => {
+    // Measure total line width for centring
+    let lw = ln.reduce((s, {w}, i) => s + w + (i < ln.length-1 ? spW : 0), 0);
+    let x  = (CW - lw) / 2;
+
+    ln.forEach(({tok, w}) => {
+      const cx = x + w / 2; // centre of this token
+      if (tok === SLOT_TOKEN) {
+        sentTokens.push({ isSlot:true, x:cx, y, w, slotState, slotColour,
+                          slotWord: word });
+        gapX = cx;
+        gapY = y;
       } else {
-        sentWords.push({ isSlot:false, text:tok, x: x + w/2, y, w });
+        sentTokens.push({ isSlot:false, text:tok, x:cx, y, w });
       }
-      x += w + spaceW;
+      x += w + spW;
     });
     y += lineH;
   });
 }
 
+// ══════════════════════════════════════════════════════════
+// DRAW SENTENCE
+// ══════════════════════════════════════════════════════════
 function drawSentence() {
-  const fs   = sentenceFontSize();
-  const font = `${fs}px "DM Sans", sans-serif`;
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
+  const fs = sentFS();
 
-  sentWords.forEach(sw => {
-    if (sw.isSlot) {
-      const state = sw.slotState;
-      // Draw the slot box
-      const bx = sw.x - sw.w/2, bw = sw.w, bh = fs * 1.3;
-      const by = sw.y - bh/2 + fs * 0.05;
+  sentTokens.forEach(t => {
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
 
-      if (state === 'empty') {
-        // Dashed underline only
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 3]);
+    if (t.isSlot) {
+      const bx = t.x - t.w / 2;
+      const bh = fs * 1.3;
+      const by = t.y - bh / 2;
+
+      if (t.slotState === 'empty') {
+        // Dashed underline
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth   = 2;
+        ctx.setLineDash([5, 4]);
         ctx.beginPath();
-        ctx.moveTo(bx + 2, by + bh - 1);
-        ctx.lineTo(bx + bw - 2, by + bh - 1);
+        ctx.moveTo(bx + 4, by + bh);
+        ctx.lineTo(bx + t.w - 4, by + bh);
         ctx.stroke();
         ctx.setLineDash([]);
-      } else if (state === 'preview') {
-        // Word shown in white, slot box visible
+
+      } else if (t.slotState === 'preview') {
+        // White word in a subtle box
         ctx.fillStyle = 'rgba(255,255,255,.07)';
-        roundRect(bx, by, bw, bh, 4);
-        ctx.strokeStyle = 'rgba(255,255,255,.25)';
-        ctx.lineWidth = 1.5;
-        roundRectStroke(bx, by, bw, bh, 4);
-        ctx.font = `bold ${fs}px "Space Mono", monospace`;
+        rrFill(bx, by, t.w, bh, 4);
+        ctx.strokeStyle = 'rgba(255,255,255,.28)';
+        ctx.lineWidth   = 1.5;
+        rrStroke(bx, by, t.w, bh, 4);
+        ctx.font      = `bold ${fs}px "Space Mono", monospace`;
         ctx.fillStyle = '#fff';
-        ctx.fillText(sw.text || '', sw.x, sw.y);
-        ctx.font = font;
-      } else if (state === 'correct') {
-        // Word shown in category colour
-        const col = sw.colour || '#fff';
-        ctx.fillStyle = col + '1a';
-        roundRect(bx, by, bw, bh, 4);
-        ctx.strokeStyle = col + '88';
-        ctx.lineWidth = 1.5;
-        roundRectStroke(bx, by, bw, bh, 4);
-        ctx.font = `bold ${fs}px "Space Mono", monospace`;
-        ctx.fillStyle = col;
-        ctx.shadowColor = col;
-        ctx.shadowBlur  = 8;
-        ctx.fillText(sw.text || '', sw.x, sw.y);
+        ctx.shadowColor = 'rgba(255,255,255,.25)';
+        ctx.shadowBlur  = 6;
+        ctx.fillText(t.slotWord.toUpperCase(), t.x, t.y);
         ctx.shadowBlur  = 0;
-        ctx.font = font;
+        ctx.font        = `${fs}px "DM Sans", sans-serif`;
+
+      } else if (t.slotState === 'correct') {
+        const col = t.slotColour || '#fff';
+        ctx.fillStyle = col + '1c';
+        rrFill(bx, by, t.w, bh, 4);
+        ctx.strokeStyle = col + '90';
+        ctx.lineWidth   = 1.5;
+        rrStroke(bx, by, t.w, bh, 4);
+        ctx.font        = `bold ${fs}px "Space Mono", monospace`;
+        ctx.fillStyle   = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur  = 10;
+        ctx.fillText(t.slotWord.toUpperCase(), t.x, t.y);
+        ctx.shadowBlur  = 0;
+        ctx.font        = `${fs}px "DM Sans", sans-serif`;
       }
+
     } else {
-      ctx.font = font;
-      ctx.fillStyle = '#aaa';
-      ctx.fillText(sw.text, sw.x, sw.y);
+      ctx.font      = `${fs}px "DM Sans", sans-serif`;
+      ctx.fillStyle = '#bbb';
+      ctx.fillText(t.text, t.x, t.y);
     }
   });
 }
 
-function roundRect(x, y, w, h, r) {
+function rrFill(x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
-  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-  ctx.lineTo(x+w, y+h-r);
-  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-  ctx.lineTo(x+r, y+h);
-  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-  ctx.lineTo(x, y+r);
-  ctx.quadraticCurveTo(x, y, x+r, y);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath(); ctx.fill();
 }
-function roundRectStroke(x, y, w, h, r) {
+function rrStroke(x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
-  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-  ctx.lineTo(x+w, y+h-r);
-  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-  ctx.lineTo(x+r, y+h);
-  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-  ctx.lineTo(x, y+r);
-  ctx.quadraticCurveTo(x, y, x+r, y);
-  ctx.closePath();
-  ctx.stroke();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath(); ctx.stroke();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -913,67 +1002,75 @@ function roundRectStroke(x, y, w, h, r) {
 function draw() {
   ctx.clearRect(0, 0, CW, CH);
 
-  // ── Sentence zone background ──
-  ctx.fillStyle = '#141414';
-  ctx.fillRect(0, 0, CW, SENTENCE_H);
-  // Subtle separator line
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, SENTENCE_H); ctx.lineTo(CW, SENTENCE_H); ctx.stroke();
+  // Sentence zone background
+  ctx.fillStyle = '#161616';
+  ctx.fillRect(0, 0, CW, SENT_H);
 
-  // ── Column zone ──
+  // Drop zone columns
   activeCats.forEach((cat, i) => {
-    const x = i * colW;
+    const x   = i * colW;
     const col = CAT_COLOURS[cat];
-    // Faint column tint in drop zone
-    ctx.fillStyle = col + '08';
-    ctx.fillRect(x, SENTENCE_H, colW, CH - SENTENCE_H);
-    // Column divider — extends from sentence separator to bottom
+    // Subtle column tint
+    ctx.fillStyle = col + '0a';
+    ctx.fillRect(x, SENT_H, colW, CH - SENT_H);
+    // Column divider — dashed, runs from sentence separator to bottom
     if (i > 0) {
-      ctx.strokeStyle = col + '22';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = col + '30';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([5, 7]);
       ctx.beginPath();
-      ctx.moveTo(x, SENTENCE_H + 2);
+      ctx.moveTo(x, SENT_H + 2);
       ctx.lineTo(x, CH - 2);
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    // Landing zone glow at bottom
-    const grad = ctx.createLinearGradient(0, CH - 40, 0, CH);
+    // Landing glow
+    const grad = ctx.createLinearGradient(0, CH - 50, 0, CH);
     grad.addColorStop(0, 'transparent');
-    grad.addColorStop(1, col + '25');
+    grad.addColorStop(1, col + '28');
     ctx.fillStyle = grad;
-    ctx.fillRect(x, CH - 40, colW, 40);
+    ctx.fillRect(x, CH - 50, colW, 50);
   });
 
-  // ── Sentence (drawn on canvas, centred) ──
-  if (sentWords.length) drawSentence();
+  // Sentence separator — matches the column zone colour, seamlessly
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(0, SENT_H);
+  ctx.lineTo(CW, SENT_H);
+  ctx.stroke();
 
-  // ── Fly-back animation ──
+  // Sentence text
+  if (sentTokens.length) drawSentence();
+
+  // Fly-back animation
   if (flyAnim) {
-    const prog = Math.min(1, flyAnim.t / flyAnim.duration);
-    // Ease-in-out
-    const ease = prog < 0.5 ? 2*prog*prog : -1+(4-2*prog)*prog;
-    const y    = flyAnim.startY + (flyAnim.endY - flyAnim.startY) * ease;
-    const alpha = prog > 0.75 ? 1 - (prog - 0.75) * 4 : 1;
-    const scale = 1 - prog * 0.2;
+    const prog  = Math.min(1, flyAnim.t / flyAnim.dur);
+    const ease  = prog < 0.5 ? 2*prog*prog : -1+(4-2*prog)*prog;
+    // Interpolate BOTH x and y toward the gap
+    const ax    = flyAnim.fromX + (flyAnim.toX - flyAnim.fromX) * ease;
+    const ay    = flyAnim.fromY + (flyAnim.toY - flyAnim.fromY) * ease;
+    const alpha = prog > 0.7 ? 1 - (prog - 0.7) / 0.3 : 1;
+    const scale = 0.85 + (1 - ease) * 0.15;
+
     ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(flyAnim.x, y);
+    ctx.globalAlpha = Math.max(0, alpha);
+    ctx.translate(ax, ay);
     ctx.scale(scale, scale);
-    ctx.font = `bold ${flyAnim.fs}px "Space Mono", monospace`;
+    ctx.font         = `bold ${flyAnim.fs}px "Space Mono", monospace`;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = flyAnim.colour;
     ctx.shadowColor  = flyAnim.colour;
-    ctx.shadowBlur   = 16;
+    ctx.shadowBlur   = 18;
     ctx.fillText(flyAnim.word, 0, 0);
     ctx.restore();
+
     flyAnim.t += 16;
-    if (flyAnim.t >= flyAnim.duration) {
+    if (flyAnim.t >= flyAnim.dur) {
       const cb = flyAnim.onDone;
-      flyAnim = null;
+      flyAnim  = null;
       if (cb) cb();
     } else {
       requestAnimationFrame(draw);
@@ -981,22 +1078,22 @@ function draw() {
     return;
   }
 
-  // ── Falling word ── white bold caps, no colour hint
-  if (block) {
+  // Falling word — pure white, no colour hint
+  if (block && block.slotState !== 'preview') {
     const bx = block.colIdx * colW + colW / 2;
     const by = block.y;
-    let fs = Math.max(13, Math.min(26, Math.round(colW * 0.26)));
+    let fs   = Math.max(13, Math.min(26, Math.round(colW * 0.27)));
     ctx.font = `bold ${fs}px "Space Mono", monospace`;
-    while (ctx.measureText(block.word.toUpperCase()).width > colW - 10 && fs > 10) {
+    while (ctx.measureText(block.word.toUpperCase()).width > colW - 8 && fs > 10) {
       fs--;
       ctx.font = `bold ${fs}px "Space Mono", monospace`;
     }
-    block._fs = fs;
+    block._fs        = fs;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = '#ffffff';
-    ctx.shadowColor  = 'rgba(255,255,255,.3)';
-    ctx.shadowBlur   = 6;
+    ctx.shadowColor  = 'rgba(255,255,255,.28)';
+    ctx.shadowBlur   = 7;
     ctx.fillText(block.word.toUpperCase(), bx, by);
     ctx.shadowBlur   = 0;
   }
@@ -1006,44 +1103,54 @@ function draw() {
 // WORD POOL
 // ══════════════════════════════════════════════════════════
 function shuffle(arr) {
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
   return a;
 }
 function buildPool(rIdx) {
   const cfg  = ROUND_CONFIG[rIdx];
   const tier = rIdx < 5 ? 1 : rIdx < 14 ? 2 : 3;
-  const elig = WORD_BANK.filter(([,,pos,t]) => t<=tier && cfg.cats.includes(pos));
+  const elig = WORD_BANK.filter(([,,pos,t]) => t <= tier && cfg.cats.includes(pos));
   const pc   = {};
-  cfg.cats.forEach(c => pc[c]=[]);
+  cfg.cats.forEach(c => pc[c] = []);
   shuffle(elig).forEach(w => { if (pc[w[2]]) pc[w[2]].push(w); });
   let pool = [];
-  cfg.cats.forEach(c => pool.push(...pc[c].slice(0, Math.ceil(cfg.words*2/cfg.cats.length))));
+  cfg.cats.forEach(c => pool.push(...pc[c].slice(0, Math.ceil(cfg.words * 2 / cfg.cats.length))));
   return shuffle(pool);
 }
 
 // ══════════════════════════════════════════════════════════
-// SPAWN — word appears in gap, pauses 1s, then drops
+// SPAWN — word shown in gap for 1s, then falls from gapX/gapY
 // ══════════════════════════════════════════════════════════
 function spawnBlock(entry) {
   const [sentence, word, pos] = entry;
-  // Layout sentence with 'preview' state so the word shows in the gap
-  block = { colIdx: Math.floor(activeCats.length/2), y: DROP_TOP, word, pos, sentence, slotState:'preview', _fs:18 };
-  layoutSentence(sentence, word, 'preview');
-  // Update slot word text in sentWords
-  const sw = sentWords.find(s => s.isSlot);
-  if (sw) { sw.text = word; sw.slotState = 'preview'; }
+
+  block = {
+    colIdx: Math.floor(activeCats.length / 2),
+    y: 0,        // will be set to gapY after layoutSentence
+    word, pos, sentence,
+    slotState: 'preview',
+    slotColour: null,
+    _fs: 18,
+  };
+
+  // Layout sentence with word visible in gap
+  layoutSentence(sentence, word, 'preview', null);
+  // Position falling word at the gap — it won't move yet
+  block.y = gapY;
   draw();
 
-  // After 1s the word lifts out of the gap and begins falling
+  // After 1 second, word lifts out and begins falling from the gap position
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => {
     if (!gameActive || !block) return;
-    // Set slot to empty
-    layoutSentence(sentence, word, 'empty');
-    // Start block at the slot's canvas position
-    block.y = slotY;
-    block.colIdx = Math.floor(activeCats.length / 2);
+    // Switch slot to empty
+    layoutSentence(block.sentence, block.word, 'empty', null);
+    // Block starts at the exact gap position
+    block.y        = gapY;
     block.slotState = 'empty';
     draw();
     startDrop();
@@ -1053,9 +1160,11 @@ function spawnBlock(entry) {
 function startDrop() {
   clearInterval(dropInterval);
   const cfg      = ROUND_CONFIG[round];
-  const range    = DROP_BOT - DROP_TOP;
+  // Drop from gapY (top of drop) to DROP_BOT
+  const range    = DROP_BOT - gapY;
   const stepPx   = 5;
-  const msPerStep = (cfg.interval / (range / stepPx));
+  const steps    = range / stepPx;
+  const msPerStep = Math.max(14, cfg.interval / steps);
 
   dropInterval = setInterval(() => {
     if (paused || !block) return;
@@ -1068,7 +1177,7 @@ function startDrop() {
     } else {
       draw();
     }
-  }, Math.max(14, msPerStep));
+  }, msPerStep);
 }
 
 function moveToCol(col) {
@@ -1083,13 +1192,11 @@ function onArrow(dir) {
 }
 function onDrop() {
   if (!block || !gameActive || paused) return;
-  // If still in preview (hasn't started dropping yet), trigger drop immediately
   clearTimeout(previewTimer);
+  // If still in preview, start from gapY
   if (block.slotState === 'preview') {
-    layoutSentence(block.sentence, block.word, 'empty');
-    const sw = sentWords.find(s => s.isSlot);
-    if (sw) sw.slotState = 'empty';
-    block.y = slotY;
+    layoutSentence(block.sentence, block.word, 'empty', null);
+    block.y        = gapY;
     block.slotState = 'empty';
   }
   clearInterval(dropInterval);
@@ -1099,22 +1206,29 @@ function onDrop() {
 }
 
 // ══════════════════════════════════════════════════════════
-// LAND + FLY-BACK
+// LAND
 // ══════════════════════════════════════════════════════════
 function landBlock(colIdx) {
   if (!block) return;
   const chosen  = activeCats[colIdx];
   const correct = block.pos;
   const isRight = chosen === correct;
-  const landedWord     = block.word;
-  const landedSentence = block.sentence;
-  const landedFs       = block._fs || 18;
-  const landX = colIdx * colW + colW / 2;
-  const landY = block.y;
 
-  // Flash column label
+  const savedWord      = block.word;
+  const savedSentence  = block.sentence;
+  const landX          = block.colIdx * colW + colW / 2; // where it landed horizontally
+  const landY          = block.y;
+  const savedFs        = block._fs || 18;
+  const savedGapX      = gapX; // capture gap position at this moment
+  const savedGapY      = gapY;
+
+  // Flash col label
   const lbl = document.getElementById('colLabel_' + colIdx);
-  if (lbl) { void lbl.offsetWidth; lbl.classList.add(isRight?'flash-good':'flash-bad'); setTimeout(()=>lbl.classList.remove('flash-good','flash-bad'),420); }
+  if (lbl) {
+    void lbl.offsetWidth;
+    lbl.classList.add(isRight ? 'flash-good' : 'flash-bad');
+    setTimeout(() => lbl.classList.remove('flash-good','flash-bad'), 450);
+  }
 
   block = null;
 
@@ -1127,44 +1241,55 @@ function landBlock(colIdx) {
     correctCount++;
     updateDot(wordsDone, 'correct');
 
-    // Fly-back: word rises from landing pos to the slot position
     const col = CAT_COLOURS[correct];
+    // Fly from landing position back to the exact gap coordinates
     flyAnim = {
-      word: landedWord.toUpperCase(),
+      word:  savedWord.toUpperCase(),
       colour: col,
-      x: landX,
-      startY: landY,
-      endY: slotY,
-      t: 0,
-      duration: 480,
-      fs: landedFs,
+      fromX: landX,   fromY: landY,
+      toX:   savedGapX, toY: savedGapY,
+      t: 0, dur: 500,
+      fs: savedFs,
       onDone: () => {
-        // Fill the gap with the word in category colour
-        layoutSentence(landedSentence, landedWord, 'correct');
-        const sw = sentWords.find(s => s.isSlot);
-        if (sw) { sw.slotState = 'correct'; sw.colour = col; sw.text = landedWord; }
+        layoutSentence(savedSentence, savedWord, 'correct', col);
         draw();
-        setTimeout(advance, 700);
-      }
+        setTimeout(advance, 650);
+      },
     };
     requestAnimationFrame(draw);
+
   } else {
-    SFX.wrong();
+    SFX.loseLife();
     streak = 0;
-    mistakes.push({ sent: landedSentence, word: landedWord, given: chosen, correct });
+    mistakes.push({ sent:savedSentence, word:savedWord, given:chosen, correct });
     updateDot(wordsDone, 'wrong');
-    // Flash correct column
+
+    // Flash the correct column label
     const ci = activeCats.indexOf(correct);
     const cl = document.getElementById('colLabel_' + ci);
-    if (cl) { cl.classList.add('flash-good'); setTimeout(()=>cl.classList.remove('flash-good'),600); }
-    // Keep empty slot visible, move on
+    if (cl) { cl.classList.add('flash-good'); setTimeout(()=>cl.classList.remove('flash-good'),650); }
+
+    // Lose a life
+    lives = Math.max(0, lives - 1);
+    renderLives();
     draw();
-    setTimeout(advance, 700);
+
+    if (lives <= 0) {
+      // Game over — out of lives
+      setTimeout(() => {
+        document.getElementById('livesOverlay').style.display = 'flex';
+      }, 600);
+      wordsDone++;
+      return;
+    }
+
+    setTimeout(advance, 750);
   }
 
   document.getElementById('scoreVal').textContent  = score;
   document.getElementById('streakVal').textContent = streak;
   wordsDone++;
+
   if (wordsDone >= ROUND_CONFIG[round].words) {
     clearInterval(dropInterval);
     setTimeout(showRoundComplete, isRight ? 1400 : 800);
@@ -1174,27 +1299,56 @@ function landBlock(colIdx) {
 function advance() {
   if (!gameActive) return;
   if (wordsDone >= ROUND_CONFIG[round].words) return;
-  if (roundPoolIdx >= roundPool.length) { roundPool = buildPool(round); roundPoolIdx = 0; }
+  if (roundPoolIdx >= roundPool.length) {
+    roundPool = buildPool(round); roundPoolIdx = 0;
+  }
   spawnBlock(roundPool[roundPoolIdx++]);
 }
 
 // ══════════════════════════════════════════════════════════
-// PROGRESS DOTS (in the right panel)
+// LIVES DISPLAY
+// ══════════════════════════════════════════════════════════
+function renderLives() {
+  const row = document.getElementById('livesRow');
+  row.innerHTML = '';
+  for (let i = 0; i < MAX_LIVES; i++) {
+    const s = document.createElement('span');
+    s.className = 'life' + (i >= lives ? ' lost' : '');
+    s.textContent = '❤️';
+    row.appendChild(s);
+  }
+}
+
+function renderLivesGain() {
+  // Animate the newly gained life
+  const row   = document.getElementById('livesRow');
+  const spans = row.querySelectorAll('.life');
+  // Find the first 'lost' life that becomes active
+  const newLiveIdx = lives - 1; // before increment this is the index being restored
+  if (spans[newLiveIdx]) {
+    spans[newLiveIdx].classList.remove('lost');
+    spans[newLiveIdx].classList.add('pulse');
+    setTimeout(() => spans[newLiveIdx].classList.remove('pulse'), 600);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// PROGRESS DOTS
 // ══════════════════════════════════════════════════════════
 function buildDots() {
   const el = document.getElementById('progressDots');
   el.innerHTML = '';
   const n = ROUND_CONFIG[round].words;
-  for (let i=0; i<n; i++) {
+  for (let i = 0; i < n; i++) {
     const d = document.createElement('div');
-    d.className = 'pdot' + (i===0?' current':'');
-    d.id = 'pdot'+i;
+    d.className = 'pdot' + (i===0 ? ' current' : '');
+    d.id = 'pdot' + i;
     el.appendChild(d);
   }
 }
 function updateDot(idx, status) {
   const d = document.getElementById('pdot'+idx);
-  if (d) d.className = 'pdot '+(status==='correct'?'done-correct':'done-wrong');
+  if (d) d.className = 'pdot ' + (status==='correct' ? 'done-correct' : 'done-wrong');
   const n = document.getElementById('pdot'+(idx+1));
   if (n) n.classList.add('current');
 }
@@ -1207,8 +1361,8 @@ function buildColLabels() {
   el.innerHTML = '';
   activeCats.forEach((cat, i) => {
     const div = document.createElement('div');
-    div.className = 'col-label';
-    div.id = 'colLabel_' + i;
+    div.className   = 'col-label';
+    div.id          = 'colLabel_' + i;
     div.textContent = CAT_LABELS[cat];
     div.style.color = CAT_COLOURS[cat];
     div.addEventListener('click', () => moveToCol(i));
@@ -1216,7 +1370,6 @@ function buildColLabels() {
     el.appendChild(div);
   });
 }
-
 function buildCatPreview() {
   const el = document.getElementById('catPreview');
   ['noun','verb','adjective'].forEach(cat => {
@@ -1229,62 +1382,96 @@ function buildCatPreview() {
 }
 
 // ══════════════════════════════════════════════════════════
-// ROUND MANAGEMENT
+// ROUND COMPLETE
 // ══════════════════════════════════════════════════════════
 function showRoundComplete() {
   clearInterval(dropInterval);
   SFX.roundEnd();
-  document.getElementById('roundOverlayTitle').textContent =
-    round+1 < MAX_ROUNDS ? `Round ${round+1} complete! 🎉` : 'Final round done! 🏆';
-  document.getElementById('roundOverlayScore').textContent = `Score so far: ${score} pts`;
-  const nc = document.getElementById('roundOverlayNewCat');
-  nc.style.display = 'none';
-  if (round+1 < MAX_ROUNDS) {
-    const added = ROUND_CONFIG[round+1].cats.filter(c=>!ROUND_CONFIG[round].cats.includes(c));
-    if (added.length) { nc.style.display='block'; nc.innerHTML=`New category unlocked: <strong style="color:${CAT_COLOURS[added[0]]}">${CAT_LABELS[added[0]]}</strong>`; }
+
+  document.getElementById('roTitle').textContent =
+    round + 1 < MAX_ROUNDS ? `Round ${round+1} complete! 🎉` : 'Final round done! 🏆';
+  document.getElementById('roScore').textContent = `Score so far: ${score} pts`;
+
+  const unlockEl = document.getElementById('roUnlock');
+  unlockEl.style.display = 'none';
+
+  // Check if next round is a bonus round
+  if (round + 1 < MAX_ROUNDS && BONUS_ROUNDS.has(round + 1)) {
+    const added = ROUND_CONFIG[round+1].cats.filter(c => !ROUND_CONFIG[round].cats.includes(c));
+    const newCat = added[0];
+    if (newCat) {
+      // Grant extra life
+      lives = Math.min(MAX_LIVES + 1, lives + 1); // allow up to 4 temporarily
+      SFX.gainLife();
+      unlockEl.style.display = 'block';
+      unlockEl.innerHTML = `
+        <span class="life-anim">❤️</span>
+        <strong>+1 Life!</strong><br>
+        New category unlocked:<br>
+        <strong style="color:${CAT_COLOURS[newCat]}">${CAT_LABELS[newCat]}</strong>`;
+      // Animate the life in the HUD
+      renderLives();
+      setTimeout(() => {
+        const row = document.getElementById('livesRow');
+        const spans = row.querySelectorAll('.life');
+        if (spans[lives-1]) {
+          spans[lives-1].classList.add('pulse');
+          setTimeout(() => spans[lives-1].classList.remove('pulse'), 600);
+        }
+      }, 250);
+    }
   }
+
   document.getElementById('roundOverlay').style.display = 'flex';
 }
+
 function nextRound() {
   document.getElementById('roundOverlay').style.display = 'none';
   round++;
   if (round >= MAX_ROUNDS) { endGame(); return; }
   startRound();
 }
+
 function startRound() {
-  const cfg = ROUND_CONFIG[round];
-  activeCats = cfg.cats; wordsDone = 0; block = null; flyAnim = null;
+  const cfg   = ROUND_CONFIG[round];
+  activeCats  = cfg.cats;
+  wordsDone   = 0;
+  block       = null;
+  flyAnim     = null;
+  sentTokens  = [];
   clearTimeout(previewTimer);
+
   document.getElementById('roundVal').textContent = `${round+1}/${MAX_ROUNDS}`;
   resizeCanvas();
   buildColLabels();
   buildDots();
-  sentWords = [];
-  roundPool = buildPool(round); roundPoolIdx = 0;
+  renderLives();
+  roundPool    = buildPool(round);
+  roundPoolIdx = 0;
   draw();
-  setTimeout(advance, 500);
+  setTimeout(advance, 600);
 }
 
 // ══════════════════════════════════════════════════════════
 // TOUCH + KEYBOARD
 // ══════════════════════════════════════════════════════════
-let txStart=null, tyStart=null, ttStart=0, lastTap=0;
+let txS=null, tyS=null, ttS=0, lastTap=0;
 
 canvas.addEventListener('touchstart', e=>{
-  const t=e.touches[0]; txStart=t.clientX; tyStart=t.clientY; ttStart=Date.now();
+  const t=e.touches[0]; txS=t.clientX; tyS=t.clientY; ttS=Date.now();
   const now=Date.now();
   if (now-lastTap<280) togglePause();
   lastTap=now;
 },{passive:true});
 canvas.addEventListener('touchend', e=>{
-  if (txStart===null) return;
+  if (txS===null) return;
   const t=e.changedTouches[0];
-  const dx=t.clientX-txStart, dy=t.clientY-tyStart, dt=Date.now()-ttStart;
+  const dx=t.clientX-txS, dy=t.clientY-tyS, dt=Date.now()-ttS;
   if (Math.abs(dx)>35 && Math.abs(dx)>Math.abs(dy) && dt<400) onArrow(dx>0?1:-1);
-  else if (Math.abs(dx)<20 && Math.abs(dy)<20 && dt<220) onDrop();
-  txStart=null;
+  else if (Math.abs(dx)<20 && Math.abs(dy)<20 && dt<250) onDrop();
+  txS=null;
 },{passive:true});
-document.body.addEventListener('dblclick', ()=>{ if(gameActive) togglePause(); });
+document.body.addEventListener('dblclick',()=>{ if(gameActive) togglePause(); });
 
 document.addEventListener('keydown', e=>{
   if (!gameActive) return;
@@ -1302,8 +1489,8 @@ document.addEventListener('keydown', e=>{
 // ══════════════════════════════════════════════════════════
 function togglePause() {
   paused = !paused;
-  document.getElementById('pauseOverlay').style.display = paused?'flex':'none';
-  if (!paused && block && block.slotState!=='preview') startDrop();
+  document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+  if (!paused && block && block.slotState !== 'preview') startDrop();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1312,28 +1499,34 @@ function togglePause() {
 function goToIntro() {
   clearInterval(dropInterval); clearTimeout(previewTimer);
   gameActive=false; block=null; flyAnim=null;
-  document.getElementById('pauseOverlay').style.display='none';
-  document.getElementById('roundOverlay').style.display='none';
+  ['pauseOverlay','roundOverlay','livesOverlay'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
   document.getElementById('phase-game').style.display='none';
   document.getElementById('phase-result').style.display='none';
   document.getElementById('phase-intro').style.display='flex';
   document.body.style.overflow='';
   renderLeaderboard('worddrop','lbBodyIntro');
 }
+
 function endGameEarly() {
-  document.getElementById('pauseOverlay').style.display='none';
-  document.getElementById('roundOverlay').style.display='none';
+  ['pauseOverlay','roundOverlay','livesOverlay'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
   endGame();
 }
+
 function startGame() {
   round=0; score=0; streak=0; correctCount=0; mistakes=[];
-  paused=false; gameActive=true; block=null; flyAnim=null; sentWords=[];
+  lives=MAX_LIVES; paused=false; gameActive=true;
+  block=null; flyAnim=null; sentTokens=[];
   clearInterval(dropInterval); clearTimeout(previewTimer);
 
   document.getElementById('phase-intro').style.display='none';
   document.getElementById('phase-result').style.display='none';
-  document.getElementById('pauseOverlay').style.display='none';
-  document.getElementById('roundOverlay').style.display='none';
+  ['pauseOverlay','roundOverlay','livesOverlay'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
   document.getElementById('phase-game').style.display='flex';
   document.body.style.overflow='hidden';
 
@@ -1348,6 +1541,7 @@ function startGame() {
   resizeCanvas();
   startRound();
 }
+
 function endGame() {
   clearInterval(dropInterval); clearTimeout(previewTimer);
   gameActive=false; block=null; flyAnim=null;
@@ -1355,11 +1549,12 @@ function endGame() {
   document.getElementById('phase-game').style.display='none';
   document.getElementById('phase-result').style.display='flex';
   document.body.style.overflow='';
-  document.getElementById('resultHeadline').textContent=round>=MAX_ROUNDS?'🏆 Game complete!':'Game over';
+  document.getElementById('resultHeadline').textContent=
+    round>=MAX_ROUNDS?'🏆 Game complete!':`Round ${round+1}${lives<=0?' — Out of lives':' — Game over'}`;
   document.getElementById('resultMsg').textContent=
-    score>=1500?'🎉 Outstanding! Brilliant grammatical instinct!':
-    score>=900?'👏 Really impressive — well done!':
-    score>=500?'Good effort — keep practising!':
+    score>=1500?'🎉 Outstanding — brilliant grammatical instinct!':
+    score>=900 ?'👏 Really impressive — well done!':
+    score>=500 ?'Good effort — keep practising!':
     'Every drop teaches you something — try again!';
   document.getElementById('finalScore').textContent=score;
   document.getElementById('finalCorrect').textContent=correctCount;
@@ -1367,15 +1562,21 @@ function endGame() {
   document.getElementById('submitArea').dataset.score=score;
   const ml=document.getElementById('mistakesList');
   ml.innerHTML='';
-  if (!mistakes.length) { ml.innerHTML='<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>'; }
-  else mistakes.slice(-8).forEach(m=>{
-    const d=document.createElement('div'); d.className='mistake-item';
-    const disp=m.sent.replace('___'+m.word+'___',`<strong>${m.word}</strong>`);
-    d.innerHTML=`<div class="mi-s">${disp}</div><div><span class="mi-w">You chose: ${CAT_LABELS[m.given]||m.given}</span>&nbsp;→&nbsp;<span class="mi-p">Correct: ${CAT_LABELS[m.correct]}</span></div>`;
-    ml.appendChild(d);
-  });
+  if (!mistakes.length) {
+    ml.innerHTML='<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>';
+  } else {
+    mistakes.slice(-8).forEach(m=>{
+      const d=document.createElement('div'); d.className='mistake-item';
+      const disp=m.sent.replace('___'+m.word+'___',`<strong>${m.word}</strong>`);
+      d.innerHTML=`<div class="mi-s">${disp}</div>
+        <div><span class="mi-w">You chose: ${CAT_LABELS[m.given]||m.given}</span>
+        &nbsp;→&nbsp;<span class="mi-p">Correct: ${CAT_LABELS[m.correct]}</span></div>`;
+      ml.appendChild(d);
+    });
+  }
   renderLeaderboard('worddrop','lbBodyResult');
 }
+
 async function doSubmit() {
   const s=parseInt(document.getElementById('submitArea').dataset.score||'0');
   await handleScoreSubmit('worddrop',s,'nameInput','submitArea','lbBodyResult');
@@ -1388,9 +1589,11 @@ async function doSubmit() {
 const ro = new ResizeObserver(()=>{
   if (document.getElementById('phase-game').style.display==='flex') {
     resizeCanvas(); buildColLabels();
-    if (block) layoutSentence(block.sentence, block.word, block.slotState);
+    if (block && block.sentence) {
+      layoutSentence(block.sentence, block.word, block.slotState, block.slotColour);
+    }
     draw();
-    if (block && block.slotState!=='preview') startDrop();
+    if (block && block.slotState==='empty') startDrop();
   }
 });
 ro.observe(canvas);
