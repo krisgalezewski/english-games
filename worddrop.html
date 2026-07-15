@@ -30,10 +30,6 @@ main { max-width:none; margin:0; padding:0; }
 .stat-box .sv { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
 .stat-box .sl { font-family:'Space Mono',monospace; font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
 .mistakes-list { display:flex; flex-direction:column; gap:.4rem; text-align:left; margin:.6rem 0; max-height:160px; overflow-y:auto; }
-.mistake-item { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:.45rem .7rem; font-size:.8rem; }
-.mistake-item .mi-s { color:var(--muted); font-size:.74rem; margin-bottom:.15rem; }
-.mistake-item .mi-w { font-weight:700; color:var(--wrong); }
-.mistake-item .mi-p { color:var(--correct); font-size:.72rem; }
 
 /* ── GAME SCREEN — fixed full viewport, two columns ── */
 #phase-game {
@@ -213,7 +209,8 @@ main { max-width:none; margin:0; padding:0; }
 <div id="phase-intro" class="screen">
   <div class="intro-card">
     <h2>⬇ WordDrop</h2>
-    <p>A word lifts out of its sentence and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
+    <p>A word teleports from its sentence to the top of the centre column and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
+    <p><strong>On mobile:</strong> swipe left/right to move · swipe down to drop · double-tap to pause/resume. <strong>On desktop:</strong> arrow keys to move · ↓ or Space to drop · Escape to pause.</p>
     <p>You have <strong>3 lives ❤️</strong>. Each wrong category costs a life. Reach rounds 6, 11 and 16 to unlock a new category <em>and</em> earn a bonus life.</p>
     <p>New categories unlock every 5 rounds. Speed increases as you progress.</p>
     <div style="margin:.5rem 0">
@@ -290,7 +287,7 @@ main { max-width:none; margin:0; padding:0; }
 <!-- ══ PAUSE ══ -->
 <div class="overlay" id="pauseOverlay" style="display:none">
   <h2>⏸ Paused</h2>
-  <p>Space, Escape, or double-tap to resume</p>
+  <p>Double-tap, Space, or Escape to resume</p>
   <div class="overlay-btns">
     <button class="btn-primary" onclick="togglePause()">Resume →</button>
     <button class="btn-ghost"   onclick="endGameEarly()">End game &amp; save score</button>
@@ -1161,52 +1158,122 @@ function buildPool(rIdx) {
 // ══════════════════════════════════════════════════════════
 // SPAWN — word shown in gap for 1s, slides to centre, then falls
 // ══════════════════════════════════════════════════════════
+// ── Teleport flash state ──────────────────────────────────
+// When the word leaves the sentence, we flash it out at the gap
+// and flash it in at the top of the drop column simultaneously.
+let teleportFlash = null; // { gapX, gapY, colX, word, t, dur }
+
 function spawnBlock(entry) {
   const [sentence, word, pos] = entry;
 
+  const midColIdx = Math.floor(activeCats.length / 2);
   block = {
-    colIdx: Math.floor(activeCats.length / 2),
-    x: 0,   // current x (set after layout)
-    y: 0,   // current y (set after layout)
-    targetX: 0, // centre column x
+    colIdx: midColIdx,
+    x: 0, y: 0,
+    targetX: 0,
     word, pos, sentence,
     slotState: 'preview',
     slotColour: null,
     _fs: 18,
-    phase: 'preview', // 'preview' | 'slide' | 'fall'
+    phase: 'preview',
   };
 
   layoutSentence(sentence, word, 'preview', null);
-  block.x = gapX;
-  block.y = gapY;
-  block.targetX = Math.floor(activeCats.length / 2) * colW + colW / 2;
+  block.x       = gapX;
+  block.y       = gapY;
+  block.targetX = midColIdx * colW + colW / 2;
   draw();
 
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => {
     if (!gameActive || !block) return;
+
+    // Switch slot to empty
     layoutSentence(block.sentence, block.word, 'empty', null);
     block.slotState = 'empty';
-    block.phase     = 'slide';
-    // Capture start positions for the slide
-    block.slideStartX = gapX;
-    block.slideStartY = gapY;
-    block.x = gapX;
-    block.y = gapY;
-    startDropRAF();
+
+    // Capture positions for the teleport flash
+    const fromX = gapX;
+    const fromY = gapY;
+    const toX   = block.targetX;
+    const toY   = DROP_TOP + 20; // near top of drop zone
+
+    // Set block to the destination immediately — it won't move visually
+    // until the flash completes
+    block.x         = toX;
+    block.y         = toY;
+    block.phase     = 'teleporting'; // invisible during flash
+    block.slideStartY = toY;
+
+    // Trigger the teleport flash animation
+    teleportFlash = { fromX, fromY, toX, toY, word: word.toUpperCase(), t: 0, dur: 280 };
+    requestAnimationFrame(drawTeleport);
+
   }, 1000);
 }
 
-// RAF-based smooth drop — replaces setInterval entirely
-let rafDrop = null;        // requestAnimationFrame id
-let dropLastTime = null;   // timestamp of last frame
-const SLIDE_DUR = 320;     // ms to slide from gap to centre column
-let slideElapsed = 0;
+// Separate RAF loop for the teleport flash — runs for ~280ms then hands off to drop
+function drawTeleport(ts) {
+  if (!teleportFlash) return;
+  teleportFlash.t += 16;
+  const prog = Math.min(1, teleportFlash.t / teleportFlash.dur);
+
+  // Flash-out: gap position fades from full → 0 in first half
+  // Flash-in:  column position fades from 0 → full in second half
+  // Both use a sharp pulse so it looks instantaneous
+  const outAlpha = prog < 0.4 ? 1 - prog / 0.4 : 0;
+  const inAlpha  = prog > 0.55 ? (prog - 0.55) / 0.45 : 0;
+
+  if (block) draw(); // draw the background + empty sentence slot
+
+  const fs = block ? (block._fs || 18) : 18;
+  ctx.font = `bold ${fs}px "Space Mono", monospace`;
+
+  // Flash out at gap
+  if (outAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = outAlpha;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = '#ffffff';
+    ctx.shadowColor  = '#ffffff';
+    ctx.shadowBlur   = 20 * (1 - prog / 0.4);
+    ctx.fillText(teleportFlash.word, teleportFlash.fromX, teleportFlash.fromY);
+    ctx.restore();
+  }
+
+  // Flash in at column top
+  if (inAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = inAlpha;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = '#ffffff';
+    ctx.shadowColor  = '#ffffff';
+    ctx.shadowBlur   = 18 * inAlpha;
+    ctx.fillText(teleportFlash.word, teleportFlash.toX, teleportFlash.toY);
+    ctx.restore();
+  }
+
+  if (teleportFlash.t < teleportFlash.dur) {
+    requestAnimationFrame(drawTeleport);
+  } else {
+    teleportFlash = null;
+    // Block is now visible and starts falling
+    if (block) {
+      block.phase = 'fall';
+      startDropRAF();
+    }
+  }
+}
+
+// RAF-based smooth drop
+let rafDrop = null;
+let dropLastTime = null;
 
 function startDropRAF() {
   if (rafDrop) cancelAnimationFrame(rafDrop);
-  dropLastTime  = null;
-  slideElapsed  = 0;
+  dropLastTime = null;
   rafDrop = requestAnimationFrame(dropFrame);
 }
 
@@ -1216,30 +1283,23 @@ function dropFrame(ts) {
     rafDrop = requestAnimationFrame(dropFrame);
     return;
   }
-
+  if (block.phase === 'teleporting' || block.phase === 'preview') {
+    // Don't move during teleport or preview — handled by their own loops
+    dropLastTime = null;
+    rafDrop = requestAnimationFrame(dropFrame);
+    return;
+  }
   if (dropLastTime === null) dropLastTime = ts;
-  const dt = Math.min(ts - dropLastTime, 50); // cap at 50ms to avoid huge jumps after tab switch
+  const dt = Math.min(ts - dropLastTime, 50);
   dropLastTime = ts;
 
-  const cfg   = ROUND_CONFIG[round];
-  const range = DROP_BOT - block.slideStartY;
-  // pixels per millisecond for the fall phase
+  const cfg       = ROUND_CONFIG[round];
+  const range     = DROP_BOT - block.slideStartY;
   const fallSpeed = range / cfg.interval;
 
-  if (block.phase === 'slide') {
-    slideElapsed += dt;
-    const prog  = Math.min(1, slideElapsed / SLIDE_DUR);
-    const ease  = prog < 0.5 ? 2*prog*prog : -1+(4-2*prog)*prog;
-    block.x = block.slideStartX + (block.targetX - block.slideStartX) * ease;
-    block.y = block.slideStartY; // stays at gap y during slide
-    if (prog >= 1) {
-      block.phase = 'fall';
-      block.x     = block.targetX;
-    }
-
-  } else if (block.phase === 'fall') {
+  if (block.phase === 'fall') {
     block.y += fallSpeed * dt;
-    block.x  = block.colIdx * colW + colW / 2; // track column position
+    block.x  = block.colIdx * colW + colW / 2;
     if (block.y >= DROP_BOT) {
       block.y = DROP_BOT;
       draw();
@@ -1602,20 +1662,52 @@ function startRound() {
 // ══════════════════════════════════════════════════════════
 let txS=null, tyS=null, ttS=0, lastTap=0;
 
+// ── Touch on canvas ──────────────────────────────────────
+// Swipe left/right = move column
+// Swipe down      = drop (hard drop)
+// Double-tap      = pause/resume
 canvas.addEventListener('touchstart', e=>{
+  // Unlock AudioContext directly in a non-passive handler
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(ex){}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+
   const t=e.touches[0]; txS=t.clientX; tyS=t.clientY; ttS=Date.now();
   const now=Date.now();
-  if (now-lastTap<280) togglePause();
+  if (now-lastTap<300) {
+    togglePause();
+    lastTap=0; // reset so triple-tap doesn't trigger again
+    return;
+  }
   lastTap=now;
-},{passive:true});
+},{ passive:false });
+
 canvas.addEventListener('touchend', e=>{
   if (txS===null) return;
   const t=e.changedTouches[0];
   const dx=t.clientX-txS, dy=t.clientY-tyS, dt=Date.now()-ttS;
-  if (Math.abs(dx)>35 && Math.abs(dx)>Math.abs(dy) && dt<400) onArrow(dx>0?1:-1);
-  else if (Math.abs(dx)<20 && Math.abs(dy)<20 && dt<250) onDrop();
+  const absDx=Math.abs(dx), absDy=Math.abs(dy);
+
+  if (absDx>35 && absDx>absDy*1.2 && dt<400) {
+    // Horizontal swipe → move column
+    onArrow(dx>0?1:-1);
+  } else if (absDy>35 && absDy>absDx*1.2 && dy>0 && dt<400) {
+    // Downward swipe → drop
+    onDrop();
+  }
+  // (single taps do nothing — double-tap is handled on touchstart)
   txS=null;
-},{passive:true});
+},{ passive:true });
+
+// Also unlock audio on any touch on the right-side panel buttons
+document.getElementById('phase-game').addEventListener('touchstart', ()=>{
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(ex){}
+  }
+  if (audioCtx && audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
+},{ passive:true });
+
 document.body.addEventListener('dblclick',()=>{ if(gameActive) togglePause(); });
 
 document.addEventListener('keydown', e=>{
@@ -1705,18 +1797,50 @@ function endGame() {
   document.getElementById('finalCorrect').textContent=correctCount;
   document.getElementById('finalRound').textContent=Math.max(1,round+(wordsDone>0?1:0));
   document.getElementById('submitArea').dataset.score=score;
-  const ml=document.getElementById('mistakesList');
-  ml.innerHTML='';
+  const ml = document.getElementById('mistakesList');
+  ml.innerHTML = '';
+
+  // Gather all words played this game from the global mistakes list + correctCount
+  // We track everything in roundCorrect/roundWrong per round — but those reset each round.
+  // The `mistakes` array holds all wrong answers across the whole game.
+  // For the post-game summary we show: all wrong answers (clickable with def/ex)
+  // and a "no mistakes" message if perfect.
   if (!mistakes.length) {
-    ml.innerHTML='<div style="color:var(--correct);font-size:.85rem;text-align:center">No mistakes — perfect! 🎯</div>';
+    ml.innerHTML = '<div style="color:var(--correct);font-size:.85rem;text-align:center;padding:.5rem 0">No mistakes — perfect! 🎯</div>';
   } else {
-    mistakes.slice(-8).forEach(m=>{
-      const d=document.createElement('div'); d.className='mistake-item';
-      const disp=m.sent.replace('___'+m.word+'___',`<strong>${m.word}</strong>`);
-      d.innerHTML=`<div class="mi-s">${disp}</div>
-        <div><span class="mi-w">You chose: ${CAT_LABELS[m.given]||m.given}</span>
-        &nbsp;→&nbsp;<span class="mi-p">Correct: ${CAT_LABELS[m.correct]}</span></div>`;
-      ml.appendChild(d);
+    // Header
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-family:"Space Mono",monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(192,57,43,.8);margin-bottom:.3rem';
+    hdr.textContent = `✗ Words to review — ${mistakes.length}`;
+    ml.appendChild(hdr);
+    let pgOpenPopup = null;
+    mistakes.forEach(m => {
+      const chip = document.createElement('div');
+      chip.className = 'ro-chip ro-wrong';
+      chip.style.cursor = 'pointer';
+      const correctLabel = CAT_LABELS[m.correct] || m.correct;
+      const givenLabel   = CAT_LABELS[m.given]   || m.given;
+      chip.innerHTML = `<div class="ro-word">${m.word.toUpperCase()}</div>
+        <div class="ro-cat">${givenLabel} → ${correctLabel}</div>`;
+      chip.addEventListener('click', () => {
+        if (pgOpenPopup) { pgOpenPopup.remove(); pgOpenPopup = null; }
+        const entry = getWordInfo(m.word);
+        const def = entry ? entry[3] : '—';
+        const ex  = entry ? entry[4] : '';
+        const col = CAT_COLOURS[m.correct] || '#aaa';
+        const popup = document.createElement('div');
+        popup.className = 'word-popup';
+        popup.innerHTML = `
+          <div class="wp-word">${m.word}</div>
+          <div class="wp-pos" style="color:${col}">${CAT_LABELS[m.correct] || m.correct}</div>
+          <div class="wp-def">${escHtml(def)}</div>
+          <div class="wp-ex">${ex ? '"' + escHtml(ex) + '"' : ''}</div>
+          <div class="wp-close" onclick="this.parentElement.remove()">Close ✕</div>`;
+        chip.parentNode.insertBefore(popup, chip.nextSibling);
+        pgOpenPopup = popup;
+        setTimeout(() => popup.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+      });
+      ml.appendChild(chip);
     });
   }
   renderLeaderboard('worddrop','lbBodyResult');
