@@ -800,31 +800,41 @@ let previewTimer = null;
 // ══════════════════════════════════════════════════════════
 let audioCtx = null;
 let soundOn  = true;  // ON by default
+let audioUnlocked = false;
 
-function ensureAudio() {
+function unlockAudio() {
+  if (audioUnlocked) return;
   if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
   }
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  // Play a silent 1-frame buffer — the ONLY reliable iOS Safari audio unlock
+  try {
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
+    audioUnlocked = true;
+  } catch(e) {}
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
 }
-document.addEventListener('click',     ensureAudio, {passive:true});
-document.addEventListener('touchstart',ensureAudio, {passive:true});
-document.addEventListener('keydown',   ensureAudio, {passive:true});
+// Non-passive touchstart so iOS allows AudioContext unlock inside the handler
+document.addEventListener('touchstart', unlockAudio, { passive: false });
+document.addEventListener('click',      unlockAudio, { passive: true });
+document.addEventListener('keydown',    unlockAudio, { passive: true });
 
 function toggleSound() {
   soundOn = !soundOn;
   document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
-  ensureAudio();
+  unlockAudio();
 }
 
 function tone(freq, type, dur, vol=0.14) {
   if (!soundOn) return;
-  ensureAudio();
-  if (!audioCtx) return;
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
+  }
   const play = () => {
     try {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
       o.connect(g); g.connect(audioCtx.destination);
       o.type = type;
       o.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -840,10 +850,13 @@ function tone(freq, type, dur, vol=0.14) {
 const SFX = {
   correct()  { tone(523,'sine',.09); setTimeout(()=>tone(659,'sine',.09),65); },
   wrong()    { tone(200,'sawtooth',.18,.12); },
-  loseLife() { tone(180,'sawtooth',.28,.15); },
+  loseLife() { tone(160,'sawtooth',.32,.16); setTimeout(()=>tone(140,'sawtooth',.2,.1),180); },
   gainLife() { [659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.15),i*70)); },
   streak()   { [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.13),i*55)); },
-  roundEnd() { [523,659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.16),i*75)); },
+  // Soft low thud when a word lands — clearly different from round-end
+  drop()     { tone(110,'sine',.07,.09); setTimeout(()=>tone(95,'sine',.05,.06),35); },
+  // Ascending fanfare — unmistakably different from the landing thud
+  roundEnd() { [330,415,523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',.22,.13),i*90)); },
   gameOver() { [330,294,247,220].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.2,.1),i*90)); },
 };
 
@@ -1161,7 +1174,7 @@ function buildPool(rIdx) {
 // ── Teleport flash state ──────────────────────────────────
 // When the word leaves the sentence, we flash it out at the gap
 // and flash it in at the top of the drop column simultaneously.
-let teleportFlash = null; // { gapX, gapY, colX, word, t, dur }
+let spawnTime = 0; // timestamp when the word started falling (after teleport)
 
 function spawnBlock(entry) {
   const [sentence, word, pos] = entry;
@@ -1196,14 +1209,14 @@ function spawnBlock(entry) {
     const fromX = gapX;
     const fromY = gapY;
     const toX   = block.targetX;
-    const toY   = DROP_TOP + 20; // near top of drop zone
+    const toY   = SENT_H + 20; // near top of drop zone, just below sentence bar
 
     // Set block to the destination immediately — it won't move visually
     // until the flash completes
     block.x         = toX;
-    block.y         = toY;
-    block.phase     = 'teleporting'; // invisible during flash
-    block.slideStartY = toY;
+    block.y         = SENT_H + 20;
+    block.phase     = 'teleporting';
+    block.slideStartY = SENT_H + 20;
 
     // Trigger the teleport flash animation
     teleportFlash = { fromX, fromY, toX, toY, word: word.toUpperCase(), t: 0, dur: 280 };
@@ -1262,6 +1275,7 @@ function drawTeleport(ts) {
     // Block is now visible and starts falling
     if (block) {
       block.phase = 'fall';
+      spawnTime   = Date.now();
       startDropRAF();
     }
   }
@@ -1376,9 +1390,18 @@ function landBlock(colIdx) {
 
   block = null;
 
+  SFX.drop(); // soft landing thud for every word (right or wrong)
+
   if (isRight) {
     SFX.correct();
-    score += 10;
+    // Base: 10 pts. Time bonus: up to 5 pts for dropping quickly.
+    // Time available = the round interval. Quick = first 30% of that time.
+    const elapsed     = Date.now() - spawnTime;
+    const available   = ROUND_CONFIG[round].interval;
+    const timeRatio   = Math.min(1, elapsed / available);
+    const timeBonus   = Math.round(5 * Math.max(0, 1 - timeRatio / 0.5)); // 5→0 over first 50% of time
+    const pts         = 10 + timeBonus;
+    score            += pts;
     streak++;
     if (streak >= 5) { score += 10; SFX.streak(); }
     else if (streak >= 3) score += 5;
@@ -1533,8 +1556,41 @@ function buildCatPreview() {
 // ── Round summary helpers ─────────────────────────────────
 let openPopup = null;
 
+// POS descriptions shown in the popup as the word's "definition context"
+const POS_DESC = {
+  noun:        'Noun — a word for a person, place, thing or idea.',
+  verb:        'Verb — a word describing an action, event or state.',
+  adjective:   'Adjective — a word that describes or modifies a noun.',
+  adverb:      'Adverb — a word that modifies a verb, adjective or other adverb.',
+  preposition: 'Preposition — a word showing the relationship between a noun and other words.',
+  conjunction: 'Conjunction — a word that joins clauses, sentences or words together.',
+};
+
 function getWordInfo(word) {
+  // Returns the WORD_BANK entry for this word (first match)
   return WORD_BANK.find(([,w]) => w === word) || null;
+}
+
+function showWordPopup(word, pos, anchorEl) {
+  if (openPopup) { openPopup.remove(); openPopup = null; }
+  const entry   = getWordInfo(word);
+  // The sentence in the bank IS the example (with ___word___ markers)
+  const rawSent = entry ? entry[0] : '';
+  // Clean up the sentence: replace ___word___ with the word in plain text
+  const example = rawSent.replace('___' + word + '___', word);
+  const posdesc = POS_DESC[pos] || (CAT_LABELS[pos] || pos);
+  const col     = CAT_COLOURS[pos] || '#aaa';
+
+  const popup = document.createElement('div');
+  popup.className = 'word-popup';
+  popup.innerHTML = `
+    <div class="wp-word">${escHtml(word)}</div>
+    <div class="wp-pos" style="color:${col}">${posdesc}</div>
+    <div class="wp-ex">${example ? '"' + escHtml(example) + '"' : ''}</div>
+    <div class="wp-close" onclick="this.parentElement.remove();openPopup=null">Close ✕</div>`;
+  anchorEl.parentNode.insertBefore(popup, anchorEl.nextSibling);
+  openPopup = popup;
+  setTimeout(() => popup.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
 }
 
 function buildRoundSummary() {
@@ -1568,23 +1624,6 @@ function makeRoChip(item, wasCorrect) {
   return chip;
 }
 
-function showWordPopup(word, pos, anchorEl) {
-  if (openPopup) { openPopup.remove(); openPopup = null; }
-  const entry = getWordInfo(word);
-  const def = entry ? entry[3] : '';
-  const ex  = entry ? entry[4] : '';
-  const popup = document.createElement('div');
-  popup.className = 'word-popup';
-  popup.innerHTML = `
-    <div class="wp-word">${word}</div>
-    <div class="wp-pos" style="color:${CAT_COLOURS[pos]||'#aaa'}">${CAT_LABELS[pos]||pos}</div>
-    <div class="wp-def">${escHtml(def)}</div>
-    <div class="wp-ex">${ex ? '"' + escHtml(ex) + '"' : ''}</div>
-    <div class="wp-close" onclick="this.parentElement.remove();openPopup=null">Close ✕</div>`;
-  anchorEl.parentNode.insertBefore(popup, anchorEl.nextSibling);
-  openPopup = popup;
-  setTimeout(() => popup.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
-}
 
 function showRoundComplete() {
   if(rafDrop){cancelAnimationFrame(rafDrop);rafDrop=null;}
@@ -1667,11 +1706,8 @@ let txS=null, tyS=null, ttS=0, lastTap=0;
 // Swipe down      = drop (hard drop)
 // Double-tap      = pause/resume
 canvas.addEventListener('touchstart', e=>{
-  // Unlock AudioContext directly in a non-passive handler
-  if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(ex){}
-  }
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  // Unlock AudioContext — must be in non-passive handler for iOS Safari
+  unlockAudio();
 
   const t=e.touches[0]; txS=t.clientX; tyS=t.clientY; ttS=Date.now();
   const now=Date.now();
@@ -1824,17 +1860,17 @@ function endGame() {
         <div class="ro-cat">${givenLabel} → ${correctLabel}</div>`;
       chip.addEventListener('click', () => {
         if (pgOpenPopup) { pgOpenPopup.remove(); pgOpenPopup = null; }
-        const entry = getWordInfo(m.word);
-        const def = entry ? entry[3] : '—';
-        const ex  = entry ? entry[4] : '';
+        const entry   = getWordInfo(m.word);
+        const rawSent = entry ? entry[0] : '';
+        const example = rawSent.replace('___' + m.word + '___', m.word);
+        const posdesc = POS_DESC[m.correct] || (CAT_LABELS[m.correct] || m.correct);
         const col = CAT_COLOURS[m.correct] || '#aaa';
         const popup = document.createElement('div');
         popup.className = 'word-popup';
         popup.innerHTML = `
-          <div class="wp-word">${m.word}</div>
-          <div class="wp-pos" style="color:${col}">${CAT_LABELS[m.correct] || m.correct}</div>
-          <div class="wp-def">${escHtml(def)}</div>
-          <div class="wp-ex">${ex ? '"' + escHtml(ex) + '"' : ''}</div>
+          <div class="wp-word">${escHtml(m.word)}</div>
+          <div class="wp-pos" style="color:${col}">${posdesc}</div>
+          <div class="wp-ex">${example ? '"' + escHtml(example) + '"' : ''}</div>
           <div class="wp-close" onclick="this.parentElement.remove()">Close ✕</div>`;
         chip.parentNode.insertBefore(popup, chip.nextSibling);
         pgOpenPopup = popup;
