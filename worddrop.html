@@ -49,13 +49,14 @@ main { max-width:none; margin:0; padding:0; }
 .col-labels { display:flex; flex-shrink:0; }
 .col-label {
   flex:1; text-align:center;
-  padding:.5rem .1rem;
+  padding:.55rem .1rem;
   font-family:'Space Mono',monospace;
-  font-size:clamp(.55rem,1.1vw,.75rem);
-  letter-spacing:.05em; text-transform:uppercase; font-weight:700;
+  font-size:.75rem; /* overridden by JS per column count */
+  letter-spacing:.04em; text-transform:uppercase; font-weight:700;
   background:#0d0d0d; cursor:pointer;
   -webkit-tap-highlight-color:transparent; transition:background .12s;
   border-top:1px solid #222;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .col-label:hover { background:#1a1a1a; }
 .col-label.flash-good { animation:colGood .45s; }
@@ -444,7 +445,7 @@ const WORD_BANK = [
   ['She ___proudly___ showed her certificate.', 'proudly', 'adverb', 1],
   ['He ___gently___ picked up the baby.', 'gently', 'adverb', 1],
   ['She is a ___fast___ runner.', 'fast', 'adjective', 2],
-  ['He ___fast___ed for three days.', 'fasted', 'verb', 2],
+  ['He ___fasted___ for three days.', 'fasted', 'verb', 2],
   ['She carried a ___light___ bag.', 'light', 'adjective', 2],
   ['Please ___light___ the candle.', 'light', 'verb', 2],
   ['The ___light___ in the room was dim.', 'light', 'noun', 2],
@@ -720,6 +721,315 @@ const WORD_BANK = [
   ['She worked ___while___ he cooked.', 'while', 'conjunction', 2],
   ['He stayed ___since___ he had nowhere else to go.', 'since', 'conjunction', 2]
 ];
+
+const WORD_DEFS = {
+  'dog': 'A domestic animal kept as a pet or used for work.',
+  'book': 'A written or printed work consisting of pages.',
+  'rain': 'Water that falls from clouds in drops.',
+  'car': 'A road vehicle with an engine and four wheels.',
+  'table': 'A piece of furniture with a flat top and legs.',
+  'dress': 'A piece of clothing worn by women or girls.',
+  'child': 'A young human being below the age of puberty.',
+  'door': 'A movable barrier used to open or close an entrance.',
+  'teacher': 'A person who teaches, especially in a school.',
+  'bag': 'A container made of flexible material for carrying things.',
+  'sun': 'The star around which the Earth orbits.',
+  'key': 'A small metal device for opening a lock.',
+  'river': 'A large natural flow of water.',
+  'apple': 'A round fruit with red or green skin.',
+  'bird': 'A warm-blooded animal with feathers and wings.',
+  'letter': 'A written message sent to someone.',
+  'city': 'A large town or urban centre.',
+  'coin': 'A small flat metal disc used as money.',
+  'story': 'An account of events, real or imaginary.',
+  'window': 'An opening in a wall fitted with glass.',
+  'garden': 'A piece of ground for growing plants.',
+  'hand': 'The part of the body at the end of the arm.',
+  'doctor': 'A person qualified to practise medicine.',
+  'newspaper': 'A printed publication containing news.',
+  'mountain': 'A large natural elevation of land.',
+  'cake': 'A sweet baked food made from flour and sugar.',
+  'phone': 'A device used to make and receive calls.',
+  'coat': 'An outer garment worn for warmth.',
+  'school': 'An institution where children are educated.',
+  'tree': 'A tall plant with a wooden trunk and branches.',
+  'sings': 'Produces musical sounds with the voice.',
+  'runs': 'Moves quickly; or manages or operates.',
+  'laughed': 'Made sounds showing amusement.',
+  'writes': 'Marks letters or words on a surface.',
+  'cooked': 'Prepared food by heating it.',
+  'sleeps': 'Is in a natural state of rest.',
+  'painted': 'Applied colour to a surface with a brush.',
+  'jumped': 'Pushed oneself off the ground into the air.',
+  'built': 'Constructed something by putting parts together.',
+  'whispered': 'Spoke very softly.',
+  'forgot': 'Failed to remember something.',
+  'celebrate': 'Mark a special event with festivities.',
+  'studied': 'Applied the mind to learn a subject.',
+  'climbed': 'Went up using hands and feet.',
+  'argued': 'Exchanged opposing views heatedly.',
+  'discovered': 'Found something for the first time.',
+  'fixed': 'Repaired something that was broken.',
+  'travelled': 'Made a journey to another place.',
+  'remembered': 'Recalled something from the past.',
+  'promised': 'Gave an assurance that one will do something.',
+  'decided': 'Came to a resolution after consideration.',
+  'explained': 'Made something clear or understandable.',
+  'borrowed': 'Took something with the intention of returning it.',
+  'enjoyed': 'Found pleasure in something.',
+  'answered': 'Responded to a question or request.',
+  'arrived': 'Reached a destination.',
+  'disagreed': 'Had a different opinion from another person.',
+  'introduced': 'Made someone known to another person.',
+  'accepted': 'Agreed to receive or take something offered.',
+  'escaped': 'Got free from a place or situation.',
+  'beautiful': 'Pleasing to the senses; very attractive.',
+  'long': 'Having great length or duration.',
+  'hot': 'Having a high temperature.',
+  'red': 'Having the colour of blood.',
+  'boring': 'Not interesting; dull.',
+  'tired': 'Feeling the need to sleep or rest.',
+  'dark': 'With little or no light.',
+  'happy': 'Feeling or showing pleasure or contentment.',
+  'difficult': 'Needing much effort or skill.',
+  'angry': 'Feeling strong displeasure or hostility.',
+  'delicious': 'Having a very pleasant taste.',
+  'friendly': 'Kind and pleasant in manner.',
+  'narrow': 'Having a small width.',
+  'nervous': 'Anxious or easily alarmed.',
+  'cold': 'Low in temperature; or a respiratory illness.',
+  'proud': 'Feeling satisfaction over one\'s achievements.',
+  'expensive': 'Costing a lot of money.',
+  'surprised': 'Feeling sudden wonder or shock.',
+  'fresh': 'Newly made or not yet stale.',
+  'kind': 'Having a warm and caring nature.',
+  'guilty': 'Having done something wrong.',
+  'enormous': 'Very large in size.',
+  'elegant': 'Graceful and stylish.',
+  'correct': 'True or accurate; free from error.',
+  'polite': 'Respectful and considerate in manner.',
+  'quiet': 'Making little or no noise.',
+  'curious': 'Eager to know or learn something.',
+  'reasonable': 'Fair and sensible.',
+  'generous': 'Willing to give more than expected.',
+  'quickly': 'At a fast speed.',
+  'quietly': 'With little sound; in a soft manner.',
+  'always': 'At all times; on every occasion.',
+  'correctly': 'In a way that is accurate or true.',
+  'warmly': 'In a friendly and enthusiastic manner.',
+  'never': 'At no time; not ever.',
+  'almost': 'Very nearly but not quite.',
+  'honestly': 'In a truthful, sincere manner.',
+  'often': 'Many times; frequently.',
+  'carefully': 'With great attention to avoid mistakes.',
+  'rarely': 'Not very often.',
+  'immediately': 'Without any delay.',
+  'suddenly': 'Very quickly and without warning.',
+  'clearly': 'In a way that is easy to see or understand.',
+  'deeply': 'To a great degree; intensely.',
+  'gradually': 'In small stages; little by little.',
+  'reluctantly': 'Unwillingly; without enthusiasm.',
+  'shyly': 'In a nervous or timid manner.',
+  'completely': 'Entirely; in every way.',
+  'barely': 'Only just; almost not.',
+  'firmly': 'With force and determination.',
+  'patiently': 'Without complaint or restlessness.',
+  'loudly': 'With a great amount of sound.',
+  'eventually': 'At some later time; in the end.',
+  'accidentally': 'Without intention; by mistake.',
+  'proudly': 'In a way showing satisfaction or honour.',
+  'gently': 'In a mild and careful way.',
+  'fast': 'Moving or acting with great speed.',
+  'light': 'Illumination; or not heavy; or to ignite.',
+  'fasted': 'Went without food for a period of time.',
+  'love': 'A deep feeling of affection.',
+  'loves': 'Feels great affection for something.',
+  'work': 'Activity involving effort; or employment.',
+  'right': 'Correct; or the direction opposite to left.',
+  'watch': 'A small timepiece worn on the wrist.',
+  'watched': 'Looked at attentively.',
+  'hard': 'Solid and firm; or with great effort.',
+  'flies': 'Moves through the air; or plural of fly (insect).',
+  'run': 'Movement faster than walking; or to operate.',
+  'empty': 'Containing nothing; or to remove contents.',
+  'free': 'Not restricted; or without cost.',
+  'freed': 'Released from captivity or restriction.',
+  'order': 'A direction or instruction; or to request something.',
+  'ordered': 'Gave an instruction or request.',
+  'calm': 'Free from agitation; or to soothe.',
+  'sound': 'A vibration perceived by the ear; or healthy.',
+  'present': 'Being in a place; or a gift; or to show.',
+  'presented': 'Showed or displayed something formally.',
+  'need': 'A requirement or necessity.',
+  'change': 'To make different; or money returned.',
+  'changed': 'Made or became different.',
+  'place': 'A location; or to put something somewhere.',
+  'placed': 'Put something in a particular position.',
+  'clean': 'Free from dirt; or to remove dirt.',
+  'cleaned': 'Removed dirt from something.',
+  'last': 'Coming after all others; or to continue.',
+  'lasted': 'Continued for a period of time.',
+  'early': 'Before the expected time.',
+  'fair': 'Treating people equally and reasonably.',
+  'act': 'A thing done; or to perform.',
+  'acted': 'Took action or performed in a play.',
+  'sharp': 'Having a fine cutting edge.',
+  'longed': 'Had a strong desire for something.',
+  'cross': 'Angry; or to go across something.',
+  'crossed': 'Went from one side to the other.',
+  'second': 'Coming after the first; or a unit of time.',
+  'seconded': 'Formally supported a proposal.',
+  'might': 'Past tense of may; or great strength.',
+  'back': 'The rear part; or to return; or to support.',
+  'backed': 'Supported or moved backwards.',
+  'match': 'A contest; or to correspond; or a fire-lighting stick.',
+  'matched': 'Was equal to or corresponded with.',
+  'own': 'Belonging to oneself; or to possess.',
+  'owns': 'Possesses something as property.',
+  'single': 'One only; or not married; or to select one.',
+  'singled': 'Selected one person or thing from a group.',
+  'question': 'A sentence seeking information; or to doubt.',
+  'questioned': 'Asked for information; or expressed doubt.',
+  'model': 'An example to copy; or to display fashion.',
+  'modelled': 'Displayed or shaped something as a model.',
+  'equal': 'The same in quantity or quality.',
+  'equals': 'Is the same in value or amount.',
+  'open': 'Not closed or blocked; or to make accessible.',
+  'cover': 'Something that protects; or to put something over.',
+  'covered': 'Put something over to protect or hide.',
+  'used': 'Having been put to a purpose; or second-hand.',
+  'still': 'Without movement; or continuing; or nevertheless.',
+  'stilled': 'Made calm or quiet.',
+  'well': 'In a good manner; or a deep hole for water.',
+  'subject': 'A topic; or under the authority of something.',
+  'subjected': 'Made to undergo something unpleasant.',
+  'perfect': 'Without any faults or flaws.',
+  'perfected': 'Made completely without flaw.',
+  'bear': 'A large wild mammal; or to tolerate.',
+  'mean': 'Unkind; or to intend; or an average.',
+  'fine': 'Of high quality; or a monetary penalty.',
+  'fined': 'Required to pay a monetary penalty.',
+  'wound': 'An injury; or past tense of wind.',
+  'down': 'Towards a lower position; or depressed.',
+  'downed': 'Knocked or brought to the ground.',
+  'report': 'An account of events; or to give information.',
+  'reported': 'Gave a formal account of something.',
+  'drop': 'To let fall; or a small amount of liquid.',
+  'dropped': 'Let something fall.',
+  'rise': 'An upward movement; or to move up.',
+  'rose': 'Moved upward; or past tense of rise.',
+  'start': 'The beginning; or to begin.',
+  'started': 'Began doing something.',
+  'break': 'An interruption; or to damage something.',
+  'broke': 'Damaged something so it no longer works.',
+  'firm': 'Solid and stable; or a company.',
+  'firmed': 'Became more solid or definite.',
+  'rate': 'A measure of speed or frequency.',
+  'rated': 'Assessed the quality or standard of something.',
+  'care': 'Concern and protection; or to feel concern.',
+  'cared': 'Felt concern or interest in something.',
+  'pale': 'Light in colour; or to become less impressive.',
+  'paled': 'Became lighter in colour; or seemed less important.',
+  'silence': 'Complete absence of sound; or to make quiet.',
+  'silenced': 'Caused to be quiet.',
+  'final': 'Coming at the end; or a decisive contest.',
+  'total': 'The complete amount; or including everything.',
+  'totalled': 'Added up to a certain amount.',
+  'before': 'At an earlier time than; or in front of.',
+  'beside': 'Next to or at the side of.',
+  'through': 'Moving in at one side and out at the other.',
+  'behind': 'On the far side of; or after.',
+  'over': 'Above or higher than; or more than.',
+  'between': 'In the space separating two things.',
+  'against': 'In opposition to; or touching.',
+  'despite': 'Without being affected by; regardless of.',
+  'without': 'Not having or doing something.',
+  'according': 'As stated by.',
+  'within': 'Inside the limits of.',
+  'throughout': 'In every part of; during the whole of.',
+  'via': 'By way of; through.',
+  'following': 'After; as a result of.',
+  'regardless': 'Without being affected by something.',
+  'amid': 'Surrounded by; in the middle of.',
+  'ahead': 'Further forward; in advance.',
+  'beneath': 'Under; below.',
+  'beyond': 'On the further side of; more than.',
+  'alongside': 'Next to; together with.',
+  'past': 'Further than; beyond.',
+  'opposite': 'On the other side of.',
+  'owing': 'Because of; as a result of.',
+  'regarding': 'About; concerning.',
+  'concerning': 'About; relating to.',
+  'out': 'Outside of; away from the inside.',
+  'prior': 'Before in time or order.',
+  'on': 'Physically touching a surface; or at a time.',
+  'at': 'Expressing location or a point in time.',
+  'because': 'For the reason that.',
+  'although': 'In spite of the fact that.',
+  'even': 'Used to emphasise something unexpected.',
+  'provided': 'On the condition that.',
+  'until': 'Up to the point in time when.',
+  'as': 'At the same time; or in the way that.',
+  'whereas': 'In contrast with the fact that.',
+  'once': 'As soon as; or one time.',
+  'whenever': 'Every time that; or at any time.',
+  'wherever': 'In every place that; or to any place.',
+  'unless': 'Except on the condition that.',
+  'after': 'Following in time; later than.',
+  'while': 'During the time that; whereas.',
+  'supposing': 'If it is assumed that.',
+  'whether': 'Expressing doubt between alternatives.',
+  'so': 'With the result that; therefore.',
+  'lest': 'With the intention of preventing.',
+  'though': 'Despite the fact that.',
+  'since': 'From a time in the past; or because.',
+  'yet': 'Up until now; or nevertheless.',
+  'just': 'Very recently; or only; or exactly.',
+  'already': 'Before now; or by this time.',
+  'nearly': 'Almost; very close to.',
+  'simply': 'In a straightforward way; or just.',
+  'rather': 'To a significant degree; or instead.',
+  'hardly': 'Almost not at all.',
+  'quite': 'To a certain or significant degree.',
+  'merely': 'Only; just; nothing more than.',
+  'indeed': 'In fact; certainly.',
+  'otherwise': 'In a different way; or apart from that.',
+  'somewhat': 'To a moderate extent.',
+  'nonetheless': 'In spite of that; nevertheless.',
+  'hence': 'For this reason; therefore.',
+  'therefore': 'As a result; for that reason.',
+  'thus': 'In this way; therefore.',
+  'furthermore': 'In addition; moreover.',
+  'nevertheless': 'In spite of what has been said.',
+  'likewise': 'In the same way; also.',
+  'subsequently': 'Afterwards; following that.',
+  'consequently': 'As a result; therefore.',
+  'arguably': 'It can be argued that.',
+  'literally': 'Exactly as described; not figuratively.',
+  'apparently': 'As far as one knows; seemingly.',
+  'genuinely': 'Truly; in a real or authentic manner.',
+  'remarkably': 'In a way that is surprising or extraordinary.',
+  'accordingly': 'In a way that is appropriate.',
+  'briefly': 'For a short time; in a few words.',
+  'late': 'After the expected time.',
+  'close': 'Near in space or time; or to shut.',
+  'near': 'Not far away; close.',
+  'straight': 'Without a bend; directly.',
+  'high': 'At a great distance above the ground.',
+  'deep': 'Extending far down or in.',
+  'wrong': 'Not correct or appropriate.',
+  'apart': 'Separated by a distance.',
+  'by': 'Identifying who did an action; or past.',
+  'and': 'Used to connect words or phrases.',
+  'but': 'Used to introduce a contrast.',
+  'or': 'Used to link alternatives.',
+  'if': 'On the condition that.',
+  'when': 'At the time that.',
+  'around': 'On all sides of; approximately.',
+  'across': 'From one side to the other.',
+  'along': 'Moving in a constant direction.',
+  'past_adj': 'Belonging to a former time.',
+};
 
 // ══════════════════════════════════════════════════════════
 // CONFIG
@@ -1219,7 +1529,7 @@ function spawnBlock(entry) {
     block.slideStartY = SENT_H + 20;
 
     // Trigger the teleport flash animation
-    teleportFlash = { fromX, fromY, toX, toY, word: word.toUpperCase(), t: 0, dur: 280 };
+    teleportFlash = { fromX, fromY, toX, toY, word: word.toUpperCase(), t: 0, dur: 380 };
     requestAnimationFrame(drawTeleport);
 
   }, 1000);
@@ -1234,8 +1544,8 @@ function drawTeleport(ts) {
   // Flash-out: gap position fades from full → 0 in first half
   // Flash-in:  column position fades from 0 → full in second half
   // Both use a sharp pulse so it looks instantaneous
-  const outAlpha = prog < 0.4 ? 1 - prog / 0.4 : 0;
-  const inAlpha  = prog > 0.55 ? (prog - 0.55) / 0.45 : 0;
+  const outAlpha = prog < 0.35 ? 1 - prog / 0.35 : 0;           // fades out in first 35%
+  const inAlpha  = prog > 0.40 ? Math.min(1, (prog - 0.40) / 0.25) : 0; // fades in 40-65%, stays bright
 
   if (block) draw(); // draw the background + empty sentence slot
 
@@ -1255,7 +1565,7 @@ function drawTeleport(ts) {
     ctx.restore();
   }
 
-  // Flash in at column top
+  // Flash in at column top — brighter, with strong glow
   if (inAlpha > 0) {
     ctx.save();
     ctx.globalAlpha = inAlpha;
@@ -1263,8 +1573,10 @@ function drawTeleport(ts) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = '#ffffff';
     ctx.shadowColor  = '#ffffff';
-    ctx.shadowBlur   = 18 * inAlpha;
+    ctx.shadowBlur   = 32 * inAlpha; // strong glow
+    ctx.font = `bold ${fs}px "Space Mono", monospace`;
     ctx.fillText(teleportFlash.word, teleportFlash.toX, teleportFlash.toY);
+    ctx.shadowBlur   = 0;
     ctx.restore();
   }
 
@@ -1528,12 +1840,17 @@ function updateDot(idx, status) {
 function buildColLabels() {
   const el = document.getElementById('colLabels');
   el.innerHTML = '';
+  const n = activeCats.length;
+  // Font size scales with available column width: wider columns = bigger text
+  // At 3 cols on a 320px canvas: colW≈107 → ~.72rem; at 6 cols: colW≈53 → ~.52rem
+  const fs = Math.max(0.48, Math.min(0.78, (colW - 20) / 120)).toFixed(2) + 'rem';
   activeCats.forEach((cat, i) => {
     const div = document.createElement('div');
     div.className   = 'col-label';
     div.id          = 'colLabel_' + i;
     div.textContent = CAT_LABELS[cat];
-    div.style.color = CAT_COLOURS[cat];
+    div.style.color    = CAT_COLOURS[cat];
+    div.style.fontSize = fs;
     div.addEventListener('click', () => moveToCol(i));
     div.addEventListener('touchend', e => { e.preventDefault(); moveToCol(i); });
     el.appendChild(div);
@@ -1574,19 +1891,20 @@ function getWordInfo(word) {
 function showWordPopup(word, pos, anchorEl) {
   if (openPopup) { openPopup.remove(); openPopup = null; }
   const entry   = getWordInfo(word);
-  // The sentence in the bank IS the example (with ___word___ markers)
   const rawSent = entry ? entry[0] : '';
-  // Clean up the sentence: replace ___word___ with the word in plain text
   const example = rawSent.replace('___' + word + '___', word);
-  const posdesc = POS_DESC[pos] || (CAT_LABELS[pos] || pos);
+  // Use the actual word definition from WORD_DEFS; fall back to POS description
+  const def     = WORD_DEFS[word] || WORD_DEFS[word.toLowerCase()] || '';
   const col     = CAT_COLOURS[pos] || '#aaa';
+  const posLabel = CAT_LABELS[pos] || pos;
 
   const popup = document.createElement('div');
   popup.className = 'word-popup';
   popup.innerHTML = `
     <div class="wp-word">${escHtml(word)}</div>
-    <div class="wp-pos" style="color:${col}">${posdesc}</div>
-    <div class="wp-ex">${example ? '"' + escHtml(example) + '"' : ''}</div>
+    <div class="wp-pos" style="color:${col}">${posLabel}</div>
+    ${def ? `<div class="wp-def">${escHtml(def)}</div>` : ''}
+    ${example ? `<div class="wp-ex">"${escHtml(example)}"</div>` : ''}
     <div class="wp-close" onclick="this.parentElement.remove();openPopup=null">Close ✕</div>`;
   anchorEl.parentNode.insertBefore(popup, anchorEl.nextSibling);
   openPopup = popup;
@@ -1699,49 +2017,37 @@ function startRound() {
 // ══════════════════════════════════════════════════════════
 // TOUCH + KEYBOARD
 // ══════════════════════════════════════════════════════════
-let txS=null, tyS=null, ttS=0, lastTap=0;
+let txS=null, tyS=null, ttS=0, lastTap=0, doubleTapFired=false;
 
 // ── Touch on canvas ──────────────────────────────────────
-// Swipe left/right = move column
-// Swipe down      = drop (hard drop)
-// Double-tap      = pause/resume
 canvas.addEventListener('touchstart', e=>{
-  // Unlock AudioContext — must be in non-passive handler for iOS Safari
   unlockAudio();
-
   const t=e.touches[0]; txS=t.clientX; tyS=t.clientY; ttS=Date.now();
+  doubleTapFired = false;
   const now=Date.now();
-  if (now-lastTap<300) {
-    togglePause();
-    lastTap=0; // reset so triple-tap doesn't trigger again
+  if (now-lastTap < 320) {
+    // Only pause/resume — never end game from a double-tap
+    if (gameActive) togglePause();
+    doubleTapFired = true;
+    lastTap = 0;
+    txS = null; // prevent touchend from interpreting this as a swipe
     return;
   }
   lastTap=now;
 },{ passive:false });
 
 canvas.addEventListener('touchend', e=>{
-  if (txS===null) return;
+  if (txS===null || doubleTapFired) { doubleTapFired=false; return; }
   const t=e.changedTouches[0];
   const dx=t.clientX-txS, dy=t.clientY-tyS, dt=Date.now()-ttS;
   const absDx=Math.abs(dx), absDy=Math.abs(dy);
 
-  if (absDx>35 && absDx>absDy*1.2 && dt<400) {
-    // Horizontal swipe → move column
+  if (absDx>40 && absDx>absDy*1.3 && dt<400) {
     onArrow(dx>0?1:-1);
-  } else if (absDy>35 && absDy>absDx*1.2 && dy>0 && dt<400) {
-    // Downward swipe → drop
+  } else if (absDy>40 && absDy>absDx*1.3 && dy>0 && dt<400) {
     onDrop();
   }
-  // (single taps do nothing — double-tap is handled on touchstart)
   txS=null;
-},{ passive:true });
-
-// Also unlock audio on any touch on the right-side panel buttons
-document.getElementById('phase-game').addEventListener('touchstart', ()=>{
-  if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(ex){}
-  }
-  if (audioCtx && audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
 },{ passive:true });
 
 document.body.addEventListener('dblclick',()=>{ if(gameActive) togglePause(); });
@@ -1863,14 +2169,16 @@ function endGame() {
         const entry   = getWordInfo(m.word);
         const rawSent = entry ? entry[0] : '';
         const example = rawSent.replace('___' + m.word + '___', m.word);
-        const posdesc = POS_DESC[m.correct] || (CAT_LABELS[m.correct] || m.correct);
-        const col = CAT_COLOURS[m.correct] || '#aaa';
+        const def     = WORD_DEFS[m.word] || WORD_DEFS[m.word.toLowerCase()] || '';
+        const col     = CAT_COLOURS[m.correct] || '#aaa';
+        const posLabel = CAT_LABELS[m.correct] || m.correct;
         const popup = document.createElement('div');
         popup.className = 'word-popup';
         popup.innerHTML = `
           <div class="wp-word">${escHtml(m.word)}</div>
-          <div class="wp-pos" style="color:${col}">${posdesc}</div>
-          <div class="wp-ex">${example ? '"' + escHtml(example) + '"' : ''}</div>
+          <div class="wp-pos" style="color:${col}">${posLabel}</div>
+          ${def ? `<div class="wp-def">${escHtml(def)}</div>` : ''}
+          ${example ? `<div class="wp-ex">"${escHtml(example)}"</div>` : ''}
           <div class="wp-close" onclick="this.parentElement.remove()">Close ✕</div>`;
         chip.parentNode.insertBefore(popup, chip.nextSibling);
         pgOpenPopup = popup;

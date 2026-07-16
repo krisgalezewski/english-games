@@ -60,10 +60,13 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   border:2px solid var(--border2); background:var(--surface2);
   display:flex; align-items:center; justify-content:center;
   font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
-  color:var(--text); transition:border-color .2s, background .2s;
+  color:var(--text); transition:border-color .15s, background .15s;
 }
 .letter-box.revealed { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
-.letter-box.empty { border-style:dashed; }
+.letter-box.empty    { border-style:dashed; }
+.letter-box.filled   { border-color:rgba(255,255,255,.5); background:var(--surface); color:var(--text); }
+.letter-box.cursor   { border-color:var(--gold); animation:cursorBlink .9s step-end infinite; }
+@keyframes cursorBlink { 0%,100%{border-color:var(--gold)} 50%{border-color:var(--border2)} }
 
 /* found list */
 .found-area { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; }
@@ -164,10 +167,18 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   </div>
 
   <!-- Mode tabs visible during game -->
-  <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:100%">
-    <button class="diff-tab" id="gTab1" onclick="switchMode(1)">Find synonym</button>
-    <button class="diff-tab" id="gTab2" onclick="switchMode(2)">Find antonym</button>
-    <button class="diff-tab" id="gTab3" onclick="switchMode(3)">Type it</button>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;width:100%">
+    <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem;justify-content:center;width:100%">
+      <button class="diff-tab" id="gTab1" onclick="switchMode(1)">Find synonym</button>
+      <button class="diff-tab" id="gTab2" onclick="switchMode(2)">Find antonym</button>
+      <button class="diff-tab" id="gTab3" onclick="switchMode(3)">Type it</button>
+    </div>
+    <!-- Type it sub-mode: shown only in mode 3, sits right under the tabs -->
+    <div id="typeSubMode" style="display:none;flex-direction:row;align-items:center;gap:.5rem">
+      <span style="font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Type…</span>
+      <button class="diff-tab active" id="typeSub1" onclick="selectTypeSub(1)">synonyms</button>
+      <button class="diff-tab"        id="typeSub2" onclick="selectTypeSub(2)">antonyms</button>
+    </div>
   </div>
 
   <!-- Mode 1: find synonym -->
@@ -182,19 +193,20 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     <div class="options-grid" id="m2grid"></div>
   </div>
 
-  <!-- Mode 3: type it -->
-  <div id="m3area" style="display:none;flex-direction:column;align-items:center;gap:.75rem;width:100%">
+  <!-- Mode 3: type it — letter boxes only, hidden input feeds them directly -->
+  <div id="m3area" style="display:none;flex-direction:column;align-items:center;gap:.6rem;width:100%">
     <div style="text-align:center">
       <span class="word-type-badge" id="m3badge"></span>
     </div>
-    <!-- Letter boxes: first letter always revealed, remaining shown as empty boxes -->
-    <div class="letter-boxes" id="letterBoxes"></div>
-    <div class="instruction" id="m3instruction">Type and press Enter</div>
-    <div class="type-input-wrap">
-      <input class="type-input" id="m3input" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type here…"/>
-      <button class="btn-primary" onclick="submitTyped()">→</button>
-    </div>
-    <div id="hintArea" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:center">
+    <!-- Letter boxes — player types directly into these -->
+    <div class="letter-boxes" id="letterBoxes" style="cursor:text" onclick="focusTypeInput()"></div>
+    <div class="instruction" id="m3instruction" style="font-size:.78rem">Tap the boxes and type · Enter to submit</div>
+    <!-- Hidden input: captures keyboard input and mirrors it into the letter boxes -->
+    <input id="m3input" inputmode="text" autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false"
+           style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;top:0;left:0"
+           onkeydown="handleTypeKey(event)" oninput="syncLetterBoxes()"/>
+    <div id="hintArea" style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;justify-content:center">
       <button class="btn-ghost" id="hintBtn"      onclick="showHint()">💡 Hint (−3 pts)</button>
       <button class="btn-ghost" id="extraHintBtn" onclick="showExtraHint()">🔍 Extra hint (−5 pts)</button>
       <button class="btn-ghost" id="skipBtn"      onclick="skipTypeWord()">⏭ Skip (−8 pts)</button>
@@ -830,48 +842,94 @@ function buildMode3() {
     m3targets = currentWord.syn.filter(s => !found.has('syn:'+s));
     badge.textContent = 'TYPE A SYNONYM';
     badge.className = 'word-type-badge badge-syn';
-    document.getElementById('m3instruction').textContent = 'Type the synonym and press Enter · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter to submit · Wrong = −5 seconds';
   } else {
     m3targets = currentWord.ant.filter(a => !found.has('ant:'+a));
     badge.textContent = 'TYPE AN ANTONYM';
     badge.className = 'word-type-badge badge-ant';
-    document.getElementById('m3instruction').textContent = 'Type the antonym and press Enter · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter to submit · Wrong = −5 seconds';
   }
 
   if (m3targets.length === 0) { pickNextWord(); return; }
   m3current = Math.floor(Math.random() * m3targets.length);
 
-  // Reset hint buttons
   const hintBtn = document.getElementById('hintBtn');
   const extraHintBtn = document.getElementById('extraHintBtn');
   const skipBtn = document.getElementById('skipBtn');
   hintBtn.disabled = false;
-  extraHintBtn.disabled = true; // enabled only after hint1 is used
+  extraHintBtn.disabled = true;
   skipBtn.disabled = skipsLeft <= 0;
   skipBtn.textContent = `⏭ Skip (${skipsLeft} left)`;
 
-  buildLetterBoxes();
   input.value = '';
-  input.focus();
-  input.className = 'type-input';
+  buildLetterBoxes();
+  // Auto-focus the hidden input so keyboard appears immediately
+  setTimeout(() => focusTypeInput(), 100);
 }
 
-// Build the letter box display — first letter always shown, rest as empty boxes
+// Build letter boxes — first `revealedLetters` shown, rest are input targets
 function buildLetterBoxes() {
   const target = m3targets[m3current];
   const container = document.getElementById('letterBoxes');
   container.innerHTML = '';
+
+  // Current typed value (only the non-revealed part)
+  const input = document.getElementById('m3input');
+  const typed = (input.value || '').toLowerCase();
+
   for (let i = 0; i < target.length; i++) {
     const box = document.createElement('div');
+    box.id = 'lbox_' + i;
+
     if (i < revealedLetters) {
+      // Revealed by hint or first letter
       box.className = 'letter-box revealed';
       box.textContent = target[i].toUpperCase();
     } else {
-      box.className = 'letter-box empty';
-      box.textContent = '';
+      // Player-typed position: i - revealedLetters is the index into typed string
+      const typedIdx = i - revealedLetters;
+      const typedChar = typed[typedIdx];
+      if (typedChar) {
+        box.className = 'letter-box filled';
+        box.textContent = typedChar.toUpperCase();
+      } else {
+        box.className = 'letter-box empty';
+        box.textContent = '';
+      }
+      // Highlight the current typing position
+      if (typedIdx === typed.length) box.classList.add('cursor');
     }
     container.appendChild(box);
   }
+}
+
+// Focus the hidden input — brings up the keyboard on mobile
+function focusTypeInput() {
+  const input = document.getElementById('m3input');
+  if (input) {
+    input.removeAttribute('readonly');
+    input.focus({ preventScroll: true });
+  }
+}
+
+// Called on every input event — sync typed chars into the letter boxes
+function syncLetterBoxes() {
+  const target = m3targets ? m3targets[m3current] : '';
+  if (!target) return;
+  const input  = document.getElementById('m3input');
+  // Cap input length to the number of non-revealed boxes
+  const maxLen = target.length - revealedLetters;
+  if (input.value.length > maxLen) input.value = input.value.slice(0, maxLen);
+  buildLetterBoxes();
+}
+
+// Handle keydown on the hidden input
+function handleTypeKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitTyped();
+  }
+  // Backspace and regular chars are handled by native input + syncLetterBoxes via oninput
 }
 
 function showHint() {
@@ -879,11 +937,14 @@ function showHint() {
   hint1Used = true;
   document.getElementById('hintBtn').disabled = true;
   document.getElementById('extraHintBtn').disabled = false;
-  // Deduct points for using hint
   finalScore = Math.max(0, finalScore - 3);
   document.getElementById('scoreVal').textContent = finalScore;
-  revealedLetters = 2; // reveal second letter
+  revealedLetters = 2;
+  // Trim any typed character that was in position 1 (now revealed)
+  const input = document.getElementById('m3input');
+  if (input.value.length > 0) input.value = input.value.slice(1);
   buildLetterBoxes();
+  focusTypeInput();
 }
 
 function showExtraHint() {
@@ -892,8 +953,11 @@ function showExtraHint() {
   document.getElementById('extraHintBtn').disabled = true;
   finalScore = Math.max(0, finalScore - 5);
   document.getElementById('scoreVal').textContent = finalScore;
-  revealedLetters = 3; // reveal third letter
+  revealedLetters = 3;
+  const input = document.getElementById('m3input');
+  if (input.value.length > 0) input.value = input.value.slice(1);
   buildLetterBoxes();
+  focusTypeInput();
 }
 
 function skipTypeWord() {
@@ -908,29 +972,48 @@ function showTypeHint() { showHint(); } // backwards compat alias
 
 function submitTyped() {
   const input = document.getElementById('m3input');
-  const typed = input.value.trim().toLowerCase();
-  if (!typed) return;
+  const target = m3targets[m3current];
+  // Combine revealed letters with typed input
+  const revealed = target.slice(0, revealedLetters).toLowerCase();
+  const typed    = (input.value || '').trim().toLowerCase();
+  const full     = revealed + typed;
+
+  if (!full || full.length < 2) { focusTypeInput(); return; }
 
   const validTargets = typeSub === 1
     ? currentWord.syn.filter(s => !found.has('syn:'+s))
     : currentWord.ant.filter(a => !found.has('ant:'+a));
-  const match = validTargets.find(t => t.toLowerCase() === typed);
+  const match = validTargets.find(t => t.toLowerCase() === full);
   const parentRef = currentWord;
 
   if (match) {
-    input.className = 'type-input ok';
+    // Flash boxes green
+    const container = document.getElementById('letterBoxes');
+    [...container.querySelectorAll('.letter-box')].forEach(b => {
+      b.classList.remove('empty','filled','cursor'); b.classList.add('revealed');
+    });
     const key = typeSub === 1 ? 'syn:'+match : 'ant:'+match;
     found.add(key);
-    if (!allFound.has(key)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
+    if (!allFound.has(key)) {
+      finalScore += 10;
+      document.getElementById('scoreVal').textContent = finalScore;
+      document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
+    }
     addFoundChip(match, typeSub === 2, parentRef);
     hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;
     document.getElementById('extraHintBtn').disabled = true;
     setTimeout(pickNextWord, 600);
   } else {
-    input.className = 'type-input bad';
+    // Flash boxes red
+    const container = document.getElementById('letterBoxes');
+    [...container.querySelectorAll('.letter-box')].forEach(b => b.style.borderColor='var(--wrong)');
     penalise();
-    setTimeout(() => { input.className = 'type-input'; input.value = ''; input.focus(); }, 500);
+    setTimeout(() => {
+      input.value = '';
+      buildLetterBoxes();
+      focusTypeInput();
+    }, 500);
   }
 }
 
