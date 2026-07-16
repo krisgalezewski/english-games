@@ -62,11 +62,15 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
   color:var(--text); transition:border-color .15s, background .15s;
 }
-.letter-box.revealed { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
-.letter-box.empty    { border-style:dashed; }
-.letter-box.filled   { border-color:rgba(255,255,255,.5); background:var(--surface); color:var(--text); }
-.letter-box.cursor   { border-color:var(--gold); animation:cursorBlink .9s step-end infinite; }
-@keyframes cursorBlink { 0%,100%{border-color:var(--gold)} 50%{border-color:var(--border2)} }
+.letter-box.revealed     { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
+.letter-box.empty        { border-style:dashed; }
+.letter-box.filled       { border-color:rgba(255,255,255,.5); background:var(--surface); color:var(--text); }
+.letter-box.cursor       { border-color:var(--gold); animation:cursorBlink .9s step-end infinite; }
+.letter-box.correct-flash { border-color:var(--correct); background:var(--correct-dim); color:var(--correct); animation:flashGreen .6s ease; }
+.letter-box.wrong-flash  { border-color:var(--wrong); background:var(--wrong-dim); color:var(--wrong); animation:flashRed .5s ease; }
+@keyframes cursorBlink  { 0%,100%{border-color:var(--gold)} 50%{border-color:var(--border2)} }
+@keyframes flashGreen   { 0%{transform:scale(1.08)} 60%{transform:scale(1.08)} 100%{transform:scale(1)} }
+@keyframes flashRed     { 0%,50%{transform:translateX(-3px)} 25%,75%{transform:translateX(3px)} 100%{transform:none} }
 
 /* found list */
 .found-area { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; }
@@ -973,24 +977,25 @@ function showTypeHint() { showHint(); } // backwards compat alias
 function submitTyped() {
   const input = document.getElementById('m3input');
   const target = m3targets[m3current];
-  // Combine revealed letters with typed input
+  // Combine revealed letters with typed input to form the full guess
   const revealed = target.slice(0, revealedLetters).toLowerCase();
   const typed    = (input.value || '').trim().toLowerCase();
   const full     = revealed + typed;
 
-  if (!full || full.length < 2) { focusTypeInput(); return; }
+  if (!full) { focusTypeInput(); return; }
 
   const validTargets = typeSub === 1
     ? currentWord.syn.filter(s => !found.has('syn:'+s))
     : currentWord.ant.filter(a => !found.has('ant:'+a));
   const match = validTargets.find(t => t.toLowerCase() === full);
   const parentRef = currentWord;
+  const container = document.getElementById('letterBoxes');
+  const allBoxes  = [...container.querySelectorAll('.letter-box')];
 
   if (match) {
-    // Flash boxes green
-    const container = document.getElementById('letterBoxes');
-    [...container.querySelectorAll('.letter-box')].forEach(b => {
-      b.classList.remove('empty','filled','cursor'); b.classList.add('revealed');
+    // Flash ALL boxes green, then move on
+    allBoxes.forEach(b => {
+      b.className = 'letter-box correct-flash';
     });
     const key = typeSub === 1 ? 'syn:'+match : 'ant:'+match;
     found.add(key);
@@ -1003,17 +1008,18 @@ function submitTyped() {
     hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;
     document.getElementById('extraHintBtn').disabled = true;
-    setTimeout(pickNextWord, 600);
+    setTimeout(pickNextWord, 650);
   } else {
-    // Flash boxes red
-    const container = document.getElementById('letterBoxes');
-    [...container.querySelectorAll('.letter-box')].forEach(b => b.style.borderColor='var(--wrong)');
+    // Flash ALL boxes red, clear typed input, refocus
+    allBoxes.forEach(b => {
+      b.className = 'letter-box wrong-flash';
+    });
     penalise();
     setTimeout(() => {
       input.value = '';
       buildLetterBoxes();
       focusTypeInput();
-    }, 500);
+    }, 550);
   }
 }
 
