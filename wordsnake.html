@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>WordSnake — English Games</title>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+html,body { height:100%; overflow:hidden; }
+main { max-width:none; margin:0; padding:0; }
+
+/* ── INTRO / RESULT ── */
+.screen {
+  max-width:520px; margin:0 auto;
+  padding:1.25rem 1rem 2.5rem;
+  display:flex; flex-direction:column; align-items:center; gap:1rem;
+  overflow-y:auto; max-height:calc(100dvh - 52px);
+}
+.intro-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; width:100%; }
+.intro-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:.6rem; }
+.intro-card p  { font-size:.87rem; color:var(--muted); line-height:1.7; margin-bottom:.55rem; }
+.intro-card p:last-of-type { margin-bottom:0; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.4rem; text-align:center; width:100%; animation:fadeIn .35s; }
+.result-card h2 { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin-bottom:.35rem; }
+.result-msg { color:var(--muted); font-size:.85rem; margin-bottom:.85rem; }
+.stats-row { display:flex; gap:.6rem; justify-content:center; margin:.4rem 0; flex-wrap:wrap; }
+.stat-box { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.45rem .8rem; text-align:center; min-width:64px; }
+.stat-box .sv { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
+.stat-box .sl { font-family:'Space Mono',monospace; font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+.words-grid { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin:.7rem 0; max-height:32vh; overflow-y:auto; }
+.word-chip {
+  background:rgba(0,210,180,.08); border:1px solid rgba(0,210,180,.3);
+  border-radius:7px; padding:.4rem .65rem; cursor:pointer;
+  transition:background .15s; -webkit-tap-highlight-color:transparent;
+  display:flex; flex-direction:column; align-items:center; gap:.1rem;
+}
+.word-chip:hover { background:rgba(0,210,180,.16); }
+.word-chip .wc-word { font-family:'Space Mono',monospace; font-size:.75rem; font-weight:700; color:#fff; letter-spacing:.03em; }
+.word-chip .wc-pts  { font-size:.62rem; color:#00d2b4; }
+.no-words { color:var(--muted); font-size:.85rem; font-style:italic; }
+
+/* ── GAME SCREEN — fixed full viewport ── */
+#phase-game {
+  position:fixed; inset:0;
+  display:none; flex-direction:row;
+  background:#0a0a0a;
+}
+
+.game-left { flex:1; min-width:0; position:relative; overflow:hidden; }
+#gameCanvas { display:block; width:100%; height:100%; touch-action:none; user-select:none; -webkit-user-select:none; }
+
+/* Word-in-progress bar, floats over the top of the canvas */
+.word-bar {
+  position:absolute; top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:center; gap:.6rem;
+  padding:.6rem .8rem; flex-wrap:wrap;
+  background:linear-gradient(to bottom, rgba(10,10,10,.92) 40%, transparent);
+  z-index:5; pointer-events:none;
+}
+.word-letters { display:flex; gap:.25rem; pointer-events:none; min-height:2rem; align-items:center; flex-wrap:wrap; justify-content:center; }
+.wl-tile {
+  width:1.9rem; height:1.9rem; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-weight:700; font-size:1rem;
+  background:var(--surface2); border:1px solid var(--border2); color:var(--text);
+  animation:fadeIn .2s ease both;
+}
+.word-bar.valid .wl-tile { background:var(--correct-dim); border-color:var(--correct); color:var(--correct); }
+.word-bar.empty .word-letters::before { content:'Collect letters in order to build a word'; font-size:.72rem; color:var(--muted2); font-family:'DM Sans',sans-serif; font-style:italic; }
+#bankBtn {
+  pointer-events:auto; opacity:0; transform:translateY(-4px);
+  transition:opacity .15s, transform .15s;
+}
+.word-bar.valid #bankBtn { opacity:1; transform:none; pointer-events:auto; }
+
+/* Toast layer */
+#toastLayer { position:absolute; top:3.4rem; left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:.3rem; z-index:6; pointer-events:none; }
+.snake-toast {
+  background:rgba(20,20,20,.92); border:1px solid var(--border2); border-radius:99px;
+  padding:.35rem .9rem; font-family:'Space Mono',monospace; font-size:.68rem; letter-spacing:.03em;
+  color:var(--text); opacity:0; transform:translateY(-6px); transition:opacity .25s, transform .25s;
+}
+.snake-toast.show { opacity:1; transform:none; }
+.snake-toast.good { border-color:rgba(76,175,130,.5); color:var(--correct); }
+.snake-toast.bad  { border-color:rgba(192,57,43,.5); color:var(--wrong); }
+
+/* Right sidebar */
+.game-right {
+  width:clamp(96px,23vw,150px); flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center;
+  padding:.7rem .4rem .5rem; background:#111; border-left:1px solid #1e1e1e;
+  overflow-y:auto;
+}
+.hud-item { width:100%; text-align:center; padding:.4rem 0; border-bottom:1px solid #1c1c1c; }
+.hud-item:last-of-type { border-bottom:none; }
+.hud-val { font-family:'Playfair Display',serif; font-size:clamp(1.05rem,2.6vw,1.4rem); font-weight:700; color:var(--gold); line-height:1; }
+.hud-lbl { font-family:'Space Mono',monospace; font-size:clamp(.42rem,.8vw,.52rem); letter-spacing:.08em; text-transform:uppercase; color:#444; margin-top:.15rem; }
+
+.pip-block { width:100%; padding:.45rem 0; border-bottom:1px solid #1c1c1c; text-align:center; }
+.pip-lbl { font-family:'Space Mono',monospace; font-size:.5rem; letter-spacing:.08em; text-transform:uppercase; color:#555; margin-bottom:.3rem; }
+.pip-row { display:flex; gap:.2rem; justify-content:center; flex-wrap:wrap; margin-bottom:.35rem; }
+.pip { width:.55rem; height:.55rem; border-radius:50%; background:#2a2a2a; transition:background .2s, transform .2s; }
+.pip.filled.snake { background:#00d2b4; }
+.pip.filled.board { background:#d4af37; }
+.pip.spent { transform:scale(.6); opacity:.35; }
+.mini-btn {
+  width:100%; padding:.4rem .2rem; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:5px;
+  font-family:'Space Mono',monospace; font-size:.52rem; letter-spacing:.05em; text-transform:uppercase;
+  color:#aaa; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s;
+}
+.mini-btn:active { background:#2a2a2a; }
+.mini-btn:disabled { opacity:.3; cursor:default; }
+
+.sound-btn {
+  background:none; border:1px solid #2a2a2a; border-radius:4px;
+  padding:.25rem .45rem; font-size:.85rem; cursor:pointer; color:#555;
+  -webkit-tap-highlight-color:transparent; margin:.45rem 0 .2rem;
+}
+.sound-btn:hover { color:#aaa; }
+
+/* D-pad */
+.dpad {
+  display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  gap:.22rem; width:100%; max-width:120px; aspect-ratio:1; margin-top:.4rem;
+}
+.dpad .d-btn {
+  background:#1a1a1a; border:1px solid #2a2a2a; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem; color:#aaa; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.dpad .d-btn:active { background:#2a2a2a; color:var(--gold); }
+.d-up    { grid-column:2; grid-row:1; }
+.d-left  { grid-column:1; grid-row:2; }
+.d-right { grid-column:3; grid-row:2; }
+.d-down  { grid-column:2; grid-row:3; }
+
+/* ── Overlays ── */
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.87);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.85rem; z-index:300; padding:1.5rem;
+}
+.overlay h2 { font-family:'Playfair Display',serif; font-size:1.6rem; color:#fff; text-align:center; }
+.overlay p  { color:#777; font-size:.85rem; text-align:center; max-width:290px; margin:0; }
+.overlay-btns { display:flex; flex-direction:column; gap:.45rem; width:100%; max-width:260px; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<nav class="site-nav" id="siteNav">
+  <a href="index.html" class="back">← Games</a>
+  <span class="game-title">🐍 WordSnake</span>
+  <span></span>
+</nav>
+
+<!-- ══ INTRO ══ -->
+<div id="phase-intro" class="screen">
+  <div class="intro-card">
+    <h2>🐍 WordSnake</h2>
+    <p>Letters are scattered across the board. Steer your snake to collect them <strong>in order</strong> to spell a word — the letters join your <strong>current word</strong> at the top as you go.</p>
+    <p>Whenever your current word is a real word, it glows green and a <strong>Bank Word</strong> button appears. Bank it to score and reset your snake — or keep going to try for something longer.</p>
+    <p>Picked up a letter you didn't want? Steer into the <strong>eraser cube ⌫</strong> to remove the most recent letter and carry on.</p>
+    <p>You get <strong>5 snake resets</strong> — for when you tangle yourself up (crashing into a wall or your own tail uses one automatically) — and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
+    <p><strong>Desktop:</strong> arrow keys / WASD to steer, Space to bank a valid word. <strong>Mobile:</strong> use the on-screen D-pad.</p>
+  </div>
+  <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
+  <div class="lb-wrap" style="width:100%">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBodyIntro"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="phase-game">
+  <div class="game-left">
+    <canvas id="gameCanvas"></canvas>
+    <div class="word-bar empty" id="wordBar">
+      <div class="word-letters" id="wordLetters"></div>
+      <button class="btn-primary" id="bankBtn" style="padding:.4rem 1.1rem;font-size:.78rem" onclick="bankWord()">Bank word →</button>
+    </div>
+    <div id="toastLayer"></div>
+  </div>
+  <div class="game-right">
+    <div class="hud-item"><div class="hud-val" id="scoreVal">0</div><div class="hud-lbl">Score</div></div>
+    <div class="hud-item"><div class="hud-val" id="wordsVal">0</div><div class="hud-lbl">Words</div></div>
+
+    <div class="pip-block">
+      <div class="pip-lbl">🔄 Snake resets</div>
+      <div class="pip-row" id="snakePips"></div>
+      <button class="mini-btn" id="resetSnakeBtn" onclick="manualSnakeReset()">Reset snake</button>
+    </div>
+    <div class="pip-block">
+      <div class="pip-lbl">🎲 Board resets</div>
+      <div class="pip-row" id="boardPips"></div>
+      <button class="mini-btn" id="newBoardBtn" onclick="manualBoardReset()">New board</button>
+    </div>
+
+    <button class="sound-btn" id="pauseBtn" onclick="togglePause()" title="Pause">⏸</button>
+
+    <div class="dpad" id="dpad">
+      <div class="d-btn d-up"    ontouchstart="onDpad(0,-1);event.preventDefault()" onmousedown="onDpad(0,-1)">↑</div>
+      <div class="d-btn d-left"  ontouchstart="onDpad(-1,0);event.preventDefault()" onmousedown="onDpad(-1,0)">←</div>
+      <div class="d-btn d-right" ontouchstart="onDpad(1,0);event.preventDefault()"  onmousedown="onDpad(1,0)">→</div>
+      <div class="d-btn d-down"  ontouchstart="onDpad(0,1);event.preventDefault()"  onmousedown="onDpad(0,1)">↓</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div id="phase-result" class="screen" style="display:none">
+  <div class="result-card">
+    <h2 id="resultHeadline">Run complete!</h2>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="sv" id="finalScore">0</div><div class="sl">Score</div></div>
+      <div class="stat-box"><div class="sv" id="finalWords">0</div><div class="sl">Words</div></div>
+      <div class="stat-box"><div class="sv" id="finalLongest">–</div><div class="sl">Longest</div></div>
+    </div>
+    <div class="eyebrow" style="margin-bottom:.4rem">Words you formed</div>
+    <div class="words-grid" id="wordsGrid"></div>
+  </div>
+  <div id="submitArea">
+    <div class="submit-row">
+      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="startGame()">Play again</button>
+    <button class="btn-ghost" onclick="goToIntro()">← WordSnake menu</button>
+  </div>
+  <div class="lb-wrap" style="width:100%;margin-top:.5rem">
+    <h2>🏆 Leaderboard</h2>
+    <table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBodyResult"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ PAUSE ══ -->
+<div class="overlay" id="pauseOverlay" style="display:none">
+  <h2>⏸ Paused</h2>
+  <p>Take your time — the snake won't move until you resume.</p>
+  <div class="overlay-btns">
+    <button class="btn-primary" onclick="togglePause()">Resume →</button>
+    <button class="btn-ghost"   onclick="endGameEarly()">End run &amp; save score</button>
+    <button class="btn-ghost"   onclick="goToIntro()">← WordSnake menu</button>
+  </div>
+</div>
+
+<!-- ══ OUT OF RESETS ══ -->
+<div class="overlay" id="outOfResetsOverlay" style="display:none">
+  <h2>💥 Tangled for good</h2>
+  <p>You're out of snake resets. Nice run — here's how you did.</p>
+  <div class="overlay-btns">
+    <button class="btn-primary" onclick="finishGame()">See your score</button>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const GAME_KEY        = 'wordsnake';
+const INITIAL_LEN      = 4;
+const LETTER_TILE_COUNT = 11;
+const MAX_SNAKE_RESETS = 5;
+const MAX_BOARD_RESETS = 5;
+const MIN_SNAKE_LEN    = 3;
+const MIN_WORD_LEN     = 3;
+const TICK_MS_START    = 170;
+const TICK_MS_MIN      = 95;
+
+const LETTER_DIST = {A:9,B:2,C:2,D:4,E:12,F:2,G:3,H:2,I:9,J:1,K:1,L:4,M:2,N:6,O:8,P:2,Q:1,R:6,S:4,T:6,U:4,V:2,W:2,X:1,Y:2,Z:1};
+const LETTER_BAG = Object.entries(LETTER_DIST).flatMap(([l,n]) => Array(n).fill(l));
+function randomLetter() { return LETTER_BAG[Math.floor(Math.random() * LETTER_BAG.length)]; }
+
+const LETTER_PTS = {
+  A:1,E:1,I:1,O:1,U:1,L:1,N:1,S:1,T:1,R:1,
+  D:2,G:2,
+  B:3,C:3,M:3,P:3,
+  F:4,H:4,V:4,W:4,Y:4,
+  K:5,
+  J:8,X:8,
+  Q:10,Z:10,
+};
+
+// ── Dictionary ──────────────────────────────────────────────────
+let DICT = new Set();
+let dictLoaded = false;
+async function loadDictionary() {
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt');
+    const text = await r.text();
+    text.split('\n').forEach(w => {
+      const clean = w.trim().toLowerCase();
+      if (clean.length >= 3 && clean.length <= 15 && /^[a-z]+$/.test(clean)) DICT.add(clean);
+    });
+    dictLoaded = true;
+  } catch(e) {
+    'abbey abide able absent absorb abyss accent access accord ace ache ached aching acid acorn acquit across act active actual acumen acute adapt add adept adhere adjust adobe adroit adult advert aegis aerial affirm afford afield aflame afraid after again age aged ageing agency agenda aghast agile agitate ago agog agony agree ahead ahoy aid aided ailing aim air airway airy aisle albeit album alcove alert algae alien align all alley allot allow allude allure alms aloft alone along aloof aloud alpha alpine also alter alto alum amaze amber amble ambush amend amiable amidst amine amok among amount ample amps amuse amused angel anger angle angler angry anguish animal anime ankle annex annual anoint answer ant ante antic anvil anyone anyway apart ape apex aplenty apple apply aptly arable arc arcade arcane arch ardent are area arena argue aria arid arise ark arm armor army aroma arose around arouse array arrow art arty ash aside ask aspect aspire assail assemble assert ate atone attain attest attic attune audio auger augur august aunt authentic avenge aviate avid avoid awaken awash awe awed awful awhile awry axe aye back badge bag bagel bail bait bake bald bale ball balm ban band bane bang bank banter bar bare bark barn barter base bash basic basis bask bat batch bath bathe bay beach beacon bead beady beam bean bear beard beast beat beck beckon bed bee beef been beer beet beguile behave behold bell belle belong belt bench bend best bestow better bevel bewail bias bide big bile bill billow binary bind bird bisect bit bite blanch blazon bleach bless blew bliss blitz bloat blob bloc block blood bloom blossom blot blotch blow blown blue blunt board boat bode body bold bolt bond bonder bone bonnet bonus boo book boost bore borer boring born botch both bother bough bounce bout bow box boy boyish brag braid bran branch brand brash brave bravo brawn bray braze breach bream bred breed brew bribe brick bride bright brim brine brink brisk broach broad broil broke brood broth brow brown brows brunt brush bud budge buffer bug buggy build bulb bulge bulk bull bully bump bumpy bun bunch bundle bunk bunny buoy burden burg burgh burn burp burrow burst bus busy but buy buzz bypass cab cable cafe cage cake call calm came camp can candy cane cap cape car care cargo carol carry cart case cash cast cat catch catnap cause cave cavort cedar cell censure cent chafe chain chair chalk champ chant chaos charm chasm chaste cheer chef chess chest chide child chin china chip choke choose chop chord chose chow chrome chub chug ciao cipher city civil clad claim clam clamp clang clank clap clarify clash clasp classy clave claw clay clean clear cleft clench clerk clever cliche clink clip cloak clock clod clog clone clop close clot cloth cloud clout clown clue coal coat coax cob cobalt cobble cod code coded codify coffee coil cold collide colony colt coma combat comet comic comma compel comply concur condone cone confide conk convoy cook cool cop coral core corn cost coup couple coven cover covert cow cozy crab crack craft cram cramp crane crave crawl crazy creak create creed creek creep crest crimp crisis crisp crisped crop cross crow crowd crown cruise crusade crust cry crypt cubic cup curate curl curt curve cushion cusp cut cute cycle dab dabble dam damp dampen dance dapper dare dark darken darn dart dash day daze dazed dazzle dead deaf deal dean dear debar debate debut deceive deck decor decoy decree deep deer deferral define deflect deft delta deluge demo den dense dent deplete depot derby desire desk devil devote devout dew dial dice did die died differ dig digit dike dill dim dime dine diner ding dip dire dirty disco dish disk ditzy divert dizzy docile dock dodge dog dole dolt domain dome done doom door dork dorm dose dot dote double dove dowdy dowel down downy drag draw drawn dread dream dreary dress drew dried drift drink drip drive drool droop drop dross drove drug drum dry dryer dual dub duel dug dumb dump dun dune duo duress during dusk dust duty dwarf dwell each eagle ear earl early earn ease easel easily east eat ebony edge edgy eel eerie egg ego eight eject elapse elder elf elicit elk elm else embed embers emcee emerge emit emote empire empty enable enact end endow enrich ensue ensure entail enter entity entreat entry envy epic equal era errant erst escape essay etude evade eve even evenly event every evict evil evince ewe exact exalt exam excel exhaust exile expand expel expire expo extol exult eye fab fabled face fact factor fad fail fair fairly fall fame famous fan fancy far fare farm fast fat fate fathom fawn fax faze feat fee feeble feet feign feisty feline fell fellow fend fern fervent fester fete feud few fiasco fib fife fig figure file fill film fin find finest finish firm fish fist fit fix fizz flab flag flair flak flake flame flank flap flare flask flat flaw flea fleck flew flick flinch fling flint flit flop flora floss flour flow flown fluff fluke flunk flute fly flyer foam foamy foe foes fog fold folk fond font food fool for fore forego fork form formal fort forte forum foster foul found fox foyer frail frame franc frank fray freak free freely frenzy frog frolic from frond front frost froth frown frozen frugal fry fudge fuel fugue full fully fume fun fund fungi funky fur furl furtive fury fuss gag gale gang gap gape garb garner gas gate gather gauze gave gavel gawky gaze gear geld gelt gene gentle gentry get gibe giddy gifted gig gild gill gimp gin girlish gist give given glad glance glare gleam glean glee gleeful glen glib glide glimmer glint gloat globe gloomy glory gloss glove glow glue gnash gnat gnaw gnu goad goal gobs god goer golden gone gong good goof goose gore gorge gory got gouge gourd gout govern grab grace gracious grad grade grain gram grand grant grapple grasp grate gravel gray graze greed greet grew grid grieve grim grin grind grip grit groan groin gross grotto ground grout grove growl grub grudge guise gulf gull gum gun gust gusto gusty gut gypsy had haggle hail hale half hall halm halt ham hamper hand handy hang hard harden hardy hare hark harm harp harsh hash hasp haste hasten hasty hat hatch hate have haven hawk hay head heal heap heart hearty heat heavy hedge heel heir heist hell hello help hem her herb herbs here heroic heron hew hidden high hill hilt him hind hinge hint hip hippo hire his hiss hit hive hoax hobble hoe hog hoist holly homer hone honest hood hooded hoot hop hope horde horn horns host hot hour house hove how howl hub hue hug hull humid hump hunch hung hunk hunker hunt hurry husk hustle hut hyena icon icy ideal idle idyll ignite ill image imp impede imply impose inane inborn inch incur indent inert infer infix inflow info inform ink inn innate insane intent inter inure invoke ion ire iris irk island item ivory ivy jab jag jagged jam jar jaunt jaunty jaw jelly jerk jest jester jet jig jilt jitter job join joke jolly jolt jostle jot joust jovial jowl joy judge jug juicy jumble jumbo jump jungle junk juror just jut kazoo kebab keen keep keg kept kern ketch kid kin kit kitty knave kneel knife knob knoll knot knuckle lab label labyrinthine lace lack lad lady lag laid lame lament lamp land lane lanky lap lapel lard lark laser lash latch later lathe laud lavish law lawn laxly lay layer lea lead leader leaf leafy leaky lean leap leapt learn lease leash led ledge lees left leg legal lemon lend lens less lessen let lethal liar lid lied life lift likely limb lime limp linage line linear liner linger link lion lip lisp list lit live lively livid load loam lodge lofty log lonely loosen lore lorry lose loss lost lot louden lousy lover low lower lucid lumpy lunar lunge lure lurk lurking lusty lute lynx mace mad made magic maid mail main major make malt mana mane mangle manor mantle map maple march mark mars mart marvel mass mat match mate math maw maze mead meal mean meat medal mellow melt menace mentor mercy merit mime mind mine minor mint mirage mire mirth mist mix mixed moat mob mobile mock mod mode modern modest moist mold moldy moles molt money monk month mood moot mop moral more mortal mossy mound mount mourn mourner mouth mow muck mud muddy mug muggy mulch mull murk murky muse musk must muster mute muzzy nab nag nail name namely nap nape narrow nasal nasty nay near nearly neat need nerd nest nestle net nifty nil nimble nimbly nine nip nippy nit nob noble nod node noise none noon nor norm nose not notch note novel now nuance nude null nun nymph oak oaken oar oat oath obey obscure obtain occur odd ode odor off offend offer ohm oil old olive once one onion onset open opera oppose opt optic option opus orb orbit ordeal order ore organ other ought ounce our ours out outdo outer outrun oven over owe owed owl own oxide paced pacify pad paddle paddy page paid pail pain painfully paint pal palate pale palm pan panda pander panel pang panic pansy papal park parka pass past pat path pave paw pawn pay pea peach peak pearl peat pedal peel peer peg pelt pen pent perch peril perish permit pest pet petite petty phase photo piano pick pie pig pile pilfer pillar pin pine ping pit pity placid plaid plain plane plank plant plaque plat play plaza plead pleat plenty plod plot plow pluck plug plum plumb plump plunge plus ply poach pod poem poet poker polar poll pond ponder poor pop portal pose post pot potter pouch pout pow power praise pray prayer preen prefer press pretty prey price pride prim prime prism prismatic privy probe prod profit prolong prompt prone prong proof prop pros proven prowess psalm pub pubic pull pulp pulse pump pun punch pup pupal pupil pure purge pus push put puzzle pygmy quake quart queen quest queue quilt quit quiver quiz quota quote rabid rack radar radiant radix radon raft rag rage rail rain rake rally ram ramp rampage ran rand rang ranger rank ransom rant rap rapid rash rasher rat ravage raven raw ray rayon reach read ready real realm reap rebel reborn reckon red reedy ref reform refuge refund regard regret reign rein relay relic relive remain rend renown rent rep repay repent require rescue rest rev reveal revere revolt rhythm rice rich rick rid ride rife rift rim ring riot rip rise risk risky rite rivet road roam roar roast rob robe robin robust rock rocky rod rode roe role roll rood root rope rose rot rote rouge rough round rout rove row rowdy royal rub rube ruddy rude ruff rug rugged rugs rule rum run rune rung rupee rush rust rustic rusty rut rye sad sadly safe sag sage sail sake sale salt salvage same sample sane sang sank sap sash sat save saw say scald scale scant scare scarf scene scone scorch scorn scour scout scowl scram scrap scrawl screen screw scrub sea seal seam seamy seed seedy seek seem seen seep sentry sere serene serve set settle seven severe sew sewer sewn shady shake shaky shale shank shape share shark sharp she shed sheen sheer sheet shelf shell shield shift shimmer shin shine shiny ship shoal shock shod shop shore shorten shot show shrewd shrink shrunk shut shy side sieve sigh signal silk silky sill simple sin since sine sing sink sip sir sire siren sis sit sixth sixty ski skid skim skimp skin skip skull sky slab slam slant slap sleek sleepy sleet sleight slew slid slim slink slip slit sliver slob slop slope slow slug slum smack smash smear smell smile smock smoke smooth smug snag snail snake snaky snap snare sneak sneer sniff snore snuff soar sob sock sod sofa soil sold sole some son soot soothe sooty sordid sore sort soul sound soup sous south sow sown spa span spar spark speak speck sped speed spend spied spike spill spin spine spiral spire spirit spit spite spleen spoke spore spot spout spray sprig spry spur spy squall squander squint stab stable staid stain stale stalk stall stand star stark start starve stash state stay steak steal steam steel steep steer stem step stern stew stiff stifle still sting stink stir stirred stoical stoke stolen stomp stone stood stop straw stray stream strife string strive strong struck strum stub stuck stud study stuff stumble stump stung sty style suave sub subdue subtle such sue suite sulky sum sun sung sunk sunny sup sure surely surpass swam swan sway swerve swift swim swipe swirl swoop swum synth tab tail talk talon tame tan tang tangled tango tap taper tapir tar tardy taut tawny tax tea teal team tear tease teem tell tempo ten tend tender tenor tense tenure tepid term terse than that the thee them then theory third this thorn thou threw throng throw tie tile till tilt time timid tin tingle tip tire tithe title toad toast toddy toe toil token told toll tome ton tonal tone tong too took tool top topaz torch torment torn torrent toss total tough tow town toy tragic trap tray tread treed trend trial tribal trick tried trim trio tripe triple trite trivial troll tromp trough trout trove truck true truly trump trunk truss trust try tub tube tuber tuck tuft tug tulip tuner tunnel tuple turf tusk twang tweak twig twirl twitch two tycoon tying type ugly ulcers umbra unbend uncut under undo undue unfit union unique unit unite until unwrap upend upon upset urn use used usher utmost utter vacant vague vain vale valor valued valve van vane vanish vanquish vapor varied vast vat vault veer veil vein veiny vengeance venom vent verge verse vest via vibe vibrant video vigil vine viper viral visit visor vista vivid vividly vocal voice vouch vow wad wade wag wail wait wake waltz wander wane war warden ware wart was wasp wave waver wax wealth weary weave web wed wedge weigh weird weld went were west wet whack whale wheat wheel where whet which while white who whole whose why wick wicked wide widely widow wig wile will wilt wily win windy wine wing wisdom wish wisp wit with witty woe woke woken wolf womb won woo wood wool wore work world worm worn worry worse worthy wow wrap wrath wren writhe wrongly yacht yak yam yap yawn yearn yearning yell yew yield yip you young yucky zap zeal zealot zero zest zesty zinc zippy zit zodiac zone zoo zoom'.split(' ').forEach(w => { if (w.length >= 3) DICT.add(w); });
+    dictLoaded = false;
+  }
+}
+function isValidWord(w) {
+  return DICT.has(w.toLowerCase());
+}
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let CW=0, CH=0, CELL=22, cols=0, rows=0, offX=0, offY=0;
+
+let snake = [];                 // [{x,y}, ...] head first
+let dir = {x:1,y:0}, nextDir = {x:1,y:0};
+let letterTiles = [];           // [{x,y,letter}]
+let eraser = null;              // {x,y}
+let currentWord = [];           // ['C','A','T']
+let wordIsValid = false;
+let foundWords = [];            // [{word,pts}]
+let foundWordSet = new Set();
+let score = 0;
+let snakeResetsLeft = MAX_SNAKE_RESETS;
+let boardResetsLeft = MAX_BOARD_RESETS;
+let gameActive = false, paused = false;
+let tickMs = TICK_MS_START;
+let lastTick = 0;
+let rafId = null;
+
+// ══════════════════════════════════════════════════════════
+// SETUP / RESIZE
+// ══════════════════════════════════════════════════════════
+function resizeCanvas() {
+  const el = canvas;
+  CW = el.clientWidth || 300;
+  CH = el.clientHeight || 400;
+  canvas.width = CW; canvas.height = CH;
+  CELL = Math.max(16, Math.min(30, Math.floor(Math.min(CW,CH) / 16)));
+  cols = Math.max(6, Math.floor(CW / CELL));
+  rows = Math.max(6, Math.floor(CH / CELL));
+  offX = Math.floor((CW - cols*CELL) / 2);
+  offY = Math.floor((CH - rows*CELL) / 2);
+  // Clamp any existing entities into the new bounds so a resize mid-game
+  // never leaves something off-board.
+  const clampCell = c => ({ x: Math.min(c.x, cols-1), y: Math.min(c.y, rows-1) });
+  snake = snake.map(clampCell);
+  letterTiles = letterTiles.map(clampCell);
+  if (eraser) eraser = clampCell(eraser);
+}
+
+function cellKey(c) { return c.x + ',' + c.y; }
+function sameCell(a,b) { return a.x===b.x && a.y===b.y; }
+
+function randomFreeCell() {
+  const occupied = new Set(snake.map(cellKey));
+  letterTiles.forEach(t => occupied.add(cellKey(t)));
+  if (eraser) occupied.add(cellKey(eraser));
+  let tries = 0;
+  while (tries++ < 400) {
+    const c = { x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows) };
+    if (!occupied.has(cellKey(c))) return c;
+  }
+  return { x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows) };
+}
+
+function spawnLetterTile() {
+  const c = randomFreeCell();
+  letterTiles.push({ x:c.x, y:c.y, letter: randomLetter() });
+}
+
+function spawnEraser() {
+  const c = randomFreeCell();
+  eraser = { x:c.x, y:c.y };
+}
+
+function regenerateBoard() {
+  letterTiles = [];
+  eraser = null;
+  spawnEraser();
+  for (let i=0; i<LETTER_TILE_COUNT; i++) spawnLetterTile();
+}
+
+// ══════════════════════════════════════════════════════════
+// SNAKE
+// ══════════════════════════════════════════════════════════
+function resetSnakePosition() {
+  const startRow = Math.floor(rows/2);
+  const startCol = Math.min(cols-2, Math.max(INITIAL_LEN+1, Math.floor(cols/2)-4));
+  snake = [];
+  for (let i=0; i<INITIAL_LEN; i++) snake.push({ x:startCol-i, y:startRow });
+  dir = {x:1,y:0}; nextDir = {x:1,y:0};
+  currentWord = [];
+  wordIsValid = false;
+  updateWordBar();
+}
+
+function manualSnakeReset() {
+  if (!gameActive || paused || snakeResetsLeft<=0) return;
+  snakeResetsLeft--;
+  updatePips();
+  resetSnakePosition();
+  showToast('Snake reset — fresh start', 'good');
+}
+
+function manualBoardReset() {
+  if (!gameActive || paused || boardResetsLeft<=0) return;
+  boardResetsLeft--;
+  updatePips();
+  regenerateBoard();
+  showToast('New board laid out', 'good');
+}
+
+function handleCrash() {
+  if (snakeResetsLeft > 0) {
+    snakeResetsLeft--;
+    updatePips();
+    resetSnakePosition();
+    showToast('Tangled up! Snake reset used', 'bad');
+  } else {
+    gameActive = false;
+    document.getElementById('outOfResetsOverlay').style.display = 'flex';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// WORD LOGIC
+// ══════════════════════════════════════════════════════════
+function scoreForWord(word) {
+  const letterScore = word.split('').reduce((s,l) => s + (LETTER_PTS[l]||1), 0);
+  const lengthBonus = word.length >= 7 ? 15 : word.length >= 6 ? 10 : word.length >= 5 ? 5 : 0;
+  return letterScore + lengthBonus;
+}
+
+function updateWordBar() {
+  const bar = document.getElementById('wordBar');
+  const wrap = document.getElementById('wordLetters');
+  wrap.innerHTML = currentWord.map(l => `<div class="wl-tile">${l}</div>`).join('');
+  bar.classList.toggle('empty', currentWord.length===0);
+  bar.classList.toggle('valid', wordIsValid);
+}
+
+function checkWordValidity() {
+  const w = currentWord.join('');
+  wordIsValid = w.length >= MIN_WORD_LEN && !foundWordSet.has(w) && isValidWord(w);
+  updateWordBar();
+}
+
+function bankWord() {
+  if (!gameActive || paused || !wordIsValid) return;
+  const word = currentWord.join('');
+  const pts = scoreForWord(word);
+  foundWords.push({ word, pts });
+  foundWordSet.add(word);
+  score += pts;
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('wordsVal').textContent = foundWords.length;
+  tickMs = Math.max(TICK_MS_MIN, TICK_MS_START - foundWords.length*4);
+  resetSnakePosition();
+  showToast(`+${pts} pts — "${word.toUpperCase()}"`, 'good');
+}
+
+function eraseLastLetter() {
+  if (currentWord.length === 0) return false;
+  currentWord.pop();
+  checkWordValidity();
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════════════════════════════
+function trySetDirection(dx,dy) {
+  if (dir.x === -dx && dir.y === -dy) return; // no instant reverse
+  nextDir = {x:dx,y:dy};
+}
+function onDpad(dx,dy) { if (gameActive && !paused) trySetDirection(dx,dy); }
+
+function step() {
+  dir = nextDir;
+  const head = snake[0];
+  let nx = head.x + dir.x, ny = head.y + dir.y;
+
+  if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) { handleCrash(); return; }
+  const newHead = { x:nx, y:ny };
+
+  const letterHit = letterTiles.find(t => sameCell(t,newHead));
+  const eraserHit = eraser && sameCell(eraser,newHead);
+  const willGrow = !!letterHit;
+
+  const obstacleSegs = willGrow ? snake : snake.slice(0,-1);
+  if (obstacleSegs.some(s => sameCell(s,newHead))) { handleCrash(); return; }
+
+  snake.unshift(newHead);
+
+  if (letterHit) {
+    currentWord.push(letterHit.letter);
+    letterTiles = letterTiles.filter(t => t !== letterHit);
+    spawnLetterTile();
+    checkWordValidity();
+  } else {
+    snake.pop();
+  }
+
+  if (eraserHit) {
+    const erased = eraseLastLetter();
+    if (erased && snake.length > MIN_SNAKE_LEN) snake.pop();
+    eraser = null;
+    spawnEraser();
+  }
+}
+
+function loop(ts) {
+  if (!gameActive) return;
+  rafId = requestAnimationFrame(loop);
+  if (paused) return;
+  if (ts - lastTick >= tickMs) {
+    lastTick = ts;
+    step();
+  }
+  draw();
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAW
+// ══════════════════════════════════════════════════════════
+function cellRect(c) { return { px: offX + c.x*CELL, py: offY + c.y*CELL }; }
+
+function draw() {
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0,0,CW,CH);
+
+  // subtle grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 1;
+  for (let x=0; x<=cols; x++) { ctx.beginPath(); ctx.moveTo(offX+x*CELL+.5, offY); ctx.lineTo(offX+x*CELL+.5, offY+rows*CELL); ctx.stroke(); }
+  for (let y=0; y<=rows; y++) { ctx.beginPath(); ctx.moveTo(offX, offY+y*CELL+.5); ctx.lineTo(offX+cols*CELL, offY+y*CELL+.5); ctx.stroke(); }
+
+  // letter tiles
+  letterTiles.forEach(t => {
+    const {px,py} = cellRect(t);
+    roundRect(px+2, py+2, CELL-4, CELL-4, 5);
+    ctx.fillStyle = '#1e1e1e';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(212,175,55,0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#d4af37';
+    ctx.font = `bold ${Math.floor(CELL*0.52)}px "Space Mono", monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(t.letter, px+CELL/2, py+CELL/2+1);
+  });
+
+  // eraser cube
+  if (eraser) {
+    const {px,py} = cellRect(eraser);
+    roundRect(px+2, py+2, CELL-4, CELL-4, 5);
+    ctx.fillStyle = 'rgba(192,57,43,0.18)';
+    ctx.fill();
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.fillStyle = '#e07a6c';
+    ctx.font = `${Math.floor(CELL*0.5)}px "DM Sans", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⌫', px+CELL/2, py+CELL/2+1);
+  }
+
+  // snake
+  snake.forEach((s,i) => {
+    const {px,py} = cellRect(s);
+    const isHead = i===0;
+    const t = i / Math.max(1,snake.length-1);
+    roundRect(px+1, py+1, CELL-2, CELL-2, isHead?6:4);
+    if (isHead) {
+      ctx.fillStyle = '#d4af37';
+    } else {
+      const alpha = 0.95 - t*0.45;
+      ctx.fillStyle = `rgba(0,210,180,${alpha.toFixed(2)})`;
+    }
+    ctx.fill();
+  });
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function roundRect(x,y,w,h,r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+// ══════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════
+function updatePips() {
+  const snakeRow = document.getElementById('snakePips');
+  const boardRow = document.getElementById('boardPips');
+  snakeRow.innerHTML = Array.from({length:MAX_SNAKE_RESETS}, (_,i) =>
+    `<div class="pip filled snake${i<snakeResetsLeft?'':' spent'}"></div>`).join('');
+  boardRow.innerHTML = Array.from({length:MAX_BOARD_RESETS}, (_,i) =>
+    `<div class="pip filled board${i<boardResetsLeft?'':' spent'}"></div>`).join('');
+  document.getElementById('resetSnakeBtn').disabled = snakeResetsLeft<=0;
+  document.getElementById('newBoardBtn').disabled = boardResetsLeft<=0;
+}
+
+function showToast(msg, cls) {
+  const layer = document.getElementById('toastLayer');
+  const t = document.createElement('div');
+  t.className = 'snake-toast ' + (cls||'');
+  t.textContent = msg;
+  layer.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(),300); }, 1300);
+  while (layer.children.length > 2) layer.removeChild(layer.firstChild);
+}
+
+// ══════════════════════════════════════════════════════════
+// PAUSE
+// ══════════════════════════════════════════════════════════
+function togglePause() {
+  if (!gameActive) return;
+  paused = !paused;
+  document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+  if (!paused) lastTick = performance.now();
+}
+
+// ══════════════════════════════════════════════════════════
+// INPUT
+// ══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!gameActive) return;
+  const k = e.key.toLowerCase();
+  if (['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','escape','p'].includes(k)) e.preventDefault();
+  if (k==='arrowup'||k==='w')    trySetDirection(0,-1);
+  if (k==='arrowdown'||k==='s')  trySetDirection(0,1);
+  if (k==='arrowleft'||k==='a')  trySetDirection(-1,0);
+  if (k==='arrowright'||k==='d') trySetDirection(1,0);
+  if (k===' ') bankWord();
+  if (k==='escape'||k==='p') togglePause();
+});
+
+let txS=null, tyS=null;
+canvas.addEventListener('touchstart', e => {
+  const t = e.touches[0]; txS=t.clientX; tyS=t.clientY;
+}, { passive:true });
+canvas.addEventListener('touchend', e => {
+  if (txS===null || !gameActive || paused) { txS=null; return; }
+  const t = e.changedTouches[0];
+  const dx = t.clientX-txS, dy = t.clientY-tyS;
+  const absDx=Math.abs(dx), absDy=Math.abs(dy);
+  if (Math.max(absDx,absDy) > 24) {
+    if (absDx > absDy) trySetDirection(dx>0?1:-1, 0);
+    else trySetDirection(0, dy>0?1:-1);
+  }
+  txS=null;
+}, { passive:true });
+
+// ══════════════════════════════════════════════════════════
+// GAME FLOW
+// ══════════════════════════════════════════════════════════
+function goToIntro() {
+  gameActive = false; paused = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  ['pauseOverlay','outOfResetsOverlay'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('phase-game').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-intro').style.display = 'flex';
+  document.body.style.overflow = '';
+  renderLeaderboard(GAME_KEY, 'lbBodyIntro');
+}
+
+function startGame() {
+  score = 0; foundWords = []; foundWordSet = new Set();
+  snakeResetsLeft = MAX_SNAKE_RESETS; boardResetsLeft = MAX_BOARD_RESETS;
+  tickMs = TICK_MS_START; paused = false; gameActive = true;
+
+  document.getElementById('phase-intro').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  ['pauseOverlay','outOfResetsOverlay'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('phase-game').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  document.getElementById('submitArea').innerHTML = `
+    <div class="submit-row">
+      <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
+      <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>`;
+  document.getElementById('scoreVal').textContent = '0';
+  document.getElementById('wordsVal').textContent = '0';
+
+  resizeCanvas();
+  regenerateBoard();
+  resetSnakePosition();
+  updatePips();
+  lastTick = performance.now();
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+function endGameEarly() {
+  ['pauseOverlay','outOfResetsOverlay'].forEach(id => document.getElementById(id).style.display='none');
+  finishGame();
+}
+
+function finishGame() {
+  gameActive = false; paused = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  document.getElementById('outOfResetsOverlay').style.display = 'none';
+  document.getElementById('phase-game').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'flex';
+  document.body.style.overflow = '';
+
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalWords').textContent = foundWords.length;
+  const longest = foundWords.reduce((a,b) => b.word.length>a.length ? b.word : a, '');
+  document.getElementById('finalLongest').textContent = longest ? longest.toUpperCase() : '–';
+  document.getElementById('resultMsg').textContent = foundWords.length
+    ? `You formed ${foundWords.length} word${foundWords.length===1?'':'s'} for ${score} points.`
+    : `No words banked this run — give it another go!`;
+
+  const grid = document.getElementById('wordsGrid');
+  grid.innerHTML = foundWords.length
+    ? foundWords.map(w => `<div class="word-chip" onclick="showDefinitionModal('${w.word.replace(/'/g,"\\'")}')">
+        <span class="wc-word">${w.word.toUpperCase()}</span><span class="wc-pts">+${w.pts}</span>
+      </div>`).join('')
+    : `<div class="no-words">Nothing banked — try tapping "Bank word" next time your word glows green!</div>`;
+
+  renderLeaderboard(GAME_KEY, 'lbBodyResult');
+}
+
+async function doSubmit() {
+  await handleScoreSubmit(GAME_KEY, score, 'nameInput', 'submitArea', 'lbBodyResult');
+  renderLeaderboard(GAME_KEY, 'lbBodyResult');
+}
+
+// ══════════════════════════════════════════════════════════
+// RESIZE OBSERVER
+// ══════════════════════════════════════════════════════════
+const ro = new ResizeObserver(() => {
+  if (document.getElementById('phase-game').style.display === 'flex') {
+    resizeCanvas();
+    draw();
+  }
+});
+ro.observe(canvas);
+
+// ══════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════
+loadDictionary();
+renderLeaderboard(GAME_KEY, 'lbBodyIntro');
+</script>
+</body>
+</html>
