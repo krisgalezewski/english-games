@@ -182,7 +182,7 @@ main { max-width:none; margin:0; padding:0; }
     <p>Every <strong>5 words</strong> you bank, the snake gets a little faster — you'll get a warning the moment it speeds up.</p>
     <p>Picked up a letter you didn't want? Steer into the <strong>eraser cube ⌫</strong> to remove the most recent letter and carry on.</p>
     <p>The board wraps at the edges — fly off one side and you'll reappear on the other. You get <strong>5 snake resets</strong> for when you tangle into your own tail, and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
-    <p><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause, R to reset the snake, N for a new board. <strong>Mobile:</strong> use the on-screen D-pad and buttons.</p>
+    <p><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause, R to reset the snake, N for a new board. <strong>Mobile:</strong> swipe to steer (chain directions in one drag — swipe up then right without lifting your finger), tap once to bank a word, double-tap to pause, or use the on-screen D-pad and buttons.</p>
   </div>
   <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-wrap" style="width:100%">
@@ -863,20 +863,68 @@ document.addEventListener('keydown', e => {
   if (k==='enter') bankWord();
 });
 
-let txS=null, tyS=null;
+// Continuous swipe: track a moving reference point so a single unbroken
+// drag (e.g. up then right, no lifting the finger) can trigger several
+// direction changes in a row, not just one per touch.
+const SWIPE_THRESHOLD = 22;   // px of movement before a turn triggers
+const TAP_MOVE_LIMIT  = 12;   // px — below this, treat as a tap not a swipe
+const TAP_MAX_MS       = 300;  // max duration to still count as a tap
+const DOUBLE_TAP_MS    = 320;  // max gap between taps to count as a double-tap
+const DOUBLE_TAP_DIST  = 40;   // px — max distance between taps to still count as "same spot"
+
+let swipeRef = null;      // {x,y} current reference point for the active drag
+let touchStartInfo = null; // {x,y,time} for tap/double-tap detection
+let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+let pendingTapTimer = null;
+
 canvas.addEventListener('touchstart', e => {
-  const t = e.touches[0]; txS=t.clientX; tyS=t.clientY;
+  if (!gameActive) return;
+  const t = e.touches[0];
+  swipeRef = { x:t.clientX, y:t.clientY };
+  touchStartInfo = { x:t.clientX, y:t.clientY, time: performance.now() };
 }, { passive:true });
-canvas.addEventListener('touchend', e => {
-  if (txS===null || !gameActive || paused) { txS=null; return; }
-  const t = e.changedTouches[0];
-  const dx = t.clientX-txS, dy = t.clientY-tyS;
-  const absDx=Math.abs(dx), absDy=Math.abs(dy);
-  if (Math.max(absDx,absDy) > 24) {
+
+canvas.addEventListener('touchmove', e => {
+  if (!gameActive || paused || !swipeRef) return;
+  const t = e.touches[0];
+  const dx = t.clientX - swipeRef.x, dy = t.clientY - swipeRef.y;
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  if (Math.max(absDx,absDy) > SWIPE_THRESHOLD) {
     if (absDx > absDy) trySetDirection(dx>0?1:-1, 0);
     else trySetDirection(0, dy>0?1:-1);
+    // Re-anchor so the rest of the same drag can trigger further turns —
+    // this is what lets "swipe up then right" work without lifting.
+    swipeRef = { x:t.clientX, y:t.clientY };
   }
-  txS=null;
+}, { passive:true });
+
+canvas.addEventListener('touchend', e => {
+  const info = touchStartInfo;
+  swipeRef = null;
+  touchStartInfo = null;
+  if (!gameActive || !info) return;
+  const t = e.changedTouches[0];
+  const dist = Math.hypot(t.clientX-info.x, t.clientY-info.y);
+  const duration = performance.now() - info.time;
+  if (dist >= TAP_MOVE_LIMIT || duration >= TAP_MAX_MS) return; // was a swipe/drag, not a tap
+
+  const now = performance.now();
+  const sinceLastTap = now - lastTapTime;
+  const distFromLastTap = Math.hypot(t.clientX-lastTapX, t.clientY-lastTapY);
+  if (sinceLastTap < DOUBLE_TAP_MS && distFromLastTap < DOUBLE_TAP_DIST) {
+    // Double tap → pause/resume
+    if (pendingTapTimer) { clearTimeout(pendingTapTimer); pendingTapTimer = null; }
+    lastTapTime = 0;
+    togglePause();
+  } else {
+    // Could still become a double tap — wait briefly before treating as a single tap (bank word)
+    lastTapTime = now; lastTapX = t.clientX; lastTapY = t.clientY;
+    if (pendingTapTimer) clearTimeout(pendingTapTimer);
+    pendingTapTimer = setTimeout(() => {
+      pendingTapTimer = null;
+      if (gameActive && !paused) bankWord();
+    }, DOUBLE_TAP_MS);
+  }
 }, { passive:true });
 
 // ══════════════════════════════════════════════════════════
