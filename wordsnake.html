@@ -110,16 +110,18 @@ main { max-width:none; margin:0; padding:0; }
   width:100%; padding:.4rem .2rem; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:5px;
   font-family:'Space Mono',monospace; font-size:.52rem; letter-spacing:.05em; text-transform:uppercase;
   color:#aaa; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s;
+  touch-action:manipulation;
 }
 .mini-btn:active { background:#2a2a2a; }
 .mini-btn:disabled { opacity:.3; cursor:default; }
 
+.icon-btn-row { display:flex; gap:.4rem; margin:.5rem 0 .3rem; }
 .sound-btn {
-  background:none; border:1px solid #2a2a2a; border-radius:4px;
-  padding:.25rem .45rem; font-size:.85rem; cursor:pointer; color:#555;
-  -webkit-tap-highlight-color:transparent; margin:.45rem 0 .2rem;
+  flex:1; background:none; border:1px solid #2a2a2a; border-radius:4px;
+  padding:.25rem .45rem; font-size:.85rem; cursor:pointer; color:#999;
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
 }
-.sound-btn:hover { color:#aaa; }
+.sound-btn:hover { color:#eee; border-color:#3a3a3a; }
 
 /* D-pad */
 .dpad {
@@ -130,13 +132,23 @@ main { max-width:none; margin:0; padding:0; }
   background:#1a1a1a; border:1px solid #2a2a2a; border-radius:6px;
   display:flex; align-items:center; justify-content:center;
   font-size:1rem; color:#aaa; cursor:pointer; -webkit-tap-highlight-color:transparent;
-  transition:background .1s;
+  transition:background .1s; touch-action:manipulation; user-select:none;
 }
 .dpad .d-btn:active { background:#2a2a2a; color:var(--gold); }
 .d-up    { grid-column:2; grid-row:1; }
 .d-left  { grid-column:1; grid-row:2; }
 .d-right { grid-column:3; grid-row:2; }
 .d-down  { grid-column:2; grid-row:3; }
+
+/* Mobile: bigger tap targets across the sidebar controls */
+@media (max-width:600px) {
+  .game-right { width:clamp(120px,30vw,168px); padding:.6rem .35rem .6rem; }
+  .dpad { max-width:150px; gap:.3rem; }
+  .dpad .d-btn { font-size:1.3rem; min-height:0; }
+  .mini-btn { padding:.6rem .2rem; font-size:.56rem; }
+  .sound-btn { padding:.55rem; font-size:1rem; min-height:40px; }
+  .hud-item { padding:.3rem 0; }
+}
 
 /* ── Overlays ── */
 .overlay {
@@ -147,6 +159,9 @@ main { max-width:none; margin:0; padding:0; }
 .overlay h2 { font-family:'Playfair Display',serif; font-size:1.6rem; color:#fff; text-align:center; }
 .overlay p  { color:#777; font-size:.85rem; text-align:center; max-width:290px; margin:0; }
 .overlay-btns { display:flex; flex-direction:column; gap:.45rem; width:100%; max-width:260px; }
+
+.overlay-btns .btn-ghost:disabled { opacity:.35; cursor:default; }
+.overlay-btns .btn-ghost:disabled:hover { background:transparent; border-color:var(--border); }
 
 @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
 </style>
@@ -164,9 +179,10 @@ main { max-width:none; margin:0; padding:0; }
     <h2>🐍 WordSnake</h2>
     <p>Letters are scattered across the board. Steer your snake to collect them <strong>in order</strong> to spell a word — the letters join your <strong>current word</strong> at the top as you go.</p>
     <p>Whenever your current word is a real word, it glows green and a <strong>Bank Word</strong> button appears. Bank it to score and reset your snake — or keep going to try for something longer.</p>
+    <p>Every <strong>5 words</strong> you bank, the snake gets a little faster — you'll get a warning the moment it speeds up.</p>
     <p>Picked up a letter you didn't want? Steer into the <strong>eraser cube ⌫</strong> to remove the most recent letter and carry on.</p>
-    <p>You get <strong>5 snake resets</strong> — for when you tangle yourself up (crashing into a wall or your own tail uses one automatically) — and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
-    <p><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause. <strong>Mobile:</strong> use the on-screen D-pad and the Bank word button.</p>
+    <p>The board wraps at the edges — fly off one side and you'll reappear on the other. You get <strong>5 snake resets</strong> for when you tangle into your own tail, and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
+    <p><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause, R to reset the snake, N for a new board. <strong>Mobile:</strong> use the on-screen D-pad and buttons.</p>
   </div>
   <button class="btn-primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-wrap" style="width:100%">
@@ -193,15 +209,18 @@ main { max-width:none; margin:0; padding:0; }
     <div class="pip-block">
       <div class="pip-lbl">🔄 Snake resets</div>
       <div class="pip-row" id="snakePips"></div>
-      <button class="mini-btn" id="resetSnakeBtn" onclick="manualSnakeReset()">Reset snake</button>
+      <button class="mini-btn" id="resetSnakeBtn" onclick="manualSnakeReset()" title="Shortcut: R">Reset snake (R)</button>
     </div>
     <div class="pip-block">
       <div class="pip-lbl">🎲 Board resets</div>
       <div class="pip-row" id="boardPips"></div>
-      <button class="mini-btn" id="newBoardBtn" onclick="manualBoardReset()">New board</button>
+      <button class="mini-btn" id="newBoardBtn" onclick="manualBoardReset()" title="Shortcut: N">New board (N)</button>
     </div>
 
-    <button class="sound-btn" id="pauseBtn" onclick="togglePause()" title="Pause">⏸</button>
+    <div class="icon-btn-row">
+      <button class="sound-btn" onclick="togglePause()" title="Pause (Space)">⏸</button>
+      <button class="sound-btn sound-toggle-btn" onclick="toggleSound()" title="Toggle sound">🔊</button>
+    </div>
 
     <div class="dpad" id="dpad">
       <div class="d-btn d-up"    ontouchstart="onDpad(0,-1);event.preventDefault()" onmousedown="onDpad(0,-1)">↑</div>
@@ -248,8 +267,10 @@ main { max-width:none; margin:0; padding:0; }
   <p>Take your time — the snake won't move until you resume.</p>
   <div class="overlay-btns">
     <button class="btn-primary" onclick="togglePause()">Resume →</button>
-    <button class="btn-ghost"   onclick="endGameEarly()">End run &amp; save score</button>
-    <button class="btn-ghost"   onclick="goToIntro()">← WordSnake menu</button>
+    <button class="btn-ghost" id="pauseResetSnakeBtn" onclick="manualSnakeReset()">🔄 Reset snake</button>
+    <button class="btn-ghost" id="pauseNewBoardBtn" onclick="manualBoardReset()">🎲 New board</button>
+    <button class="btn-ghost" onclick="endGameEarly()">End run &amp; save score</button>
+    <button class="btn-ghost" onclick="goToIntro()">← WordSnake menu</button>
   </div>
 </div>
 
@@ -276,6 +297,8 @@ const MIN_SNAKE_LEN    = 3;
 const MIN_WORD_LEN     = 3;
 const TICK_MS_START    = 170;
 const TICK_MS_MIN      = 95;
+const SPEEDUP_EVERY     = 5;   // words banked between each speed-up
+const SPEEDUP_STEP      = 14;  // ms shaved off the tick interval per speed-up
 
 const LETTER_DIST = {A:9,B:2,C:2,D:4,E:12,F:2,G:3,H:2,I:9,J:1,K:1,L:4,M:2,N:6,O:8,P:2,Q:1,R:6,S:4,T:6,U:4,V:2,W:2,X:1,Y:2,Z:1};
 const LETTER_BAG = Object.entries(LETTER_DIST).flatMap(([l,n]) => Array(n).fill(l));
@@ -313,6 +336,59 @@ function isValidWord(w) {
 }
 
 // ══════════════════════════════════════════════════════════
+// SOUND — tiny synthesised SFX, no audio files needed
+// ══════════════════════════════════════════════════════════
+let soundOn = true;
+let audioCtx = null;
+function ensureAudio() {
+  if (!soundOn) return;
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, vol, delay) {
+  if (!soundOn || !audioCtx || audioCtx.state !== 'running') return;
+  const t0 = audioCtx.currentTime + (delay||0);
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(vol||0.16, t0+0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.03);
+}
+function sfxEat()   { beep(560,0.08,'triangle',0.15); beep(840,0.07,'triangle',0.12,0.045); }
+function sfxErase() { beep(190,0.13,'sawtooth',0.13); }
+function sfxPing()  { beep(880,0.11,'sine',0.16); beep(1320,0.15,'sine',0.12,0.06); }
+function sfxBank()  { beep(660,0.09,'sine',0.17); beep(880,0.09,'sine',0.15,0.07); beep(1180,0.16,'sine',0.13,0.14); }
+function sfxCrash() { beep(150,0.24,'sawtooth',0.16); }
+function sfxSpeedUp() {
+  if (!soundOn || !audioCtx || audioCtx.state !== 'running') return;
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(240, t0);
+  osc.frequency.exponentialRampToValueAtTime(900, t0+0.32);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(0.16, t0+0.05);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.38);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0+0.4);
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  document.querySelectorAll('.sound-toggle-btn').forEach(b => b.textContent = soundOn ? '🔊' : '🔇');
+  if (soundOn) ensureAudio();
+}
+// Mobile browsers only allow audio after a real user gesture — unlock on
+// the first tap/click anywhere so eat/ping/bank sounds work from the start.
+['touchstart','mousedown'].forEach(evt => document.addEventListener(evt, ensureAudio, { passive:true }));
+
+// ══════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════
 const canvas = document.getElementById('gameCanvas');
@@ -322,7 +398,7 @@ let CW=0, CH=0, CELL=22, cols=0, rows=0, offX=0, offY=0, DPR=1;
 let snake = [];                 // [{x,y}, ...] head first
 let prevSnake = [];             // snapshot of snake before the last step, for smooth interpolation
 let grewThisStep = false;       // true if the last step added a head without dropping a tail
-let dir = {x:1,y:0}, nextDir = {x:1,y:0};
+let dir = {x:1,y:0};
 let letterTiles = [];           // [{x,y,letter}]
 let eraser = null;              // {x,y}
 let currentWord = [];           // ['C','A','T']
@@ -334,6 +410,7 @@ let snakeResetsLeft = MAX_SNAKE_RESETS;
 let boardResetsLeft = MAX_BOARD_RESETS;
 let gameActive = false, paused = false;
 let tickMs = TICK_MS_START;
+let speedLevel = 0;
 let lastTick = 0;
 let rafId = null;
 let flashes = [];               // [{x,y,start,color}] transient collect-effects
@@ -407,29 +484,32 @@ function resetSnakePosition() {
   for (let i=0; i<INITIAL_LEN; i++) snake.push({ x:startCol-i, y:startRow });
   prevSnake = snake.map(s => ({...s}));
   grewThisStep = false;
-  dir = {x:1,y:0}; nextDir = {x:1,y:0};
+  dir = {x:1,y:0}; dirQueue = [];
   currentWord = [];
   wordIsValid = false;
   updateWordBar();
 }
 
 function manualSnakeReset() {
-  if (!gameActive || paused || snakeResetsLeft<=0) return;
+  if (!gameActive || snakeResetsLeft<=0) return;
   snakeResetsLeft--;
   updatePips();
   resetSnakePosition();
   showToast('Snake reset — fresh start', 'good');
+  if (paused) draw();
 }
 
 function manualBoardReset() {
-  if (!gameActive || paused || boardResetsLeft<=0) return;
+  if (!gameActive || boardResetsLeft<=0) return;
   boardResetsLeft--;
   updatePips();
   regenerateBoard();
   showToast('New board laid out', 'good');
+  if (paused) draw();
 }
 
 function handleCrash() {
+  sfxCrash();
   if (snakeResetsLeft > 0) {
     snakeResetsLeft--;
     updatePips();
@@ -460,7 +540,9 @@ function updateWordBar() {
 
 function checkWordValidity() {
   const w = currentWord.join('');
+  const wasValid = wordIsValid;
   wordIsValid = w.length >= MIN_WORD_LEN && !foundWordSet.has(w) && isValidWord(w);
+  if (wordIsValid && !wasValid) sfxPing();
   updateWordBar();
 }
 
@@ -473,9 +555,19 @@ function bankWord() {
   score += pts;
   document.getElementById('scoreVal').textContent = score;
   document.getElementById('wordsVal').textContent = foundWords.length;
-  tickMs = Math.max(TICK_MS_MIN, TICK_MS_START - foundWords.length*4);
   resetSnakePosition();
   showToast(`+${pts} pts — "${word.toUpperCase()}"`, 'good');
+  sfxBank();
+
+  // Every 5 words, ramp the speed up a notch and make sure the player knows.
+  if (foundWords.length % SPEEDUP_EVERY === 0 && tickMs > TICK_MS_MIN) {
+    speedLevel++;
+    tickMs = Math.max(TICK_MS_MIN, TICK_MS_START - speedLevel*SPEEDUP_STEP);
+    setTimeout(() => {
+      showToast(`⚡ ${foundWords.length} words! Snake speeding up...`, 'bad');
+      sfxSpeedUp();
+    }, 380);
+  }
 }
 
 function eraseLastLetter() {
@@ -488,9 +580,14 @@ function eraseLastLetter() {
 // ══════════════════════════════════════════════════════════
 // MAIN LOOP
 // ══════════════════════════════════════════════════════════
+let dirQueue = []; // buffered turns, applied one per tick so quick key taps aren't lost
+
 function trySetDirection(dx,dy) {
-  if (dir.x === -dx && dir.y === -dy) return; // no instant reverse
-  nextDir = {x:dx,y:dy};
+  const last = dirQueue.length ? dirQueue[dirQueue.length-1] : dir;
+  if (last.x === -dx && last.y === -dy) return; // no instant reverse
+  if (last.x === dx && last.y === dy) return;   // already queued/heading this way
+  if (dirQueue.length >= 2) dirQueue.shift();    // keep only the most recent 2 buffered turns
+  dirQueue.push({x:dx,y:dy});
 }
 function onDpad(dx,dy) { if (gameActive && !paused) trySetDirection(dx,dy); }
 
@@ -501,11 +598,11 @@ function addFlash(cell, color) {
 function step() {
   prevSnake = snake.map(s => ({...s}));
 
-  dir = nextDir;
+  dir = dirQueue.length ? dirQueue.shift() : dir;
   const head = snake[0];
-  let nx = head.x + dir.x, ny = head.y + dir.y;
-
-  if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) { handleCrash(); return; }
+  // Board wraps at the edges — no walls to crash into.
+  let nx = (head.x + dir.x + cols) % cols;
+  let ny = (head.y + dir.y + rows) % rows;
   const newHead = { x:nx, y:ny };
 
   const letterHit = letterTiles.find(t => sameCell(t,newHead));
@@ -523,7 +620,8 @@ function step() {
     letterTiles = letterTiles.filter(t => t !== letterHit);
     spawnLetterTile();
     checkWordValidity();
-    addFlash(newHead, '#d4af37');
+    addFlash(newHead, '#f0d878');
+    sfxEat();
   } else {
     snake.pop();
   }
@@ -534,7 +632,11 @@ function step() {
     addFlash(newHead, '#c0392b');
     eraser = null;
     spawnEraser();
+    sfxErase();
   }
+
+  // Safety net: there should always be exactly one eraser cube in play.
+  if (!eraser) spawnEraser();
 }
 
 function loop(ts) {
@@ -565,6 +667,9 @@ function getRenderSnake(ts) {
       prev = prevSnake[i];
     }
     if (!prev) prev = s;
+    // A wrap jump (or growth's stationary head-origin) would otherwise
+    // interpolate straight across the board — snap instead.
+    if (Math.abs(s.x-prev.x) > 1 || Math.abs(s.y-prev.y) > 1) prev = s;
     return { x: prev.x + (s.x-prev.x)*t, y: prev.y + (s.y-prev.y)*t };
   });
 }
@@ -634,31 +739,26 @@ function draw(ts) {
   }
 
   // snake — interpolated positions for a smooth glide, rendered as
-  // overlapping rounded segments with a glowing gold head and teal tail fade
+  // overlapping rounded segments in shades of gold, brightest at the head
   const rs = getRenderSnake(now);
   for (let i=rs.length-1; i>=0; i--) {
     const s = rs[i];
     const isHead = i===0;
     const px = offX + s.x*CELL, py = offY + s.y*CELL;
     const t = i / Math.max(1,rs.length-1);
+    const lightness = 68 - t*38;   // bright gold at the head, deep amber at the tail
+    const alpha = 0.98 - t*0.22;
     ctx.save();
-    if (isHead) {
-      ctx.shadowColor = 'rgba(212,175,55,0.65)';
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = '#e3c15c';
-    } else {
-      const alpha = 0.96 - t*0.5;
-      ctx.shadowColor = 'rgba(0,210,180,0.35)';
-      ctx.shadowBlur = 4;
-      ctx.fillStyle = `rgba(0,210,180,${alpha.toFixed(2)})`;
-    }
+    ctx.shadowColor = 'rgba(212,175,55,0.55)';
+    ctx.shadowBlur = isHead ? 11 : 5;
+    ctx.fillStyle = isHead ? '#fbe9a6' : `hsla(43, 78%, ${lightness.toFixed(0)}%, ${alpha.toFixed(2)})`;
     roundRect(px+1, py+1, CELL-2, CELL-2, isHead?7:5);
     ctx.fill();
     ctx.restore();
 
     if (isHead) {
       // little eyes, oriented with the direction of travel
-      ctx.fillStyle = '#111';
+      ctx.fillStyle = '#2a1f05';
       const ex = dir.x*3, ey = dir.y*3;
       const eyeOffset = CELL*0.22;
       const cx = px+CELL/2, cy = py+CELL/2;
@@ -711,6 +811,16 @@ function updatePips() {
     `<div class="pip filled board${i<boardResetsLeft?'':' spent'}"></div>`).join('');
   document.getElementById('resetSnakeBtn').disabled = snakeResetsLeft<=0;
   document.getElementById('newBoardBtn').disabled = boardResetsLeft<=0;
+  const pauseSnakeBtn = document.getElementById('pauseResetSnakeBtn');
+  const pauseBoardBtn = document.getElementById('pauseNewBoardBtn');
+  if (pauseSnakeBtn) {
+    pauseSnakeBtn.disabled = snakeResetsLeft<=0;
+    pauseSnakeBtn.textContent = `🔄 Reset snake (${snakeResetsLeft} left)`;
+  }
+  if (pauseBoardBtn) {
+    pauseBoardBtn.disabled = boardResetsLeft<=0;
+    pauseBoardBtn.textContent = `🎲 New board (${boardResetsLeft} left)`;
+  }
 }
 
 function showToast(msg, cls) {
@@ -739,9 +849,12 @@ function togglePause() {
 // ══════════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (!gameActive) return;
+  ensureAudio();
   const k = e.key.toLowerCase();
-  if (['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','escape','p','enter'].includes(k)) e.preventDefault();
+  if (['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','escape','p','enter','r','n'].includes(k)) e.preventDefault();
   if (k===' '||k==='escape'||k==='p') { togglePause(); return; }
+  if (k==='r') { manualSnakeReset(); return; }
+  if (k==='n') { manualBoardReset(); return; }
   if (paused) return;
   if (k==='arrowup'||k==='w')    trySetDirection(0,-1);
   if (k==='arrowdown'||k==='s')  trySetDirection(0,1);
@@ -783,7 +896,7 @@ function goToIntro() {
 function startGame() {
   score = 0; foundWords = []; foundWordSet = new Set();
   snakeResetsLeft = MAX_SNAKE_RESETS; boardResetsLeft = MAX_BOARD_RESETS;
-  tickMs = TICK_MS_START; paused = false; gameActive = true;
+  tickMs = TICK_MS_START; speedLevel = 0; paused = false; gameActive = true;
 
   document.getElementById('phase-intro').style.display = 'none';
   document.getElementById('phase-result').style.display = 'none';
