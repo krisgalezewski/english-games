@@ -211,7 +211,7 @@ main { max-width:none; margin:0; padding:0; }
   <div class="intro-card">
     <h2>⬇ WordDrop</h2>
     <p>A word teleports from its sentence to the top of the centre column and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
-    <p><strong>On mobile:</strong> swipe left/right to move (chain swipes without lifting your finger) · swipe down or tap to drop · double-tap to pause. <strong>On desktop:</strong> ← → to move · ↓ or Space to drop · Escape to pause.</p>
+    <p><strong>On mobile:</strong> swipe left/right to move · swipe down to drop · double-tap to pause/resume. <strong>On desktop:</strong> arrow keys to move · ↓ or Space to drop · Escape to pause.</p>
     <p>You have <strong>3 lives ❤️</strong>. Each wrong category costs a life. Reach rounds 6, 11 and 16 to unlock a new category <em>and</em> earn a bonus life.</p>
     <p>New categories unlock every 5 rounds. Speed increases as you progress.</p>
     <div style="margin:.5rem 0">
@@ -2017,87 +2017,40 @@ function startRound() {
 // ══════════════════════════════════════════════════════════
 // TOUCH + KEYBOARD
 // ══════════════════════════════════════════════════════════
-// ── Touch gesture system ──────────────────────────────────
-// Supports chained gestures without lifting the finger:
-// - Swipe left/right → move column (fires immediately on threshold, resets ref point)
-// - Swipe down       → drop (fires immediately on threshold)
-// - Single tap       → drop (short tap, minimal movement)
-// - Double-tap       → pause/resume
+let txS=null, tyS=null, ttS=0, lastTap=0, doubleTapFired=false;
 
-const SWIPE_THRESHOLD = 32; // px to trigger a directional gesture
-const TAP_MAX_MOVE    = 12; // px — more movement than this = not a tap
-const TAP_MAX_TIME    = 220; // ms — longer than this = not a tap
-const DOUBLE_TAP_GAP  = 320; // ms between taps for double-tap
-
-let tActive  = false;  // is a touch currently down?
-let tRefX    = 0;      // reference X (resets after each gesture fires)
-let tRefY    = 0;      // reference Y
-let tStartX  = 0;      // where the touch began (for tap detection)
-let tStartY  = 0;
-let tStartT  = 0;      // when the touch began
-let lastTap  = 0;      // timestamp of last tap (for double-tap)
-let doubleTapFired = false;
-
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault(); // prevent scroll
+// ── Touch on canvas ──────────────────────────────────────
+canvas.addEventListener('touchstart', e=>{
   unlockAudio();
-  const t = e.touches[0];
-  tActive  = true;
-  tRefX    = t.clientX;
-  tRefY    = t.clientY;
-  tStartX  = t.clientX;
-  tStartY  = t.clientY;
-  tStartT  = Date.now();
+  const t=e.touches[0]; txS=t.clientX; tyS=t.clientY; ttS=Date.now();
   doubleTapFired = false;
-
-  // Double-tap detection
-  const now = Date.now();
-  if (now - lastTap < DOUBLE_TAP_GAP) {
+  const now=Date.now();
+  if (now-lastTap < 320) {
+    // Only pause/resume — never end game from a double-tap
     if (gameActive) togglePause();
     doubleTapFired = true;
     lastTap = 0;
-  } else {
-    lastTap = now;
+    txS = null; // prevent touchend from interpreting this as a swipe
+    return;
   }
-}, { passive: false });
+  lastTap=now;
+},{ passive:false });
 
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (!tActive || !block || !gameActive || paused || doubleTapFired) return;
-  const t  = e.touches[0];
-  const dx = t.clientX - tRefX;
-  const dy = t.clientY - tRefY;
+canvas.addEventListener('touchend', e=>{
+  if (txS===null || doubleTapFired) { doubleTapFired=false; return; }
+  const t=e.changedTouches[0];
+  const dx=t.clientX-txS, dy=t.clientY-tyS, dt=Date.now()-ttS;
+  const absDx=Math.abs(dx), absDy=Math.abs(dy);
 
-  if (Math.abs(dx) >= SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
-    // Horizontal swipe — move column
-    onArrow(dx > 0 ? 1 : -1);
-    // Reset reference point so the next swipe fires fresh
-    tRefX = t.clientX;
-    tRefY = t.clientY;
-  } else if (dy >= SWIPE_THRESHOLD && dy > Math.abs(dx)) {
-    // Downward swipe — drop
-    onDrop();
-    tRefX = t.clientX;
-    tRefY = t.clientY;
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchend', e => {
-  if (!tActive) return;
-  tActive = false;
-  if (doubleTapFired) { doubleTapFired = false; return; }
-
-  const dt    = Date.now() - tStartT;
-  const moved = Math.hypot(e.changedTouches[0].clientX - tStartX,
-                            e.changedTouches[0].clientY - tStartY);
-
-  // Single tap: short duration, minimal movement → drop
-  if (dt < TAP_MAX_TIME && moved < TAP_MAX_MOVE && gameActive && block && !paused) {
+  if (absDx>40 && absDx>absDy*1.3 && dt<400) {
+    onArrow(dx>0?1:-1);
+  } else if (absDy>40 && absDy>absDx*1.3 && dy>0 && dt<400) {
     onDrop();
   }
-}, { passive: true });
+  txS=null;
+},{ passive:true });
 
-document.body.addEventListener('dblclick', () => { if (gameActive) togglePause(); });
+document.body.addEventListener('dblclick',()=>{ if(gameActive) togglePause(); });
 
 document.addEventListener('keydown', e=>{
   if (!gameActive) return;
