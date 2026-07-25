@@ -934,6 +934,7 @@ function syncLetterBoxes() {
 function handleTypeKey(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
+    e.stopPropagation(); // prevent this from also triggering the document-level Enter handler below
     submitTyped();
   }
   // Backspace and regular chars are handled by native input + syncLetterBoxes via oninput
@@ -1229,12 +1230,10 @@ async function doSubmit() {
 }
 
 // ── Keyboard ───────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && selectedMode === 3 &&
-      document.getElementById('phase-game').style.display !== 'none') {
-    submitTyped();
-  }
-});
+// (Enter-to-submit for Type it mode is handled on the input itself via
+// handleTypeKey — see onkeydown on #m3input. A second, document-level
+// listener used to duplicate this, which caused submitTyped() to fire
+// twice per Enter press and intermittently mark correct answers wrong.)
 
 // ── Boot ───────────────────────────────────────────────────────────
 selectMode(1);
