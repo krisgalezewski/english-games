@@ -204,13 +204,14 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
     </div>
     <!-- Letter boxes — player types directly into these -->
     <div class="letter-boxes" id="letterBoxes" style="cursor:text" onclick="focusTypeInput()"></div>
-    <div class="instruction" id="m3instruction" style="font-size:.78rem">Tap the boxes and type · Enter to submit</div>
+    <div class="instruction" id="m3instruction" style="font-size:.78rem">Tap the boxes and type · Enter or Check to submit</div>
     <!-- Hidden input: captures keyboard input and mirrors it into the letter boxes -->
     <input id="m3input" inputmode="text" autocomplete="off" autocorrect="off"
            autocapitalize="off" spellcheck="false"
            style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;top:0;left:0"
            onkeydown="handleTypeKey(event)" oninput="syncLetterBoxes()"/>
     <div id="hintArea" style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;justify-content:center">
+      <button class="btn-primary" id="checkTypeBtn" onclick="submitTyped()">Check ✓</button>
       <button class="btn-ghost" id="hintBtn"      onclick="showHint()">💡 Hint (−3 pts)</button>
       <button class="btn-ghost" id="extraHintBtn" onclick="showExtraHint()">🔍 Extra hint (−5 pts)</button>
       <button class="btn-ghost" id="skipBtn"      onclick="skipTypeWord()">⏭ Skip (−8 pts)</button>
@@ -225,7 +226,7 @@ main { max-width:600px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; 
   <!-- Extra Time button -->
   <div id="extraTimeWrap" style="display:none;width:100%;text-align:center;margin-top:.25rem">
     <button id="extraTimeBtn" class="btn-extra-time" onclick="useExtraTime()">
-      ⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(−20 pts)</span>
+      ⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(−8 pts)</span>
     </button>
   </div>
 </div>
@@ -613,6 +614,7 @@ let typeSub = 1;         // type sub-mode: 1=synonyms, 2=antonyms
 let currentWord, found, timer, timeLeft, finalScore, extraTimeUsed;
 // Type It mode state
 let hint1Used = false, extraHintUsed = false, skipsLeft = 3;
+let typeFeedbackTimer = null; // pending correct/wrong flash → next-step timeout, tracked so it can be cancelled
 let revealedLetters = 1; // how many letters of the target are currently shown
 // Queue of words to present — rebuilt each time the pool is exhausted.
 // Ensures no word appears twice in a row and a gap of ≥3 between repeats.
@@ -680,7 +682,7 @@ function startGame() {
   const etBtn  = document.getElementById('extraTimeBtn');
   etWrap.style.display = 'none';
   etBtn.disabled = false;
-  etBtn.innerHTML = '⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(-20 pts)</span>';
+  etBtn.innerHTML = '⏱ +30 seconds <span style="font-size:.7rem;opacity:.75">(-8 pts)</span>';
 
   document.getElementById('submitArea').innerHTML = `
     <div class="submit-row">
@@ -838,6 +840,7 @@ let m3targets = [];
 let m3current = 0;
 
 function buildMode3() {
+  if (typeFeedbackTimer) { clearTimeout(typeFeedbackTimer); typeFeedbackTimer = null; }
   const badge = document.getElementById('m3badge');
   const input = document.getElementById('m3input');
   hint1Used = false; extraHintUsed = false; revealedLetters = 1;
@@ -846,12 +849,12 @@ function buildMode3() {
     m3targets = currentWord.syn.filter(s => !found.has('syn:'+s));
     badge.textContent = 'TYPE A SYNONYM';
     badge.className = 'word-type-badge badge-syn';
-    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter to submit · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter or Check to submit · Wrong = −5 seconds';
   } else {
     m3targets = currentWord.ant.filter(a => !found.has('ant:'+a));
     badge.textContent = 'TYPE AN ANTONYM';
     badge.className = 'word-type-badge badge-ant';
-    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter to submit · Wrong = −5 seconds';
+    document.getElementById('m3instruction').textContent = 'Tap the boxes and type · Enter or Check to submit · Wrong = −5 seconds';
   }
 
   if (m3targets.length === 0) { pickNextWord(); return; }
@@ -966,6 +969,7 @@ function showExtraHint() {
 
 function skipTypeWord() {
   if (skipsLeft <= 0) return;
+  if (typeFeedbackTimer) { clearTimeout(typeFeedbackTimer); typeFeedbackTimer = null; }
   skipsLeft--;
   finalScore = Math.max(0, finalScore - 8);
   document.getElementById('scoreVal').textContent = finalScore;
@@ -975,9 +979,16 @@ function skipTypeWord() {
 function showTypeHint() { showHint(); } // backwards compat alias
 
 function submitTyped() {
+  // Cancel any pending flash→next-step timeout from a previous check —
+  // without this, a stale "wrong" cleanup could fire after a later
+  // correct answer and wipe out its green flash / clear the new input.
+  if (typeFeedbackTimer) { clearTimeout(typeFeedbackTimer); typeFeedbackTimer = null; }
+
   const input = document.getElementById('m3input');
   const target = m3targets[m3current];
-  // Combine revealed letters with typed input to form the full guess
+  // Combine revealed letters with typed input to form the full guess.
+  // This is the ENTIRE guess (auto-revealed prefix + whatever was typed),
+  // so a hint never prevents a correct answer from registering as correct.
   const revealed = target.slice(0, revealedLetters).toLowerCase();
   const typed    = (input.value || '').trim().toLowerCase();
   const full     = revealed + typed;
@@ -993,10 +1004,8 @@ function submitTyped() {
   const allBoxes  = [...container.querySelectorAll('.letter-box')];
 
   if (match) {
-    // Flash ALL boxes green, then move on
-    allBoxes.forEach(b => {
-      b.className = 'letter-box correct-flash';
-    });
+    // Correct — always flash green, whether or not a hint was used.
+    allBoxes.forEach(b => { b.className = 'letter-box correct-flash'; });
     const key = typeSub === 1 ? 'syn:'+match : 'ant:'+match;
     found.add(key);
     if (!allFound.has(key)) {
@@ -1008,14 +1017,13 @@ function submitTyped() {
     hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;
     document.getElementById('extraHintBtn').disabled = true;
-    setTimeout(pickNextWord, 650);
+    typeFeedbackTimer = setTimeout(() => { typeFeedbackTimer = null; pickNextWord(); }, 650);
   } else {
-    // Flash ALL boxes red, clear typed input, refocus
-    allBoxes.forEach(b => {
-      b.className = 'letter-box wrong-flash';
-    });
+    // Only an actually-incorrect check flashes red.
+    allBoxes.forEach(b => { b.className = 'letter-box wrong-flash'; });
     penalise();
-    setTimeout(() => {
+    typeFeedbackTimer = setTimeout(() => {
+      typeFeedbackTimer = null;
       input.value = '';
       buildLetterBoxes();
       focusTypeInput();
@@ -1130,7 +1138,7 @@ function useExtraTime() {
   document.getElementById('timerNum').textContent = timeLeft;
   updateRing();
   document.getElementById('timerCircle').style.stroke = 'var(--gold)';
-  finalScore = Math.max(0, finalScore - 20);
+  finalScore = Math.max(0, finalScore - 8);
   document.getElementById('scoreVal').textContent = finalScore;
 }
 
