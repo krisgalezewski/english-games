@@ -66,6 +66,15 @@
   /* Type */
   --eg-font: Archivo, system-ui, -apple-system, sans-serif;
   --eg-transition: 140ms ease;
+
+  /* Back-compat aliases: shared.js (used by every game page) hardcodes
+     these old theme.css variable names in a couple of UI strings — the
+     leaderboard's "Loading…"/empty-state row and the score-submit
+     success/fail message. Cheap to keep them resolving to something
+     sensible without touching shared.js itself. */
+  --muted:   var(--eg-ink-faint);
+  --correct: var(--eg-green);
+  --wrong:   var(--eg-red);
 }
 
 /* --- Base ---------------------------------------------------------------- */
@@ -305,6 +314,91 @@ a:hover { color: #FFFFFF; }
   padding:7px 14px; border-radius: var(--eg-r-pill);
   font-size:11.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
 }
+
+/* --- Shared game chrome --------------------------------------------------- *
+   Not in the original handoff (which only covered the index + the shell's
+   4 screens) but needed by every game page once it's actually wired up.
+   Added while converting PhrasalBlitz (session 2) so it's here once,
+   consistently, instead of reinvented per game.                             */
+
+/* Text input — typed-answer fields, leaderboard name entry, etc. */
+.eg-input {
+  background: var(--eg-card); border:1px solid var(--eg-border-strong);
+  border-radius: var(--eg-r-well); padding:14px 18px; min-height:48px;
+  color: var(--eg-ink); font: inherit; font-size:16px; width:100%;
+  transition: border-color var(--eg-transition);
+}
+.eg-input:focus { outline:none; border-color: var(--eg-teal-light); }
+.eg-input.is-correct { border-color: var(--eg-green); }
+.eg-input.is-wrong   { border-color: var(--eg-red); }
+
+/* Mode-select cards — for any game with more than one mode. The selected
+   card takes the game's own accent colour via --eg-modecard-bg, set inline
+   per game, e.g. style="--eg-modecard-bg: var(--eg-gold)". */
+.eg-modecard {
+  background: var(--eg-card); border:1px solid var(--eg-border);
+  border-radius: var(--eg-r-card); padding:22px;
+  display:flex; flex-direction:column; gap:8px; min-height:130px;
+  text-align:left; font:inherit; color:var(--eg-ink); cursor:pointer;
+  transition: background var(--eg-transition);
+}
+.eg-modecard:hover { background: var(--eg-card-hover); }
+.eg-modecard .eg-eyebrow { color: var(--eg-ink-faint); }
+.eg-modecard .eg-body--sm { color: var(--eg-ink-dim); }
+.eg-modecard.is-selected {
+  background: var(--eg-modecard-bg, var(--eg-teal-deep)); border-color:transparent;
+}
+.eg-modecard.is-selected .eg-eyebrow,
+.eg-modecard.is-selected .eg-body--sm { color: var(--eg-ink); }
+
+/* Small pill tabs — for in-game mode switching and leaderboard filters,
+   where a full mode-select card would be too heavy. */
+.eg-pilltabs { display:inline-flex; flex-wrap:wrap; gap:4px; background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-pill); padding:4px; }
+.eg-pilltab { padding:8px 16px; border-radius:var(--eg-r-pill); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; border:0; background:transparent; color:var(--eg-ink-faint); cursor:pointer; transition:background var(--eg-transition), color var(--eg-transition); }
+.eg-pilltab:hover { color: var(--eg-ink); }
+.eg-pilltab.active { background:var(--eg-ink); color:var(--eg-ink-on-light); }
+
+/* Chips — small clickable pills for things like "found" / "missed" word
+   lists. Default variant reads as a highlight; --muted is a quieter one
+   for secondary lists (e.g. missed answers) on the same screen. */
+.eg-chip {
+  display:inline-flex; align-items:center;
+  background:rgba(217,165,32,.14); border:1px solid rgba(217,165,32,.3); color:var(--eg-gold-light);
+  border-radius:var(--eg-r-pill); padding:6px 14px; font-size:13px; font-weight:700;
+  cursor:pointer; transition:background var(--eg-transition);
+}
+.eg-chip:hover { background:rgba(217,165,32,.24); }
+.eg-chip--muted { background:var(--eg-card); border-color:var(--eg-border); color:var(--eg-ink-dim); }
+.eg-chip--muted:hover { border-color:var(--eg-gold-light); color:var(--eg-gold-light); }
+
+/* Leaderboard table — shared.js's renderLeaderboard() writes plain <tr><td>
+   rows into a <tbody>, so this stays a real <table> rather than eg-board's
+   div rows; styled to read the same way. */
+.eg-lb-table { width:100%; border-collapse:collapse; font-size:14px; }
+.eg-lb-table th { text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--eg-ink-faint); padding:8px 10px; border-bottom:1px solid var(--eg-border); }
+.eg-lb-table td { padding:11px 10px; border-bottom:1px solid var(--eg-border); font-weight:700; color:var(--eg-ink-muted); }
+.eg-lb-table tbody tr:first-child td { color:var(--eg-gold-light); }
+
+/* Definition popup — shared.js's showDefinitionModal / showPhrasalModal /
+   showLocalDefModal hard-code these class names. */
+.def-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100;
+  display:flex; align-items:center; justify-content:center; padding:16px;
+}
+.def-modal {
+  background:var(--eg-card); border:1px solid var(--eg-border-strong);
+  border-radius:var(--eg-r-card); padding:28px; max-width:420px; width:100%; position:relative;
+}
+.def-modal .close-btn {
+  position:absolute; top:16px; right:16px; background:none; border:0;
+  color:var(--eg-ink-faint); font-size:19px; cursor:pointer; line-height:1;
+}
+.def-modal .close-btn:hover { color:var(--eg-ink); }
+.def-modal h3 { margin:0 0 4px; font-size:22px; font-weight:900; font-stretch:110%; text-transform:uppercase; color:var(--eg-gold-light); }
+.def-modal .pos { font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--eg-ink-faint); margin-bottom:12px; }
+.def-modal .definition { font-size:15px; color:var(--eg-ink); line-height:1.5; margin-bottom:12px; }
+.def-modal .example { font-style:italic; color:var(--eg-ink-muted); font-size:14px; border-left:2px solid var(--eg-gold-light); padding-left:12px; line-height:1.5; margin-bottom:8px; }
+.def-modal .example:last-child { margin-bottom:0; }
 
 /* --- Motion -------------------------------------------------------------- */
 
