@@ -1,0 +1,312 @@
+/* ==========================================================================
+   English Games — shared stylesheet
+   One file, linked by index.html and all 14 game pages.
+   <link rel="stylesheet" href="styles.css">
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap');
+
+:root {
+  /* Surfaces */
+  --eg-bg:            #0A0A0A;
+  --eg-surface:       #121212;  /* large tiles, panels */
+  --eg-card:          #141414;  /* small cards */
+  --eg-card-hover:    #1B1B1B;
+  --eg-border:        #1F1F1F;
+  --eg-border-strong: #2A2A2A;
+
+  /* Ink */
+  --eg-ink:        #F4EFE6;  /* primary text, also used as a light surface */
+  --eg-ink-muted:  #C9C3B8;  /* body copy on dark surfaces */
+  --eg-ink-dim:    #A39D93;  /* body copy inside small cards */
+  --eg-ink-faint:  #8F8980;  /* eyebrows, meta, labels */
+  --eg-ink-on-light: #0A0A0A;
+
+  /* Accents (tile backgrounds — always pair with --eg-ink text) */
+  --eg-teal-deep: #0E4655;
+  --eg-teal:      #11736A;
+  --eg-green:     #12632F;
+  --eg-red:       #96162F;
+  --eg-gold:      #8A6510;
+
+  /* Accent tints (labels/icons on DARK cards only — never as tile bg) */
+  --eg-teal-light:  #45A89B;
+  --eg-green-light: #7FB08D;
+  --eg-gold-light:  #D9A520;
+  --eg-rose:        #CF4F66;
+
+  /* Artwork wells: darkened version of the parent tile colour */
+  --eg-well-teal-deep: #0A333F;
+  --eg-well-teal:      #0B524B;
+  --eg-well-green:     #0C4722;
+  --eg-well-red:       #6F1024;
+  --eg-well-gold:      #654A0B;
+  --eg-well-dark:      #101010;
+  /* Wells inside dark cards, tinted to the card's accent */
+  --eg-well-teal-tint:  #0D2F2C;
+  --eg-well-gold-tint:  #332508;
+  --eg-well-red-tint:   #3A0C17;
+  --eg-well-green-tint: #0C2F1A;
+
+  /* Radii */
+  --eg-r-tile:  20px;
+  --eg-r-card:  16px;
+  --eg-r-well:  14px;
+  --eg-r-inner: 12px;
+  --eg-r-pill:  999px;
+
+  /* Spacing */
+  --eg-gap:         14px;  /* the bento gutter — same everywhere */
+  --eg-gap-sm:      10px;
+  --eg-pad-tile:    clamp(22px, 2.6vw, 32px);
+  --eg-pad-hero:    clamp(26px, 3vw, 44px);
+  --eg-pad-card:    20px;
+  --eg-section-gap: 44px;
+
+  /* Type */
+  --eg-font: Archivo, system-ui, -apple-system, sans-serif;
+  --eg-transition: 140ms ease;
+}
+
+/* --- Base ---------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--eg-bg);
+  color: var(--eg-ink);
+  font-family: var(--eg-font);
+  -webkit-font-smoothing: antialiased;
+  padding: 0 clamp(12px, 2.5vw, 28px) 40px;
+}
+
+a { color: var(--eg-ink); text-decoration: none; }
+a:hover { color: #FFFFFF; }
+::selection { background: var(--eg-red); color: var(--eg-ink); }
+
+/* --- Type scale ---------------------------------------------------------- *
+   All display type: weight 900, font-stretch 110-115%, uppercase, tight leading.
+   Body copy: weight 400, line-height 1.5, text-wrap: pretty.                */
+
+.eg-h1 { margin:0; font-size: clamp(38px,5.2vw,68px); line-height:.95; font-weight:900; font-stretch:115%; letter-spacing:-.01em; text-transform:uppercase; text-wrap:balance; }
+.eg-h2 { margin:0; font-size: clamp(22px,2.2vw,30px); line-height:1;   font-weight:900; font-stretch:112%; text-transform:uppercase; }
+.eg-h3 { margin:0; font-size: clamp(26px,2.6vw,34px); line-height:1;   font-weight:900; font-stretch:112%; text-transform:uppercase; }
+.eg-h4 { margin:0; font-size: 22px;                   line-height:1.05;font-weight:900; font-stretch:110%; text-transform:uppercase; overflow-wrap:anywhere; }
+.eg-display { font-size: clamp(52px,7vw,84px); line-height:.9; font-weight:900; font-stretch:112%; }
+
+/* Eyebrow / meta label — the signature small-caps line above every title */
+.eg-eyebrow {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--eg-ink-faint);
+}
+.eg-eyebrow--on-color { color: var(--eg-ink); }   /* on a colour tile */
+
+.eg-body  { margin:0; font-size:15px;   line-height:1.5; color: var(--eg-ink-muted); text-wrap: pretty; }
+.eg-body--sm { font-size:14px; color: var(--eg-ink-dim); }
+
+/* --- Layout: the bento grid ---------------------------------------------- */
+
+.eg-row  { display:flex; flex-wrap:wrap; gap: var(--eg-gap); }
+.eg-row + .eg-row { margin-top: var(--eg-gap); }
+
+/* auto-fitting card grid; cards never go below 260px */
+.eg-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--eg-gap); }
+
+/* Section heading row: title left, meta right */
+.eg-section-head {
+  display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between;
+  gap:12px; margin: var(--eg-section-gap) 6px 16px;
+}
+
+.eg-header {
+  display:flex; flex-wrap:wrap; align-items:center; gap:18px 28px;
+  justify-content:space-between; padding: 22px 6px 20px;
+}
+.eg-nav { display:flex; flex-wrap:wrap; align-items:center; gap:8px 22px;
+  font-size:12.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.eg-nav a { color: var(--eg-ink-muted); }
+.eg-nav a:hover { color: var(--eg-ink); }
+
+.eg-footer {
+  margin-top:40px; padding:22px 6px 0; border-top:1px solid #1C1C1C;
+  display:flex; flex-wrap:wrap; gap:10px 24px; justify-content:space-between;
+  font-size:12.5px; letter-spacing:.06em; color:#7C766D;
+}
+
+/* --- Tiles --------------------------------------------------------------- */
+
+.eg-tile {
+  border-radius: var(--eg-r-tile);
+  padding: var(--eg-pad-tile);
+  display:flex; flex-direction:column; gap:16px;
+  background: var(--eg-surface); color: var(--eg-ink);
+  transition: background var(--eg-transition);
+}
+.eg-tile--hero { padding: var(--eg-pad-hero); justify-content:space-between; gap:36px; min-height:420px; flex:1 1 520px; }
+.eg-tile--lg   { flex: 1 1 400px; min-height: 360px; }
+.eg-tile--md   { flex: 1 1 380px; min-height: 340px; }
+
+/* Colour variants. Each sets its own hover + well + on-light button colour. */
+.eg-tile--teal-deep { background: var(--eg-teal-deep); --eg-well: var(--eg-well-teal-deep); --eg-btn-fg: var(--eg-teal-deep); }
+.eg-tile--teal      { background: var(--eg-teal);      --eg-well: var(--eg-well-teal);      --eg-btn-fg: var(--eg-well-teal); }
+.eg-tile--green     { background: var(--eg-green);     --eg-well: var(--eg-well-green);     --eg-btn-fg: var(--eg-well-green); }
+.eg-tile--red       { background: var(--eg-red);       --eg-well: var(--eg-well-red);       --eg-btn-fg: var(--eg-red); }
+.eg-tile--gold      { background: var(--eg-gold);      --eg-well: var(--eg-well-gold);      --eg-btn-fg: var(--eg-well-gold); }
+.eg-tile--dark      { background: #1B1B1B;             --eg-well: var(--eg-well-dark);      --eg-btn-fg: var(--eg-ink-on-light); }
+
+.eg-tile--teal-deep:hover { background:#115364; }
+.eg-tile--teal:hover      { background:#148176; }
+.eg-tile--green:hover     { background:#157136; }
+.eg-tile--red:hover       { background:#A61A36; }
+.eg-tile--gold:hover      { background:#9C7213; }
+.eg-tile--dark:hover      { background:#232323; }
+
+/* On colour tiles ALL text is full-opacity --eg-ink (contrast requirement).
+   Never use alpha-muted text on a colour ground. */
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-body { color: var(--eg-ink); }
+
+/* --- Cards (the Long Game grid) ------------------------------------------ */
+
+.eg-card {
+  background: var(--eg-card);
+  border: 1px solid var(--eg-border);
+  border-radius: var(--eg-r-card);
+  padding: var(--eg-pad-card);
+  display:flex; flex-direction:column; gap:12px;
+  color: var(--eg-ink);
+  transition: background var(--eg-transition);
+}
+.eg-card:hover { background: var(--eg-card-hover); }
+
+/* Accent per card — drives the eyebrow colour and the artwork well */
+.eg-card--teal  { --eg-accent: var(--eg-teal-light);  --eg-well: var(--eg-well-teal-tint); }
+.eg-card--gold  { --eg-accent: var(--eg-gold-light);  --eg-well: var(--eg-well-gold-tint); }
+.eg-card--rose  { --eg-accent: var(--eg-rose);        --eg-well: var(--eg-well-red-tint); }
+.eg-card--green { --eg-accent: var(--eg-green-light); --eg-well: var(--eg-well-green-tint); }
+.eg-card .eg-eyebrow { color: var(--eg-accent); font-size: 11px; }
+
+/* --- Artwork well -------------------------------------------------------- *
+   Each game has a flat geometric SVG motif sitting in a darkened well.
+   SVG is single-colour + opacity steps (1 / .75 / .6 / .45 / .35). No gradients.
+   Tiles: viewBox ~300x110-130. Cards: viewBox ~260x80.                       */
+
+.eg-art {
+  background: var(--eg-well, var(--eg-well-dark));
+  border-radius: var(--eg-r-well);
+  padding: 16px;
+}
+.eg-card .eg-art { border-radius: var(--eg-r-inner); padding: 14px; }
+.eg-art svg { width:100%; height:auto; display:block; }
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.eg-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  align-self:flex-start;
+  padding: 15px 30px; min-height: 48px;      /* 44px min touch target */
+  border-radius: var(--eg-r-pill);
+  font: inherit; font-size:14px; font-weight:800; letter-spacing:.04em;
+  border:0; cursor:pointer; transition: background var(--eg-transition);
+}
+.eg-btn--primary { background: var(--eg-ink); color: var(--eg-btn-fg, var(--eg-ink-on-light)); }
+.eg-btn--primary:hover { background:#FFFFFF; }
+.eg-btn--ghost { background:transparent; color: var(--eg-ink-muted); border:1px solid var(--eg-border-strong); font-weight:700; padding:14px 26px; }
+.eg-btn--ghost:hover { color: var(--eg-ink); border-color:#3A3A3A; }
+.eg-btn--sm { padding:11px 22px; min-height:44px; font-size:13px; }
+
+/* Text link with arrow, used at the foot of cards */
+.eg-link { margin-top:auto; font-size:13px; font-weight:800; }
+
+/* --- Game HUD ------------------------------------------------------------ */
+
+.eg-hud { display:flex; flex-wrap:wrap; gap: var(--eg-gap-sm); }
+.eg-stat {
+  flex: 1 1 120px;
+  background: var(--eg-card); border:1px solid var(--eg-border);
+  border-radius: var(--eg-r-well); padding:16px 18px;
+}
+.eg-stat__label { font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color: var(--eg-ink-faint); }
+.eg-stat__value { font-size:28px; font-weight:900; font-stretch:110%; line-height:1.1; margin-top:4px; }
+.eg-stat__value--streak { color: var(--eg-gold-light); }
+.eg-stat__value--time   { color: var(--eg-rose); }
+.eg-stat__value small   { color: var(--eg-ink-faint); font-size:18px; }
+
+.eg-progress { height:8px; border-radius: var(--eg-r-pill); background: var(--eg-border); overflow:hidden; }
+.eg-progress__bar { height:100%; background: var(--eg-teal-light); border-radius: var(--eg-r-pill);
+  transition: width 300ms ease; }
+
+/* --- Prompt (the question) ----------------------------------------------- *
+   Inverted: cream ground, black ink. This is the focal point of every game.  */
+
+.eg-prompt {
+  background: var(--eg-ink); color: var(--eg-ink-on-light);
+  border-radius: 18px; padding: clamp(24px,3vw,40px); text-align:center;
+}
+.eg-prompt__label { font-size:11.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#6B665E; }
+.eg-prompt__text  { margin-top:16px; font-size: clamp(26px,3.4vw,40px); line-height:1.2;
+  font-weight:900; font-stretch:110%; text-wrap:balance; }
+.eg-prompt__blank { border-bottom:6px solid var(--eg-red); padding-bottom:2px; }
+
+/* --- Answer options ------------------------------------------------------ */
+
+.eg-options { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+.eg-option {
+  display:flex; align-items:center; gap:14px;
+  background: var(--eg-card); border:1px solid var(--eg-border-strong);
+  border-radius: var(--eg-r-well); padding:20px 22px; min-height:64px;
+  color: var(--eg-ink); font: inherit; font-size:19px; font-weight:800;
+  text-align:left; cursor:pointer; transition: background var(--eg-transition), border-color var(--eg-transition);
+}
+.eg-option:hover:not([disabled]) { background: var(--eg-border); border-color:#3A3A3A; }
+.eg-option:focus-visible { outline:2px solid var(--eg-teal-light); outline-offset:2px; }
+.eg-option__key { font-size:11px; font-weight:700; letter-spacing:.1em; color: var(--eg-ink-faint); }
+.eg-option.is-correct { background: var(--eg-green); border-color: var(--eg-green); }
+.eg-option.is-correct .eg-option__key { color:#A9D9B8; }
+.eg-option.is-wrong   { background: var(--eg-red);   border-color: var(--eg-red); }
+.eg-option.is-wrong .eg-option__key { color:#F0C3CC; }
+.eg-option[disabled] { cursor:default; }
+
+/* --- Feedback ------------------------------------------------------------ */
+
+.eg-feedback {
+  display:flex; gap:14px; align-items:baseline;
+  border-radius: var(--eg-r-well); padding:18px 22px; font-size:15px; line-height:1.45;
+}
+.eg-feedback--correct { background: var(--eg-teal-deep); color: var(--eg-ink); }
+.eg-feedback--correct .eg-eyebrow { color:#9FC4CE; }
+.eg-feedback--wrong { background: var(--eg-card); border:1px solid var(--eg-border); color: var(--eg-ink-muted); }
+.eg-feedback--wrong .eg-eyebrow { color: var(--eg-rose); }
+
+/* --- Leaderboard --------------------------------------------------------- */
+
+.eg-board { display:flex; flex-direction:column; gap:2px; }
+.eg-board__row {
+  display:flex; gap:14px; align-items:baseline;
+  padding:11px 0; border-bottom:1px solid var(--eg-border);
+  font-size:15px; font-weight:700;
+}
+.eg-board__row:last-child { border-bottom:0; }
+.eg-board__rank { width:24px; font-size:13px; font-weight:800; color: var(--eg-ink-faint); }
+.eg-board__row:first-child .eg-board__rank { color: var(--eg-gold-light); }
+.eg-board__name { flex:1; color: var(--eg-ink-muted); }
+.eg-board__score { font-weight:800; color: var(--eg-ink-muted); }
+.eg-board__row.is-you { background: var(--eg-card-hover); border-radius:8px; padding-inline:10px; }
+.eg-board__row.is-you .eg-board__name,
+.eg-board__row.is-you .eg-board__score,
+.eg-board__row.is-you .eg-board__rank { color: var(--eg-ink); }
+
+/* --- Game of the week badge ---------------------------------------------- */
+
+.eg-badge {
+  background: var(--eg-ink); color: var(--eg-teal-deep);
+  padding:7px 14px; border-radius: var(--eg-r-pill);
+  font-size:11.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+}
+
+/* --- Motion -------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
