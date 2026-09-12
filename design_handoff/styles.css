@@ -246,6 +246,12 @@ a:hover { color: #FFFFFF; }
 .eg-progress { height:8px; border-radius: var(--eg-r-pill); background: var(--eg-border); overflow:hidden; }
 .eg-progress__bar { height:100%; background: var(--eg-teal-light); border-radius: var(--eg-r-pill);
   transition: width 300ms ease; }
+.eg-progress__bar.is-low { background: var(--eg-red); }
+
+/* Lives / hearts indicator, used by games with a limited-attempts mechanic */
+.eg-lives { display:flex; justify-content:center; gap:6px; }
+.eg-life { font-size:18px; transition: filter var(--eg-transition), opacity var(--eg-transition); }
+.eg-life.is-lost { filter:grayscale(1); opacity:.3; }
 
 /* --- Prompt (the question) ----------------------------------------------- *
    Inverted: cream ground, black ink. This is the focal point of every game.  */
