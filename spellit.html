@@ -4,160 +4,156 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SpellIt! — English Games</title>
-<link rel="stylesheet" href="theme.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
-main { max-width:520px; margin:0 auto; padding:1.25rem 1rem 2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+/* Playfield-only CSS — everything colour/type/chrome lives in styles.css. */
+main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-direction:column; gap:18px; align-items:center; }
+#startScreen, #gameUI, #endCard { width:100%; display:flex; flex-direction:column; align-items:center; gap:18px; }
 
-.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
-.rules-box strong { color:var(--text); }
+#qCard { width:100%; }
+#qMeta { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--eg-gold-deep,#8A6510); }
+#defText { margin-top:14px; font-size:clamp(19px,2.6vw,26px); line-height:1.4; font-weight:800; font-stretch:108%; }
+#letterHint { margin-top:14px; font-size:11.5px; color:#6B665E; padding-top:12px; border-top:1px solid rgba(10,10,10,.12); }
 
-.hud { display:flex; align-items:center; justify-content:space-between; width:100%; gap:.5rem; flex-wrap:wrap; }
-.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.45rem .9rem; text-align:center; min-width:64px; }
-.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--gold); }
-.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.sp-spell-wrap { display:flex; gap:10px; width:100%; max-width:380px; }
+.sp-hint-box { background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well); padding:12px 18px; font-size:13.5px; color:var(--eg-ink-faint); font-style:italic; text-align:center; width:100%; max-width:420px; min-height:1.8em; }
+.sp-hint-box.revealed { color:var(--eg-ink); font-style:normal; }
+.sp-hint-box .hl { font-weight:800; font-style:normal; color:var(--eg-gold-light); }
 
-/* progress dots */
-.dots { display:flex; gap:.3rem; flex-wrap:wrap; justify-content:center; }
-.dot { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
-.dot.done  { background:var(--correct); }
-.dot.wrong { background:var(--wrong); }
-.dot.skip  { background:#b8860b; }
+.sp-dots { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.sp-dot { width:8px; height:8px; border-radius:50%; background:var(--eg-border-strong); transition:background .3s; }
+.sp-dot.done  { background: var(--eg-green); }
+.sp-dot.wrong { background: var(--eg-red); }
+.sp-dot.skip  { background: var(--eg-gold-light); }
 
-.q-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.75rem 1.5rem; width:100%; display:flex; flex-direction:column; align-items:center; gap:1rem; }
-.q-meta { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
-.definition { font-size:1rem; line-height:1.7; color:var(--text); text-align:center; max-width:380px; }
-.letter-hint { font-family:'Space Mono',monospace; font-size:.75rem; color:var(--muted); letter-spacing:.06em; }
+.sp-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-.spell-wrap { display:flex; gap:.5rem; width:100%; max-width:360px; }
-.spell-input { flex:1; background:#0a0a0a; border:2px solid var(--border2); border-radius:4px; padding:.7rem 1rem; font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--text); text-align:center; letter-spacing:.12em; text-transform:uppercase; transition:border-color .2s; }
-.spell-input:focus { outline:none; border-color:var(--gold); }
-.spell-input.ok  { border-color:var(--correct); }
-.spell-input.bad { border-color:var(--wrong); animation:shake .35s; }
+.sp-review-grid { display:flex; flex-direction:column; gap:6px; width:100%; }
+.sp-review-item { display:flex; align-items:center; justify-content:space-between; background:var(--eg-card); border:1px solid var(--eg-border); border-radius:8px; padding:9px 14px; font-size:14px; cursor:pointer; transition:border-color .15s; }
+.sp-review-item:hover { border-color:var(--eg-gold-light); }
+.sp-review-word { font-weight:800; color:var(--eg-ink); }
+.sp-review-status { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.sp-review-status.correct { color: var(--eg-green-light); }
+.sp-review-status.wrong   { color: var(--eg-rose); }
+.sp-review-status.skip    { color: var(--eg-gold-light); }
 
-.hint-row { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; }
-.hint-box { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.4rem .85rem; font-size:.78rem; color:var(--muted); font-style:italic; text-align:center; width:100%; max-width:360px; min-height:1.8rem; }
-.hint-box.revealed { color:var(--text); font-style:normal; }
-.hint-box .hl { font-weight:700; font-style:normal; color:var(--gold); }
-
-.feedback { min-height:1.4rem; font-size:.88rem; font-weight:600; text-align:center; font-family:'Space Mono',monospace; }
-.feedback.ok  { color:var(--correct); }
-.feedback.bad { color:var(--wrong); }
-
-/* end */
-.end-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem 1.5rem; width:100%; text-align:center; display:flex; flex-direction:column; align-items:center; gap:1rem; animation:fadeIn .4s ease; }
-.end-score { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--gold); }
-.words-review { width:100%; display:flex; flex-direction:column; gap:.4rem; margin-top:.5rem; }
-.review-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.5rem .9rem; font-size:.85rem; cursor:pointer; transition:border-color .15s; }
-.review-item:hover { border-color:var(--gold); }
-.review-item .rword { font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); }
-.review-item .rstatus { font-size:.7rem; font-family:'Space Mono',monospace; }
-.rstatus.ok   { color:var(--correct); }
-.rstatus.bad  { color:var(--wrong); }
-.rstatus.skip { color:#b8860b; }
-
-.lb-section { width:100%; max-width:520px; padding:0 1rem 2.5rem; }
-
-/* Gentle blink on inactive mode tabs to draw attention */
-@keyframes modePulse {
-  0%,100% { opacity:1; }
-  50%      { opacity:.55; }
-}
-.diff-tab:not(.active), .mode-tab:not(.active) {
-  animation: modePulse 2.8s ease-in-out infinite;
-}
-.diff-tab:not(.active):hover, .mode-tab:not(.active):hover {
-  animation: none;
-  opacity: 1;
-}
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.eg-input.is-wrong { animation: shake .35s; }
+.eg-input.is-correct { border-color: var(--eg-green); }
 </style>
 </head>
 <body>
-<nav class="site-nav">
-  <a href="index.html" class="back">← Games</a>
-  <span class="game-title">✍️ SpellIt!</span>
-  <span></span>
-</nav>
+
+<header class="eg-header">
+  <a href="index.html" class="eg-eyebrow" style="color:var(--eg-ink-muted);">← All games</a>
+  <span style="font-size:16px; font-weight:900; font-stretch:112%; letter-spacing:.04em; text-transform:uppercase;">SpellIt!</span>
+</header>
 
 <main>
-  <!-- Start screen — shown before the player has chosen to begin -->
-  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <div class="diff-tabs">
-      <button class="diff-tab active" id="tabE" onclick="previewDiff('easy')">Easy</button>
-      <button class="diff-tab"        id="tabH" onclick="previewDiff('hard')">Hard</button>
+  <!-- Start screen -->
+  <div id="startScreen">
+    <div class="eg-grid" style="width:100%;">
+      <button type="button" class="eg-modecard is-selected" id="tabE" onclick="previewDiff('easy')">
+        <span class="eg-eyebrow">Mode 01</span>
+        <span class="eg-h4">Easy</span>
+        <span class="eg-body--sm">Common words that trip people up.</span>
+      </button>
+      <button type="button" class="eg-modecard" id="tabH" onclick="previewDiff('hard')">
+        <span class="eg-eyebrow">Mode 02</span>
+        <span class="eg-h4">Hard</span>
+        <span class="eg-body--sm">Longer, trickier words.</span>
+      </button>
     </div>
-    <div class="rules-box" style="font-size:.8rem">
-      <span id="rulesText">Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).</span>
+    <div class="eg-card" style="width:100%;">
+      <span id="rulesText" class="eg-body--sm">Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).</span>
     </div>
-    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
+    <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Game UI -->
-  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <div class="hud">
-      <div class="diff-tabs">
-        <button class="diff-tab active" id="tabEGame" onclick="setDiff('easy')">Easy</button>
-        <button class="diff-tab"        id="tabHGame" onclick="setDiff('hard')">Hard</button>
+  <div id="gameUI" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:10px;">
+      <div class="eg-pilltabs">
+        <button type="button" class="eg-pilltab active" id="tabEGame" onclick="setDiff('easy')">Easy</button>
+        <button type="button" class="eg-pilltab" id="tabHGame" onclick="setDiff('hard')">Hard</button>
       </div>
-      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-      <div class="hud-pill"><div class="val" id="streakVal">🔥0</div><div class="lbl">Streak</div></div>
-      <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
+      <div class="sp-dots" id="dots"></div>
     </div>
 
-    <div class="dots" id="dots"></div>
-
-    <div class="q-card" id="qCard">
-      <div class="q-meta" id="qMeta">Word 1 of 8</div>
-      <div class="definition" id="defText"></div>
-      <div class="letter-hint" id="letterHint"></div>
-      <div class="spell-wrap">
-        <input class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="TYPE HERE" maxlength="22"/>
-        <button class="btn-primary" onclick="checkSpelling()">✓</button>
-      </div>
-      <div class="hint-box" id="hintBox">Hint not revealed yet</div>
-      <div class="hint-row">
-        <button class="btn-ghost" id="hint1Btn" onclick="showHint1()">💡 Hint (−3 pts)</button>
-        <button class="btn-ghost" id="hint2Btn" onclick="showHint2()">🔍 Extra hint (−5 pts, once only)</button>
-        <button class="btn-ghost" id="skipBtn"  onclick="skipWord()">⏭ Skip (−8 pts)</button>
-        <button class="btn-ghost" id="endGameBtn" onclick="confirmEndGame()" style="display:none">🏁 End game</button>
-      </div>
-      <div class="feedback" id="feedback"></div>
+    <div class="eg-hud" style="width:100%">
+      <div class="eg-stat"><div class="eg-stat__label">Score</div><div class="eg-stat__value" id="scoreVal">0</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Streak</div><div class="eg-stat__value eg-stat__value--streak" id="streakVal">0</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Skips</div><div class="eg-stat__value" id="skipsVal">3</div></div>
     </div>
+
+    <div class="eg-prompt" id="qCard">
+      <div id="qMeta">Word 1 of 8</div>
+      <div id="defText"></div>
+      <div id="letterHint"></div>
+    </div>
+
+    <div class="sp-spell-wrap">
+      <input class="eg-input" id="spellInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="TYPE HERE" maxlength="22" style="text-align:center;letter-spacing:.1em;text-transform:uppercase;"/>
+      <button type="button" class="eg-btn eg-btn--primary eg-btn--sm" onclick="checkSpelling()">→</button>
+    </div>
+
+    <div class="sp-hint-box" id="hintBox">Click a hint button below to reveal</div>
+
+    <div class="sp-actions">
+      <button type="button" class="eg-btn eg-btn--ghost" id="hint1Btn" onclick="showHint1()">Hint (−3 pts)</button>
+      <button type="button" class="eg-btn eg-btn--ghost" id="hint2Btn" onclick="showHint2()">Extra hint (−5 pts)</button>
+      <button type="button" class="eg-btn eg-btn--ghost" id="skipBtn"  onclick="skipWord()">Skip (−8 pts)</button>
+      <button type="button" class="eg-btn eg-btn--ghost" id="endGameBtn" onclick="confirmEndGame()" style="display:none">End game</button>
+    </div>
+
+    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
   </div>
 
-  <div class="end-card" id="endCard" style="display:none">
-    <div class="eyebrow">Round complete</div>
-    <div class="end-score" id="endScore"></div>
-    <p style="color:var(--muted);font-size:.88rem" id="endMsg"></p>
-    <div class="words-review" id="wordsReview"></div>
-    <div id="submitArea" style="width:100%">
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+  <!-- End card -->
+  <div id="endCard" style="display:none">
+    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;">Round complete</span>
+      <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
+      <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
+    </div>
+    <div class="sp-review-grid" id="wordsReview"></div>
+    <div id="submitArea" style="width:100%;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem">
-      <button class="btn-ghost" onclick="restartGame()">Play again</button>
-      <button class="btn-ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="switchLabel"></span></button>
-      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    <div class="sp-actions">
+      <button type="button" class="eg-btn eg-btn--ghost" onclick="restartGame()">Play again</button>
+      <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="switchLabel" style="margin-left:2px;"></span></button>
+      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
     </div>
   </div>
 </main>
 
-<div class="lb-section">
-  <div class="lb-wrap">
-    <h2>🏆 Leaderboard</h2>
-    <div class="diff-tabs" style="margin-bottom:.75rem">
-      <button class="diff-tab active" id="lbTab_spellit_easy" onclick="switchLb_spellit('easy')">Easy</button>
-      <button class="diff-tab"        id="lbTab_spellit_hard" onclick="switchLb_spellit('hard')">Hard</button>
+<div class="lb-section" style="max-width:640px; margin:0 auto; width:100%; padding:0 0 48px;">
+  <div class="eg-section-head" style="margin-top:0;">
+    <h2 class="eg-h2">Leaderboard</h2>
+    <div class="eg-pilltabs">
+      <button type="button" class="eg-pilltab active" id="lbTab_spellit_easy" onclick="switchLb_spellit('easy')">Easy</button>
+      <button type="button" class="eg-pilltab" id="lbTab_spellit_hard" onclick="switchLb_spellit('hard')">Hard</button>
     </div>
-    <table class="lb-table">
-      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-      <tbody id="lbBody"></tbody>
-    </table>
   </div>
+  <table class="eg-lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"></tbody>
+  </table>
 </div>
+
+<footer class="eg-footer" style="max-width:640px; margin:0 auto;">
+  <span>Made with care by Kris · for Kris's students</span>
+  <span style="font-weight:700; letter-spacing:.18em; text-transform:uppercase;">English Games</span>
+</footer>
 
 <script src="shared.js"></script>
 <script>
@@ -623,8 +619,6 @@ const HARD_WORDS = [
    hint1:'Contains -<span class="hl">quiv</span>- in the middle',          hint2:'unequivoc-<span class="hl">ally</span> (unequivocal → unequivocally)', ex:'She stated unequivocally that she would not resign.'},
 ];
 
-
-
 const ROUND_SIZE = 8;
 let diff = 'easy', wordBank = EASY_WORDS;
 let roundWords = [], current = 0, score = 0, streak = 0, skipsLeft = 3, extraHintUsed = false, roundEnded = false;
@@ -639,8 +633,8 @@ const RULES_BY_DIFF_SPELLIT = {
 function previewDiff(d) {
   diff = d;
   wordBank = d === 'easy' ? EASY_WORDS : HARD_WORDS;
-  document.getElementById('tabE').classList.toggle('active', d==='easy');
-  document.getElementById('tabH').classList.toggle('active', d==='hard');
+  document.getElementById('tabE').classList.toggle('is-selected', d==='easy');
+  document.getElementById('tabH').classList.toggle('is-selected', d==='hard');
   const rulesText = document.getElementById('rulesText');
   if (rulesText) rulesText.innerHTML = RULES_BY_DIFF_SPELLIT[d];
 }
@@ -668,9 +662,9 @@ function initRound() {
   roundWords = indices.map(i => wordBank[i]);
   current = 0; score = 0; streak = 0; skipsLeft = 3; extraHintUsed = false; results = []; roundEnded = false;
   document.getElementById('scoreVal').textContent  = 0;
-  document.getElementById('streakVal').textContent = '🔥0';
+  document.getElementById('streakVal').textContent = 0;
   document.getElementById('skipsVal').textContent  = 3;
-  document.getElementById('qCard').style.display   = 'flex';
+  document.getElementById('qCard').style.display   = '';
   document.getElementById('endCard').style.display = 'none';
   buildDots(); loadWord();
   renderLeaderboard('spellit_' + diff, 'lbBody');
@@ -679,7 +673,7 @@ function initRound() {
 function buildDots() {
   const el = document.getElementById('dots'); el.innerHTML = '';
   for (let i=0;i<ROUND_SIZE;i++) {
-    const d = document.createElement('div'); d.className='dot'; d.id='dot'+i; el.appendChild(d);
+    const d = document.createElement('div'); d.className='sp-dot'; d.id='dot'+i; el.appendChild(d);
   }
 }
 
@@ -689,12 +683,12 @@ function loadWord() {
   document.getElementById('defText').textContent = w.def;
   document.getElementById('letterHint').textContent = `${w.word.length} letters`;
   document.getElementById('spellInput').value = '';
-  document.getElementById('spellInput').className = 'spell-input';
+  document.getElementById('spellInput').className = 'eg-input';
   document.getElementById('spellInput').disabled = false;
   document.getElementById('hintBox').textContent = 'Click a hint button below to reveal';
   document.getElementById('hintBox').classList.remove('revealed');
   document.getElementById('feedback').textContent = '';
-  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').className = 'eg-body--sm';
   document.getElementById('hint1Btn').style.display = 'inline-block';
   document.getElementById('hint2Btn').style.display = extraHintUsed ? 'none' : 'inline-block';
   document.getElementById('skipBtn').style.display  = skipsLeft > 0 ? 'inline-block' : 'none';
@@ -737,8 +731,8 @@ function skipWord() {
   streak = 0;
   document.getElementById('skipsVal').textContent = skipsLeft;
   document.getElementById('scoreVal').textContent = score;
-  document.getElementById('streakVal').textContent = '🔥' + streak;
-  document.getElementById('dot'+current).className = 'dot skip';
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('dot'+current).className = 'sp-dot skip';
   results.push({word: roundWords[current].word, def: roundWords[current].def, ex: roundWords[current].ex, status:'skip', pts:-8});
   advanceWord();
 }
@@ -754,7 +748,7 @@ function checkSpelling() {
   attempts++;
 
   if (guess === target) {
-    inp.className = 'spell-input ok';
+    inp.className = 'eg-input is-correct';
     let pts = 15;
     if (h1Shown) pts -= 3;
     if (h2Shown) pts -= 5;
@@ -762,30 +756,33 @@ function checkSpelling() {
     pts = Math.max(2, pts);
     score += pts; streak++;
     document.getElementById('scoreVal').textContent  = score;
-    document.getElementById('streakVal').textContent = '🔥' + streak;
+    document.getElementById('streakVal').textContent = streak;
     document.getElementById('feedback').textContent  = `✓ Correct! +${pts} pts`;
-    document.getElementById('feedback').className    = 'feedback ok';
-    document.getElementById('dot'+current).className = 'dot done';
+    document.getElementById('feedback').className    = 'eg-body--sm';
+    document.getElementById('feedback').style.color  = 'var(--eg-green-light)';
+    document.getElementById('dot'+current).className = 'sp-dot done';
     inp.disabled = true;
     results.push({word: target, def: roundWords[current].def, ex: roundWords[current].ex, status:'correct', pts});
     setTimeout(advanceWord, 900);
   } else {
-    inp.className = 'spell-input bad';
+    inp.className = 'eg-input is-wrong';
     streak = 0;
-    document.getElementById('streakVal').textContent = '🔥0';
+    document.getElementById('streakVal').textContent = 0;
     if (attempts >= 3) {
       score = Math.max(0, score - 2);
       document.getElementById('scoreVal').textContent = score;
       document.getElementById('feedback').textContent = `✗ The answer was: ${roundWords[current].word}`;
-      document.getElementById('feedback').className   = 'feedback bad';
-      document.getElementById('dot'+current).className = 'dot wrong';
+      document.getElementById('feedback').className   = 'eg-body--sm';
+      document.getElementById('feedback').style.color = 'var(--eg-red)';
+      document.getElementById('dot'+current).className = 'sp-dot wrong';
       inp.disabled = true;
       results.push({word: target, def: roundWords[current].def, ex: roundWords[current].ex, status:'wrong', pts:0});
       setTimeout(advanceWord, 1400);
     } else {
       document.getElementById('feedback').textContent = `✗ Try again (${attempts}/3)`;
-      document.getElementById('feedback').className   = 'feedback bad';
-      setTimeout(() => { inp.className='spell-input'; inp.value=''; inp.focus(); }, 400);
+      document.getElementById('feedback').className   = 'eg-body--sm';
+      document.getElementById('feedback').style.color = 'var(--eg-red)';
+      setTimeout(() => { inp.className='eg-input'; inp.value=''; inp.focus(); }, 400);
     }
   }
 }
@@ -807,15 +804,15 @@ function endRound() {
   const submitAreaEl = document.getElementById('submitArea');
   if (submitAreaEl) {
     submitAreaEl.innerHTML = `
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" onclick="doSubmit()">Add to leaderboard</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
   }
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('endScore').textContent  = score + ' pts';
   const maxPts = ROUND_SIZE * 15;
-  document.getElementById('endMsg').textContent = score >= maxPts * .8 ? '🎉 Outstanding spelling!' : score >= maxPts * .5 ? '👏 Solid effort!' : 'Keep at it — spelling improves with practice!';
+  document.getElementById('endMsg').textContent = score >= maxPts * .8 ? 'Outstanding spelling!' : score >= maxPts * .5 ? 'Solid effort!' : 'Keep at it — spelling improves with practice!';
   document.getElementById('endCard').dataset.score = score;
   const sl = document.getElementById('switchLabel');
   if(sl) sl.textContent = diff==='easy' ? 'Hard' : 'Easy';
@@ -825,8 +822,8 @@ function endRound() {
   const rev = document.getElementById('wordsReview'); rev.innerHTML = '';
   results.forEach(r => {
     const el = document.createElement('div');
-    el.className = 'review-item';
-    el.innerHTML = `<span class="rword">${r.word}</span><span class="rstatus ${r.status}">${r.status === 'correct' ? `+${r.pts} pts` : r.status === 'skip' ? 'skipped' : 'missed'}</span>`;
+    el.className = 'sp-review-item';
+    el.innerHTML = `<span class="sp-review-word">${r.word}</span><span class="sp-review-status ${r.status}">${r.status === 'correct' ? `+${r.pts} pts` : r.status === 'skip' ? 'skipped' : 'missed'}</span>`;
     el.addEventListener('click', () => showLocalDefModal(r.word, r.def || 'No definition available.', r.ex));
     rev.appendChild(el);
   });
