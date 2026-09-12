@@ -1775,7 +1775,13 @@ function endGame() {
       chip.addEventListener('click', () => showPhrasalModal(m.label, m.def, m.ex));
       missedEl.appendChild(chip);
     });
-  } else { missedTitle.textContent = ''; }
+  } else {
+    missedTitle.textContent = 'Perfect round';
+    const msg = document.createElement('p');
+    msg.className = 'eg-body--sm'; msg.style.color = 'var(--eg-green-light)'; msg.style.margin = '0';
+    msg.textContent = 'You found every phrasal verb — nice work!';
+    missedEl.appendChild(msg);
+  }
 
   document.getElementById('submitArea').dataset.score = finalScore;
   // Show decision panel (continue or stop), hide submit form until player decides
