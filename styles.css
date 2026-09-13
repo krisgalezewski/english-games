@@ -30,10 +30,11 @@
   --eg-gold:      #8A6510;
 
   /* Accent tints (labels/icons on DARK cards only — never as tile bg) */
-  --eg-teal-light:  #45A89B;
-  --eg-green-light: #7FB08D;
-  --eg-gold-light:  #D9A520;
-  --eg-rose:        #CF4F66;
+  --eg-teal-light:      #45A89B;
+  --eg-teal-deep-light: #4FA3B8;  /* tint of --eg-teal-deep, for VerbSprint's tile */
+  --eg-green-light:     #7FB08D;
+  --eg-gold-light:      #D9A520;
+  --eg-rose:            #CF4F66;
 
   /* Artwork wells: darkened version of the parent tile colour */
   --eg-well-teal-deep: #0A333F;
@@ -144,13 +145,16 @@ a:hover { color: #FFFFFF; }
    sibling sites (Lens, Quiz) next to them. Selectors are bumped a notch
    past ".eg-nav a" (two classes beat one class + one type) so they don't
    get silently overridden by it the way the old "Game of the week" button
-   was. */
+   was. Each link sets its own --eg-nav-accent inline (see index.html),
+   picked from that section's own tile artwork, so the underline (and the
+   hover colour) differs per section instead of being one flat colour. */
 .eg-nav .eg-nav-cat {
   color: var(--eg-ink); font-weight:800;
-  border-bottom:2px solid var(--eg-gold-light); padding-bottom:4px;
+  border-bottom:2px solid var(--eg-nav-accent, var(--eg-gold-light));
+  padding-bottom:4px;
   transition: color var(--eg-transition), border-color var(--eg-transition);
 }
-.eg-nav .eg-nav-cat:hover { color: var(--eg-gold-light); }
+.eg-nav .eg-nav-cat:hover { color: var(--eg-nav-accent, var(--eg-gold-light)); }
 
 /* Lens / Quiz — links out to the sibling sites, deliberately quieter than
    this site's own section links above (mirrors how English Lens's own nav
