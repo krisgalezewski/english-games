@@ -72,11 +72,31 @@ async function handleScoreSubmit(game, score, nameInputId, submitAreaId, lbTbody
   const input = document.getElementById(nameInputId);
   const name = input ? input.value.trim() : '';
   if (!name) { if(input) input.focus(); return; }
-  const ok = await submitScore(game, name, score);
   const area = document.getElementById(submitAreaId);
-  if (area) area.innerHTML = ok
-    ? `<p class="eyebrow" style="color:var(--correct)">✓ Score submitted!</p>`
-    : `<p class="eyebrow" style="color:var(--wrong)">✗ Submission failed — check your connection</p>`;
+  // Guard against double-submission (rapid double-click/double-tap firing
+  // this twice before the first request resolves, which would otherwise
+  // post the same score to the leaderboard more than once).
+  const controls = area ? [...area.querySelectorAll('button, input')] : [];
+  if (controls.some(el => el.disabled)) return; // a submit is already in flight
+  controls.forEach(el => el.disabled = true);
+  const ok = await submitScore(game, name, score);
+  if (area) {
+    if (ok) {
+      area.innerHTML = `<p class="eg-eyebrow" style="color:var(--correct)">✓ Score submitted!</p>`;
+    } else {
+      // Keep the name + button so the player can retry instead of losing
+      // their input on a transient network failure.
+      controls.forEach(el => el.disabled = false);
+      let msg = area.querySelector('.submit-error-msg');
+      if (!msg) {
+        msg = document.createElement('p');
+        msg.className = 'eg-eyebrow submit-error-msg';
+        msg.style.cssText = 'color:var(--wrong);width:100%;margin-top:6px;';
+        area.appendChild(msg);
+      }
+      msg.textContent = '✗ Submission failed — check your connection';
+    }
+  }
   renderLeaderboard(game, lbTbodyId);
 }
 

@@ -197,6 +197,7 @@ body {
       <input id="nameInput" class="eg-input" placeholder="Your call sign" maxlength="20" style="flex:1;min-width:120px;"/>
       <button class="eg-btn eg-btn--sm eg-btn--primary" type="button" id="submitBtn">SUBMIT</button>
     </div>
+    <p id="submitMsg" class="eg-eyebrow" style="min-height:1.2em;margin:0 0 8px;"></p>
     <table class="eg-lb-table">
       <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
       <tbody id="lbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
@@ -1052,9 +1053,22 @@ function showStart(){
 }
 
 document.getElementById('submitBtn').addEventListener('click',async()=>{
-  const name=document.getElementById('nameInput').value.trim();if(!name)return;
-  const ok=await window.submitScore('englishace',name,score);
-  if(ok){document.getElementById('nameInput').value='';renderLeaderboard('englishace','lbBody');}
+  const btn = document.getElementById('submitBtn');
+  const inp = document.getElementById('nameInput');
+  const msg = document.getElementById('submitMsg');
+  const name = inp.value.trim();
+  if(!name)return;
+  if (btn.disabled) return; // a submit is already in flight — ignore rapid double-click
+  btn.disabled = true; inp.disabled = true;
+  const ok = await window.submitScore('englishace',name,score);
+  if(ok){
+    inp.value='';
+    if (msg) { msg.textContent = '✓ Score submitted!'; msg.style.color = 'var(--correct)'; }
+    renderLeaderboard('englishace','lbBody');
+  } else {
+    if (msg) { msg.textContent = '✗ Submission failed — check your connection'; msg.style.color = 'var(--wrong)'; }
+  }
+  btn.disabled = false; inp.disabled = false;
 });
 
 // ═══════════════════════════════════════════════════════════════════

@@ -169,8 +169,9 @@ body { overflow:hidden; background:var(--eg-bg); }
   <p class="eg-body--sm" style="text-align:center;max-width:300px" id="endMsg"></p>
   <div style="display:flex; gap:10px; flex-wrap:wrap; width:100%;max-width:420px;">
     <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
-    <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Leaderboard</button>
+    <button type="button" id="wrSubmitBtn" class="eg-btn eg-btn--primary" onclick="doSubmit()">Leaderboard</button>
   </div>
+  <p id="wrSubmitMsg" class="eg-eyebrow" style="width:100%;text-align:center;min-height:1.2em;"></p>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
     <button class="eg-btn eg-btn--primary"  onclick="startGame()">Play again</button>
     <button class="eg-btn eg-btn--ghost"    onclick="switchEndDiff()">Switch to <span id="switchDiffLabel">Hard</span></button>
@@ -1053,10 +1054,22 @@ function switchEndDiff(){
 }
 
 async function doSubmit(){
-  const name=document.getElementById('nameInput').value.trim();
+  const inp  = document.getElementById('nameInput');
+  const btn  = document.getElementById('wrSubmitBtn');
+  const msg  = document.getElementById('wrSubmitMsg');
+  const name = inp.value.trim();
   if(!name)return;
-  const ok=await window.submitScore('affixrunner_'+difficulty,name,score);
-  if(ok){document.getElementById('nameInput').value='';renderLeaderboard('affixrunner_'+difficulty,'lbBody');}
+  if (btn.disabled) return; // a submit is already in flight — ignore rapid double-click
+  btn.disabled = true; inp.disabled = true;
+  const ok = await window.submitScore('affixrunner_'+difficulty,name,score);
+  if(ok){
+    inp.value='';
+    if (msg) { msg.textContent = '✓ Score submitted!'; msg.style.color = 'var(--correct)'; }
+    renderLeaderboard('affixrunner_'+difficulty,'lbBody');
+  } else {
+    if (msg) { msg.textContent = '✗ Submission failed — check your connection'; msg.style.color = 'var(--wrong)'; }
+  }
+  btn.disabled = false; inp.disabled = false;
 }
 
 // ════════════════════════════════════════════════════════════════════
