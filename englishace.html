@@ -147,12 +147,14 @@ body {
 <!-- Always-visible top nav -->
 <nav id="topNav">
   <a href="index.html">← All games</a>
-  <span class="nav-title">English Ace</span>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-    <button id="pauseBtn" title="Pause — Space on keyboard · Double-tap on mobile">⏸ PAUSE</button>
-    <span id="pauseSubHint" style="display:none;font-size:.45rem;color:var(--eg-ink-faint);letter-spacing:.08em;white-space:nowrap"></span>
+  <div style="display:flex;align-items:center;gap:14px">
+    <span class="nav-title">English Ace</span>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+      <button id="pauseBtn" title="Pause — Space on keyboard · Double-tap on mobile">⏸ PAUSE</button>
+      <span id="pauseSubHint" style="display:none;font-size:.45rem;color:var(--eg-ink-faint);letter-spacing:.08em;white-space:nowrap"></span>
+    </div>
+    <button id="muteBtn" title="Music volume">🔊 100%</button>
   </div>
-  <button id="muteBtn" title="Music volume">🔊 100%</button>
 </nav>
 
 <div id="pauseOverlay">

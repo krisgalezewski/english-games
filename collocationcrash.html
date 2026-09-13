@@ -15,6 +15,12 @@
 main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-direction:column; gap:18px; align-items:center; }
 #startScreen, #gameUI, #endCard { width:100%; display:flex; flex-direction:column; align-items:center; gap:18px; }
 
+/* The collocation icon's bold strokes fill almost the whole viewBox with
+   little negative space, so at hero size it reads as a solid block rather
+   than an icon on a background — scale it down a touch within its well to
+   match the lighter, airier feel of the other games' hero artwork. */
+#startScreen .eg-art svg { width:78%; margin:0 auto; }
+
 #qCard { width:100%; }
 #qInstruction { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--eg-gold-deep,#8A6510); }
 #qNoun { margin-top:14px; font-size:clamp(26px,3.6vw,38px); line-height:1.2; font-weight:900; font-stretch:110%; text-wrap:balance; }
