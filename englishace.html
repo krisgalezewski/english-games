@@ -22,10 +22,16 @@ body {
   position:fixed; top:48px; left:0;
 }
 
-/* ── Overlay screens ── */
+/* ── Overlay screens ──
+   justify-content uses the `safe` keyword: plain `center` on a scrollable
+   flex container clips the top of any content taller than the viewport
+   (the browser centers first, then can't scroll into negative territory
+   to reach the overflow) — `safe center` falls back to start-alignment
+   once content overflows, so tall screens stay fully reachable by
+   scrolling while short ones still centre normally. */
 .screen {
   position:fixed; inset:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
+  align-items:center; justify-content:safe center;
   gap:1rem; padding:5rem 1.5rem 2rem; z-index:100;
   background:rgba(10,10,10,.93); backdrop-filter:blur(6px);
   overflow-y:auto;
