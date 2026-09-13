@@ -138,6 +138,25 @@ a:hover { color: #FFFFFF; }
 .eg-nav a { color: var(--eg-ink-muted); }
 .eg-nav a:hover { color: var(--eg-ink); }
 
+/* Fast Lane / Arcade / Workshop / Long Game / Leaderboard are this site's
+   own sections, so they should read as the primary nav — bright, bold and
+   underlined — rather than blending in with the plainer links out to the
+   sibling sites (Lens, Quiz) next to them. Selectors are bumped a notch
+   past ".eg-nav a" (two classes beat one class + one type) so they don't
+   get silently overridden by it the way the old "Game of the week" button
+   was. */
+.eg-nav .eg-nav-cat {
+  color: var(--eg-ink); font-weight:800;
+  border-bottom:2px solid var(--eg-gold-light); padding-bottom:4px;
+  transition: color var(--eg-transition), border-color var(--eg-transition);
+}
+.eg-nav .eg-nav-cat:hover { color: var(--eg-gold-light); }
+
+/* Lens / Quiz — links out to the sibling sites, deliberately quieter than
+   this site's own section links above (mirrors how English Lens's own nav
+   keeps its "Games"/"Quiz" cross-links smaller and muted too). */
+.eg-nav .eg-nav-quiet { font-size:11px; letter-spacing:.14em; }
+
 .eg-footer {
   margin-top:40px; padding:22px 6px 0; border-top:1px solid #1C1C1C;
   display:flex; flex-wrap:wrap; gap:10px 24px; justify-content:space-between;
