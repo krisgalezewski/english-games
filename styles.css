@@ -411,3 +411,12 @@ a:hover { color: #FFFFFF; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+
+/* --- Accessibility -------------------------------------------------------- */
+/* Visually hidden but still announced by screen readers. Use for an
+   aria-live status region that reports answer feedback (correct/wrong,
+   round results) without adding visible clutter to the bento layout. */
+.sr-only {
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}

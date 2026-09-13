@@ -53,6 +53,8 @@ main { max-width:820px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
   <span style="font-size:16px; font-weight:900; font-stretch:112%; letter-spacing:.04em; text-transform:uppercase;">PhrasalBlitz</span>
 </header>
 
+<div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
 <main>
 <!-- INTRO / MODE SELECT -->
 <div id="phase-intro">
@@ -597,7 +599,8 @@ const VERBS = [
     {p:'on at',   def:'To nag or pester someone repeatedly.',               ex:'She kept on at him until he agreed.'},
     {p:'in',  def:'To confine someone indoors; or to maintain a supply.',  ex:'She kept herself in coffee by buying in bulk.'},
     {p:'in with',  def:'To stay on good terms with someone.',  ex:'It\'s worth keeping in with the boss if you want a promotion.'},
-  
+    {p:'off',  def:'To stay away from something, or to avoid a topic or substance.',  ex:'Keep off the grass, please.'},
+
   ]},
   { verb:'cut', pairs:[
     {p:'out',    def:'To remove, or to stop an engine, or to stop doing something.',  ex:'My doctor told me to cut out sugar.'},
@@ -610,8 +613,8 @@ const VERBS = [
     {p:'out of',  def:'To remove something from a larger piece by cutting; or to exclude.',  ex:'She cut the article out of the newspaper.'},
     {p:'back on',  def:'To reduce the amount of something.',  ex:'The doctor told him to cut back on alcohol.'},
     {p:'down on',  def:'To reduce the amount of something you do or consume.',  ex:'She\'s trying to cut down on the amount of sugar she eats.'},
-  
-  
+    {p:'through',  def:'To take a shortcut through a place, or to deal with something effectively despite confusion or difficulty.',  ex:'Her explanation cut through all the confusion.'},
+
   ]},
   { verb:'pull', pairs:[
     {p:'out',      def:'To withdraw from a deal or place.',                  ex:'They pulled out of the agreement.'},
@@ -1282,8 +1285,13 @@ const VERBS = [
   ]},
 ];
 
-// All possible particles used across all verbs
-const ALL_PARTICLES = ['up','down','off','on','out','in','back','away','over','through','into','across','forward','after','apart','by','around','along','about','out of'];
+// All possible particles used across all verbs — derived from the data itself
+// (rather than a separately hand-maintained list) so that every particle that
+// actually appears anywhere in VERBS is available as a distractor in Mode 1,
+// including multi-word ones like "up with" or "out of". A hand-maintained
+// list silently drifts out of sync as verbs are added, shrinking the
+// distractor pool without affecting which answers are accepted.
+const ALL_PARTICLES = [...new Set(VERBS.flatMap(v => v.pairs.map(p => p.p)))];
 
 const ALL_VERBS_FOR_MODE3 = VERBS.map(v => v.verb);
 
@@ -1491,10 +1499,12 @@ function clickParticle(p, btn, correctSet) {
     addFoundChip(currentVerb.verb + ' ' + p, p);
     finalScore += 10;
     document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
+    announce('Correct: ' + currentVerb.verb + ' ' + p);
     if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
     btn.classList.add('is-wrong');
     penalise();
+    announce('Incorrect — 5 seconds penalty');
     setTimeout(() => btn.classList.remove('is-wrong'), 600);
   }
 }
@@ -1532,10 +1542,12 @@ function clickVerb(v, btn, correctSet) {
     addFoundChipVerb(v + ' ' + currentParticle, v + ' ' + currentParticle, pairObj || {});
     finalScore += 10;
     document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
+    announce('Correct: ' + v + ' ' + currentParticle);
     if (found.size === correctSet.size) { clearInterval(timer); setTimeout(endGame, 500); }
   } else {
     btn.classList.add('is-wrong');
     penalise();
+    announce('Incorrect — 5 seconds penalty');
     setTimeout(() => btn.classList.remove('is-wrong'), 600);
   }
 }
@@ -1576,12 +1588,15 @@ function submitTyped() {
       addFoundChip(currentVerb.verb + ' ' + val, val);
       finalScore += 10;
       document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
+      announce('Correct: ' + currentVerb.verb + ' ' + val);
       if (found.size === currentVerb.pairs.length) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
       inp.className = 'eg-input is-wrong';
+      announce('Already found');
     } else {
       inp.className = 'eg-input is-wrong';
       penalise();
+      announce('Incorrect — 5 seconds penalty');
     }
   } else {
     // Typing verbs for currentParticle
@@ -1594,12 +1609,15 @@ function submitTyped() {
       addFoundChipVerb(val + ' ' + currentParticle, val + ' ' + currentParticle, pairObj);
       finalScore += 10;
       document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1;
+      announce('Correct: ' + val + ' ' + currentParticle);
       if (found.size === correctVerbs.size) { clearInterval(timer); setTimeout(endGame, 500); }
     } else if (found.has(val)) {
       inp.className = 'eg-input is-wrong';
+      announce('Already found');
     } else {
       inp.className = 'eg-input is-wrong';
       penalise();
+      announce('Incorrect — 5 seconds penalty');
     }
   }
   inp.value = '';
@@ -1642,6 +1660,13 @@ function addFoundChipVerb(label, phrasal, pairObj) {
   document.getElementById('foundChips').appendChild(chip);
 }
 
+// Screen-reader announcement for answer feedback — the visual feedback
+// (colour flash, shake animation) has no text equivalent otherwise.
+function announce(msg) {
+  const el = document.getElementById('srStatus');
+  if (el) el.textContent = msg;
+}
+
 function penalise() {
   timeLeft = Math.max(0, timeLeft - 5);
   document.getElementById('timerNum').textContent = timeLeft;
@@ -1657,6 +1682,8 @@ function runTimer() {
   clearInterval(timer);
   updateRing();
   timer = setInterval(() => {
+    // A backgrounded tab must not burn the clock — skip this tick while hidden.
+    if (document.hidden) return;
     timeLeft--;
     document.getElementById('timerNum').textContent = timeLeft;
     updateRing();
@@ -1720,6 +1747,7 @@ function endGame() {
   }
   document.getElementById('resultHeadline').textContent = `${found.size} of ${total} found · ${finalScore} pts`;
   document.getElementById('resultMsg').textContent = found.size === total ? 'Perfect — you got them all!' : found.size >= total/2 ? 'Great effort!' : 'Keep practising — phrasal verbs take time!';
+  announce(`Round complete. ${found.size} of ${total} found. ${finalScore} points.`);
 
   // Found chips in result — copy from foundChips (which already have click handlers)
   const rf = document.getElementById('resultFound');
