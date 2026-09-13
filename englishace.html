@@ -161,6 +161,7 @@ body {
   <div class="pause-title">PAUSED</div>
   <div class="pause-hint" id="resumeHint">Tap ▶ RESUME or double-tap the screen</div>
   <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="togglePause()">▶ RESUME</button>
+  <button class="eg-btn eg-btn--ghost" style="align-self:center" onclick="quitToMenu()">← English Ace menu</button>
 </div>
 
 <!-- Start screen -->
@@ -1096,6 +1097,19 @@ function showStart(){
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   renderLeaderboard('englishace', 'startLbBody');
+}
+
+// Bail out of a paused game straight to the main menu (mirrors endGame()'s
+// UI cleanup, but skips the end screen and doesn't touch the score).
+function quitToMenu(){
+  state='idle';
+  document.getElementById('pauseOverlay').classList.remove('visible');
+  document.getElementById('trackSelector').style.display='none';
+  document.getElementById('pauseBtn').classList.remove('visible');
+  const psh=document.getElementById('pauseSubHint');if(psh)psh.style.display='none';
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  if(audioReady){ switchToMenuMusic(); Tone.getTransport().start(); }
+  showStart();
 }
 
 document.getElementById('submitBtn').addEventListener('click',async()=>{

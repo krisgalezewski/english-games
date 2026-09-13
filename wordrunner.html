@@ -128,6 +128,7 @@ body { overflow:hidden; background:var(--eg-bg); }
     </div>
   </div>
   <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="togglePause()">▶ Resume</button>
+  <button class="eg-btn eg-btn--ghost" style="align-self:center" onclick="quitToMenu()">← Affix Runner menu</button>
 </div>
 
 <!-- START SCREEN -->
@@ -155,9 +156,9 @@ body { overflow:hidden; background:var(--eg-bg); }
 
     <div style="display:flex;flex-direction:column;align-items:flex-start;gap:.4rem">
       <div class="eg-eyebrow eg-eyebrow--on-color" style="font-size:.6rem">Difficulty</div>
-      <div class="eg-pilltabs" style="flex-wrap:wrap;gap:.3rem">
-        <button class="eg-pilltab active" id="diffE" onclick="setDifficulty('easy')">Easy — words coloured</button>
-        <button class="eg-pilltab"        id="diffH" onclick="setDifficulty('hard')">Hard — all same colour</button>
+      <div class="eg-pilltabs" style="display:flex;width:100%;gap:.3rem">
+        <button class="eg-pilltab active" id="diffE" onclick="setDifficulty('easy')" style="flex:1;text-align:center;">Easy — words coloured</button>
+        <button class="eg-pilltab"        id="diffH" onclick="setDifficulty('hard')" style="flex:1;text-align:center;">Hard — all same colour</button>
       </div>
     </div>
 
@@ -1108,6 +1109,18 @@ function showMainMenu(){
   switchStartLb(difficulty); // refresh leaderboard in case a score was just submitted
   // Switch to menu music
   if(audioReady){ scheduleMusic(MENU_TRACK); Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,1); }
+}
+
+// Bail out of a paused game straight to the main menu (mirrors endGame()'s
+// UI cleanup, but skips the end screen and doesn't touch the score).
+function quitToMenu(){
+  state='idle';
+  document.getElementById('pauseOverlay').classList.remove('visible');
+  document.getElementById('pauseBtn').classList.remove('visible');
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  document.getElementById('trackSel').style.display='none';
+  showMainMenu();
+  if(audioReady) Tone.getTransport().start(); // the transport was paused by togglePause()
 }
 
 function switchEndDiff(){
