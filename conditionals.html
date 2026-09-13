@@ -4,252 +4,170 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Conditional Constructor — English Games</title>
-<link rel="stylesheet" href="theme.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
-main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1.1rem; }
-
-.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
-.rules-box strong { color:var(--text); }
+/* Playfield-only CSS — everything colour/type/chrome lives in styles.css. */
+main { max-width:620px; margin:0 auto; padding:8px 0 48px; display:flex; flex-direction:column; align-items:center; gap:18px; }
 
 /* Practice mode button — sits above the scored-mode tabs, clearly distinct */
 .btn-practice {
-  background: transparent;
-  border: 2px solid var(--gold);
-  border-radius: 8px;
-  padding: .55rem 1.4rem;
-  font-family: 'DM Sans', sans-serif;
-  font-size: .88rem;
-  font-weight: 600;
-  color: var(--gold);
-  cursor: pointer;
-  letter-spacing: .02em;
-  transition: background .15s, color .15s;
-  width: 100%;
+  background: transparent; border: 2px solid var(--eg-gold-light); border-radius: var(--eg-r-pill);
+  padding: 13px 24px; font: inherit; font-size:14px; font-weight: 800; letter-spacing:.04em;
+  color: var(--eg-gold-light); cursor: pointer; transition: background .15s; width: 100%;
 }
-.btn-practice:hover { background: var(--gold-dim); }
+.btn-practice:hover { background: rgba(217,165,32,.14); }
 
 /* Practice sub-category cards — one per conditional type */
 .practice-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: .85rem;
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-  cursor: default;
+  background: var(--eg-card); border: 1px solid var(--eg-border); border-radius: var(--eg-r-card);
+  padding: 16px; display: flex; flex-direction: column; gap: 8px; cursor: default;
 }
 .practice-card .pc-type {
-  font-family: 'Space Mono', monospace;
-  font-size: .6rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  font-weight: 700;
-  padding: .2rem .5rem;
-  border-radius: 99px;
-  display: inline-block;
-  width: fit-content;
+  font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+  padding: 4px 10px; border-radius: var(--eg-r-pill); display: inline-block; width: fit-content;
 }
-.practice-card .pc-rule {
-  font-size: .75rem;
-  color: var(--muted);
-  line-height: 1.55;
-  font-style: italic;
-}
-.practice-card .btn-ghost {
-  font-size: .8rem;
-  padding: .4rem .8rem;
-  align-self: flex-start;
-  margin-top: .25rem;
-}
+.practice-card .pc-rule { font-size: 13px; color: var(--eg-ink-dim); line-height: 1.5; font-style: italic; }
+.practice-card .eg-btn--ghost { font-size: 13px; padding: 8px 16px; min-height:0; align-self: flex-start; margin-top: 4px; }
 
-/* Timer */
-.timer-wrap { width:100%; }
-.timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
-.timer-fill  { height:100%; border-radius:99px; transition:width .8s linear, background .4s; }
-.timer-fill.urgent { background:var(--wrong) !important; }
-.timer-row   { display:flex; justify-content:space-between; margin-top:.3rem; }
-.timer-row span { font-family:'Space Mono',monospace; font-size:.65rem; color:var(--muted); }
-.timer-val   { font-weight:700; }
-.timer-val.urgent { color:var(--wrong) !important; }
+/* HUD stat used for the timer isn't needed — timer uses eg-progress */
 
-/* HUD */
-.hud { display:flex; gap:.5rem; width:100%; }
-.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .9rem; text-align:center; flex:1; }
-.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
-.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+/* Round dots */
+.dots { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.dot  { width:9px; height:9px; border-radius:50%; background:var(--eg-border-strong); transition:background .3s; }
+.dot.correct { background:var(--eg-green); }
+.dot.wrong   { background:var(--eg-red); }
+.dot.skip    { background:rgba(255,255,255,.2); }
 
-/* Dots */
-.dots { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
-.dot  { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
-
-/* Conditional type colour coding */
+/* Conditional type colour coding — content-semantic, independent of the shared palette */
 :root {
-  --c0: #4caf50;   /* zero  — green */
-  --c1: #2196f3;   /* first — blue */
-  --c2: #ff9800;   /* second — amber */
-  --c3: #e91e63;   /* third — pink/red */
-  --cm32: #9c27b0; /* mixed 3→2 — purple */
-  --cm23: #00bcd4; /* mixed 2→3 — cyan */
+  --c0: #4caf50; --c1: #2196f3; --c2: #ff9800; --c3: #e91e63; --cm32: #9c27b0; --cm23: #00bcd4;
 }
 
-/* Type badge */
+/* Type badge — small colour-coded pill identifying which conditional this is */
 .type-badge {
-  display:inline-block; padding:.2rem .7rem;
-  border-radius:99px; font-family:'Space Mono',monospace;
-  font-size:.62rem; font-weight:700; letter-spacing:.1em;
-  text-transform:uppercase; color:#fff; margin-bottom:.4rem;
+  display:inline-block; padding:4px 12px; border-radius:var(--eg-r-pill);
+  font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff;
 }
 
-/* IF clause card */
-.if-card {
-  width:100%; background:var(--surface); border:1px solid var(--border);
-  border-radius:14px; padding:1.5rem 1.75rem;
-  display:flex; flex-direction:column; align-items:flex-start; gap:.5rem;
-  animation:fadeIn .25s ease;
-}
-.if-label { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
-.if-text  { font-size:1.35rem; font-family:'Playfair Display',serif; font-weight:700; color:var(--text); line-height:1.5; }
+/* IF/THEN sentence sits on the cream eg-prompt ground */
+.if-label { font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#6B665E; margin-bottom:8px; }
+.if-text  { font-size:clamp(20px,2.6vw,26px); font-weight:800; color:var(--eg-ink-on-light); line-height:1.4; text-align:left; }
 
 /* Drop zone */
 .drop-zone {
-  width:100%; min-height:80px;
-  border:2.5px dashed var(--border2); border-radius:12px;
-  background:var(--surface); position:relative;
+  width:100%; min-height:64px; box-sizing:border-box;
+  border:2.5px dashed var(--eg-border-strong); border-radius:var(--eg-r-well);
+  background:var(--eg-card); position:relative;
   display:flex; align-items:center; justify-content:center;
-  transition:border-color .2s, background .2s;
-  padding:.75rem 1rem;
+  transition:border-color .2s, background .2s; padding:14px 18px;
 }
-.drop-zone.drag-over { border-color:var(--gold); background:var(--gold-dim); }
-.drop-zone.correct-drop { border-color:var(--correct) !important; background:var(--correct-dim) !important; animation:pop .35s ease; }
-.drop-zone.wrong-drop   { border-color:var(--wrong)   !important; background:var(--wrong-dim)   !important; animation:shake .35s; }
-.drop-hint { font-family:'Space Mono',monospace; font-size:.72rem; color:var(--muted); letter-spacing:.08em; pointer-events:none; }
-.dropped-text { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--text); text-align:center; line-height:1.5; }
+.drop-zone.drag-over    { border-color:var(--eg-teal-light); background:rgba(69,168,155,.12); }
+.drop-zone.correct-drop { border-color:var(--eg-green) !important; background:rgba(18,99,47,.25) !important; animation:pop .35s ease; }
+.drop-zone.wrong-drop   { border-color:var(--eg-red) !important; background:rgba(150,22,47,.25) !important; animation:shake .35s; }
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.04)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.drop-hint { font-size:12.5px; color:var(--eg-ink-faint); letter-spacing:.06em; pointer-events:none; }
+.dropped-text { font-size:16px; font-weight:800; color:var(--eg-ink); text-align:center; line-height:1.5; }
 
-/* Options grid */
+/* Options grid — draggable/tappable answer clauses, built on .eg-option */
 .options-area { width:100%; }
-.options-label { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
-.options-grid  { display:flex; flex-direction:column; gap:.5rem; }
-
-.option-card {
-  width:100%; background:var(--surface2); border:1.5px solid var(--border2);
-  border-radius:10px; padding:.85rem 1.1rem;
-  font-family:'Playfair Display',serif; font-size:1rem;
-  color:var(--text); cursor:grab; user-select:none;
-  transition:border-color .18s, background .18s, box-shadow .18s; line-height:1.5;
-  position:relative;
-}
-.option-card:hover  { border-color:var(--gold); background:var(--gold-dim); box-shadow:0 4px 16px rgba(212,175,55,.2); }
-.option-card.dragging { opacity:.4; cursor:grabbing; }
-.option-card.selected { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
-.option-card.used     { opacity:.15; pointer-events:none; }
-.option-card.tap-hint { border-color:var(--gold); }
+.eg-option { font-size:16px; font-weight:600; cursor:grab; line-height:1.5; }
+.eg-option.is-dragging { opacity:.4; cursor:grabbing; }
+.eg-option.is-selected { border-color:var(--eg-teal-light); background:rgba(69,168,155,.12); color:var(--eg-teal-light); }
+.eg-option.is-used     { opacity:.15; pointer-events:none; }
 
 /* Feedback panel */
 .feedback-panel {
-  width:100%; background:var(--surface); border:1px solid var(--border);
-  border-radius:12px; padding:1.1rem 1.4rem;
-  display:none; flex-direction:column; gap:.5rem;
-  animation:fadeIn .3s ease;
+  width:100%; background:var(--eg-card); border:1px solid var(--eg-border);
+  border-radius:var(--eg-r-well); padding:18px 22px;
+  display:none; flex-direction:column; gap:8px;
 }
-.fb-type   { font-family:'Space Mono',monospace; font-size:.65rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
-.fb-rule   { font-size:.88rem; color:var(--text); line-height:1.65; }
-.fb-wrong  { font-size:.82rem; color:var(--muted); font-style:italic; }
+.fb-type   { font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+.fb-rule   { font-size:14.5px; color:var(--eg-ink); line-height:1.6; }
+.fb-wrong  { font-size:13px; color:var(--eg-ink-faint); font-style:italic; }
 
-/* End card — inline, non-blocking (matches CollocationCrash/WordChain style) */
-.end-card {
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
-  display:flex; flex-direction:column; align-items:center;
-  gap:1rem; padding:2rem 1.5rem; width:100%;
-  animation:fadeIn .4s ease;
-}
-.end-score { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--gold); }
-.review-grid { display:flex; flex-direction:column; gap:.4rem; width:100%; max-width:500px; max-height:40vh; overflow-y:auto; }
-.review-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.6rem 1rem; cursor:pointer; transition:border-color .15s; }
-.review-item:hover { border-color:var(--gold); }
-.review-item.correct { border-left:3px solid var(--correct); }
-.review-item.wrong   { border-left:3px solid var(--wrong); }
-.review-item.skip    { border-left:3px solid rgba(255,255,255,.2); opacity:.6; }
-.rv-sentence { font-size:.88rem; color:var(--text); line-height:1.6; margin-bottom:.2rem; }
-.rv-tag { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; }
-
-.lb-section { width:100%; max-width:620px; padding:0 1rem 2.5rem; }
-
-/* blink inactive tabs */
-@keyframes modePulse{0%,100%{opacity:1}50%{opacity:.55}}
-.diff-tab:not(.active){ animation:modePulse 2.8s ease-in-out infinite; }
-.diff-tab:not(.active):hover{ animation:none; opacity:1; }
+/* Review grid (round summary) */
+.review-grid { display:flex; flex-direction:column; gap:6px; width:100%; max-width:500px; max-height:40vh; overflow-y:auto; }
+.review-item { background:var(--eg-card); border:1px solid var(--eg-border); border-radius:8px; padding:10px 14px; cursor:pointer; transition:border-color .15s; }
+.review-item:hover { border-color:var(--eg-teal-light); }
+.review-item.correct { border-left:3px solid var(--eg-green); }
+.review-item.wrong   { border-left:3px solid var(--eg-red); }
+.review-item.skip    { border-left:3px solid var(--eg-border-strong); opacity:.6; }
+.rv-sentence { font-size:14px; color:var(--eg-ink); line-height:1.55; margin-bottom:4px; }
+.rv-tag { font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
 </style>
 </head>
 <body>
-<nav class="site-nav">
-  <a href="index.html" class="back">← Games</a>
-  <span class="game-title">🧩 Conditional Constructor</span>
-  <span></span>
-</nav>
+<header class="eg-header">
+  <a href="index.html" class="eg-eyebrow" style="color:var(--eg-ink-muted);">← All games</a>
+  <span style="font-size:16px; font-weight:900; font-stretch:112%; letter-spacing:.04em; text-transform:uppercase;">Conditional Constructor</span>
+</header>
 
 <main>
   <!-- Start screen — shown before the player has chosen to begin -->
-  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:18px;width:100%">
     <!-- Practice button sits above the scored-mode tabs, visually distinct -->
-    <button class="btn-practice" onclick="showPracticeMenu()">🎓 Practice mode</button>
-    <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
-      <button class="diff-tab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
-      <button class="diff-tab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
-      <button class="diff-tab"        id="tabC" onclick="previewDiff('advanced')">Advanced</button>
-      <button class="diff-tab"        id="tabD" onclick="previewDiff('expert')">Expert</button>
+    <button class="btn-practice" onclick="showPracticeMenu()">Practice mode</button>
+    <div class="eg-pilltabs">
+      <button class="eg-pilltab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
+      <button class="eg-pilltab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
+      <button class="eg-pilltab"        id="tabC" onclick="previewDiff('advanced')">Advanced</button>
+      <button class="eg-pilltab"        id="tabD" onclick="previewDiff('expert')">Expert</button>
     </div>
-    <div class="rules-box" style="font-size:.8rem">
-      <span id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong>Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
+    <div class="eg-card" style="width:100%">
+      <span class="eg-body--sm" id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong style="color:var(--eg-ink)">Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
     </div>
-    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
+    <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Practice menu — shown when the player clicks Practice mode -->
-  <div id="practiceMenu" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <div style="display:flex;align-items:center;width:100%;gap:.5rem">
-      <button class="btn-ghost" style="font-size:.8rem;padding:.4rem .8rem" onclick="hidePracticeMenu()">← Back</button>
-      <h2 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin:0;flex:1;text-align:center">Choose a conditional to practise</h2>
+  <div id="practiceMenu" style="display:none;flex-direction:column;align-items:center;gap:18px;width:100%">
+    <div style="display:flex;align-items:center;width:100%;gap:10px">
+      <button class="eg-btn eg-btn--ghost eg-btn--sm" onclick="hidePracticeMenu()">← Back</button>
+      <h2 class="eg-h3" style="margin:0;flex:1;text-align:center;font-size:19px;">Choose a conditional to practise</h2>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;width:100%" id="practiceCards"></div>
+    <div class="eg-grid" style="width:100%" id="practiceCards"></div>
   </div>
 
   <!-- Game UI -->
-  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:18px;width:100%">
     <!-- Difficulty tabs + End game button -->
-    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
-      <div class="diff-tabs" style="flex-wrap:wrap;gap:.3rem">
-        <button class="diff-tab active" id="tabAGame" onclick="setDiff('beginner')">Beginner</button>
-        <button class="diff-tab"        id="tabBGame" onclick="setDiff('intermediate')">Intermediate</button>
-        <button class="diff-tab"        id="tabCGame" onclick="setDiff('advanced')">Advanced</button>
-        <button class="diff-tab"        id="tabDGame" onclick="setDiff('expert')">Expert</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:10px">
+      <div class="eg-pilltabs">
+        <button class="eg-pilltab active" id="tabAGame" onclick="setDiff('beginner')">Beginner</button>
+        <button class="eg-pilltab"        id="tabBGame" onclick="setDiff('intermediate')">Intermediate</button>
+        <button class="eg-pilltab"        id="tabCGame" onclick="setDiff('advanced')">Advanced</button>
+        <button class="eg-pilltab"        id="tabDGame" onclick="setDiff('expert')">Expert</button>
       </div>
-      <button id="endGameBtn" class="btn-ghost" style="font-size:.75rem;padding:.35rem .8rem" onclick="endGameEarly()">✕ End game</button>
+      <button id="endGameBtn" class="eg-btn eg-btn--ghost eg-btn--sm" onclick="endGameEarly()">End game</button>
       <div class="dots" id="dots"></div>
     </div>
 
     <!-- HUD -->
-    <div class="hud">
-      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-      <div class="hud-pill"><div class="val" id="correctVal">0</div><div class="lbl">Correct</div></div>
-      <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+    <div class="eg-hud" style="width:100%">
+      <div class="eg-stat"><div class="eg-stat__label">Score</div><div class="eg-stat__value" id="scoreVal">0</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Correct</div><div class="eg-stat__value" id="correctVal">0</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Streak</div><div class="eg-stat__value eg-stat__value--streak" id="streakVal">0</div></div>
     </div>
 
     <!-- Timer (scored modes) / Practice controls (practice mode) -->
-    <div id="timerArea" class="timer-wrap">
-      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%;background:var(--gold)"></div></div>
-      <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">120s</span></div>
+    <div id="timerArea" style="width:100%">
+      <div class="eg-progress"><div class="eg-progress__bar" id="timerFill" style="width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;"><span class="eg-eyebrow" style="font-size:10px;">Time</span><span class="eg-eyebrow" id="timerVal" style="font-size:10px;color:var(--eg-gold-light);">120s</span></div>
     </div>
-    <div id="practiceBar" style="display:none;width:100%;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:.5rem;background:var(--gold-dim);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:.55rem 1rem;">
-      <span style="font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">🎓 Practice — no time limit</span>
-      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;border-color:var(--gold);color:var(--gold)" onclick="finishPractice(false)">Finish practice ✕</button>
+    <div id="practiceBar" style="display:none;width:100%;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;background:rgba(217,165,32,.14);border:1px solid rgba(217,165,32,.3);border-radius:var(--eg-r-well);padding:12px 16px;">
+      <span class="eg-eyebrow" style="font-size:10.5px;color:var(--eg-gold-light);">Practice — no time limit</span>
+      <button class="eg-btn eg-btn--ghost eg-btn--sm" style="border-color:var(--eg-gold-light);color:var(--eg-gold-light);" onclick="finishPractice(false)">Finish practice</button>
     </div>
 
     <!-- IF clause card -->
-    <div class="if-card" id="ifCard">
-      <div>
+    <div class="eg-prompt" style="width:100%;text-align:left;" id="ifCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div class="if-label" id="taskLabel">Complete the conditional sentence</div>
         <div id="typeBadge"></div>
       </div>
@@ -264,8 +182,8 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 
     <!-- Options -->
     <div class="options-area">
-      <div class="options-label" id="optionsLabel">Choose the correct THEN clause — drag or tap</div>
-      <div class="options-grid" id="optionsGrid"></div>
+      <div class="eg-eyebrow" id="optionsLabel" style="margin-bottom:10px;">Choose the correct THEN clause — drag or tap</div>
+      <div class="eg-options" style="grid-template-columns:1fr;" id="optionsGrid"></div>
     </div>
 
     <!-- Feedback panel (shown after answer) -->
@@ -273,65 +191,70 @@ main { max-width:620px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
       <div id="fbType" class="fb-type"></div>
       <div id="fbRule" class="fb-rule"></div>
       <div id="fbWrong" class="fb-wrong" style="display:none"></div>
-      <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
+      <button class="eg-btn eg-btn--primary eg-btn--sm" style="margin-top:2px;align-self:flex-start" id="nextBtn" onclick="nextQuestion()">Next →</button>
     </div>
   </div>
 
   <!-- Practice summary — shown after completing all 10 practice questions -->
-  <div id="practiceSummary" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <div style="display:flex;align-items:center;width:100%;gap:.5rem">
-      <h2 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin:0;flex:1;text-align:center">Practice complete 🎓</h2>
+  <div id="practiceSummary" style="display:none;flex-direction:column;align-items:center;gap:18px;width:100%">
+    <div style="display:flex;align-items:center;width:100%;gap:10px">
+      <h2 class="eg-h3" style="margin:0;flex:1;text-align:center;font-size:19px;">Practice complete</h2>
     </div>
-    <p style="color:var(--muted);font-size:.85rem;text-align:center;margin:0" id="practiceSummarySubtitle"></p>
+    <p class="eg-body" style="text-align:center;margin:0" id="practiceSummarySubtitle"></p>
     <div class="review-grid" id="practiceReviewGrid" style="max-height:55vh"></div>
     <!-- Feedback panel for practice summary item clicks -->
     <div class="feedback-panel" id="practiceFeedbackPanel" style="display:none;width:100%;max-width:500px">
       <div id="pFbType" class="fb-type"></div>
       <div id="pFbRule" class="fb-rule"></div>
       <div id="pFbWrong" class="fb-wrong" style="display:none"></div>
-      <button class="btn-primary" style="margin-top:.25rem;align-self:flex-start" onclick="document.getElementById('practiceFeedbackPanel').style.display='none'">Close</button>
+      <button class="eg-btn eg-btn--primary eg-btn--sm" style="margin-top:2px;align-self:flex-start" onclick="document.getElementById('practiceFeedbackPanel').style.display='none'">Close</button>
     </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-      <button class="btn-ghost" onclick="practiceAgain()">Practice again</button>
-      <button class="btn-ghost" onclick="hidePracticeSummary()">← Back to types</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="eg-btn eg-btn--ghost" onclick="practiceAgain()">Practice again</button>
+      <button class="eg-btn eg-btn--ghost" onclick="hidePracticeSummary()">← Back to types</button>
     </div>
   </div>
 
   <!-- End card -->
-  <div class="end-card" id="endCard" style="display:none">
-    <div class="eyebrow" id="endTitle">Round complete</div>
-    <div class="end-score" id="endScore">0 pts</div>
-    <p style="color:var(--muted);font-size:.88rem;text-align:center;max-width:380px" id="endMsg"></p>
-    <div class="review-grid" id="reviewGrid"></div>
-    <div id="submitArea" style="width:100%;max-width:460px">
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
+  <div class="eg-tile eg-tile--gold" id="endCard" style="display:none;width:100%;text-align:center;">
+    <span class="eg-eyebrow eg-eyebrow--on-color" id="endTitle">Round complete</span>
+    <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
+    <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
+    <div class="review-grid" id="reviewGrid" style="margin-top:6px;"></div>
+    <div id="submitArea" style="width:100%;max-width:460px;margin-top:6px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-      <button class="btn-ghost" id="playAgainBtn" type="button" onclick="restartGame()">Play again</button>
-      <button class="btn-ghost" id="switchLevelBtn" type="button" onclick="switchEndDiff()">Switch level</button>
-      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
+      <button class="eg-btn eg-btn--ghost" id="playAgainBtn" type="button" onclick="restartGame()">Play again</button>
+      <button class="eg-btn eg-btn--ghost" id="switchLevelBtn" type="button" onclick="switchEndDiff()">Switch level</button>
+      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
     </div>
   </div>
 </main>
 
-<div class="lb-section">
-  <div class="lb-wrap">
-    <h2>🏆 Leaderboard</h2>
-    <div class="diff-tabs" style="margin-bottom:.75rem;flex-wrap:wrap;gap:.3rem">
-      <button class="diff-tab active" id="lbA" onclick="switchLb('beginner')">Beginner</button>
-      <button class="diff-tab"        id="lbB" onclick="switchLb('intermediate')">Intermediate</button>
-      <button class="diff-tab"        id="lbC" onclick="switchLb('advanced')">Advanced</button>
-      <button class="diff-tab"        id="lbD" onclick="switchLb('expert')">Expert</button>
+<div class="lb-section" style="max-width:620px; margin:0 auto; width:100%; padding:0 0 48px;">
+  <div class="eg-section-head" style="margin-top:0;">
+    <h2 class="eg-h2">Leaderboard</h2>
+    <div class="eg-pilltabs">
+      <button type="button" class="eg-pilltab active" id="lbA" onclick="switchLb('beginner')">Beginner</button>
+      <button type="button" class="eg-pilltab" id="lbB" onclick="switchLb('intermediate')">Intermediate</button>
+      <button type="button" class="eg-pilltab" id="lbC" onclick="switchLb('advanced')">Advanced</button>
+      <button type="button" class="eg-pilltab" id="lbD" onclick="switchLb('expert')">Expert</button>
     </div>
-    <table class="lb-table">
-      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-      <tbody id="lbBody"></tbody>
-    </table>
   </div>
+  <table class="eg-lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"></tbody>
+  </table>
 </div>
+
+<footer class="eg-footer" style="max-width:620px; margin:0 auto;">
+  <span>Made with care by Kris · for Kris's students</span>
+  <span style="font-weight:700; letter-spacing:.18em; text-transform:uppercase;">English Games</span>
+</footer>
 
 <script src="shared.js"></script>
 <script>
@@ -1819,14 +1742,14 @@ function showPracticeMenu() {
   grid.innerHTML = '';
   PRACTICE_TYPES.forEach(pt => {
     const typeInfo = TYPES[pt.key] || {};
-    const color = typeInfo.color || 'var(--gold)';
+    const color = typeInfo.color || 'var(--eg-gold-light)';
     const card = document.createElement('div');
     card.className = 'practice-card';
     card.innerHTML = `
       <span class="pc-type" style="background:${color};color:#0d0d0d">${pt.label}</span>
-      <div style="font-size:.78rem;font-weight:600;color:var(--text)">${pt.rule}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--eg-ink)">${pt.rule}</div>
       <div class="pc-rule">"${pt.example}"</div>
-      <button class="btn-ghost" onclick="startPractice('${pt.key}')">Practice →</button>`;
+      <button class="eg-btn eg-btn--ghost" onclick="startPractice('${pt.key}')">Practice →</button>`;
     grid.appendChild(card);
   });
 }
@@ -1847,7 +1770,7 @@ function startPractice(type) {
   const endBtn = document.getElementById('endGameBtn');
   if (endBtn) endBtn.style.display = 'none';
   // Hide the scored-mode difficulty tabs — not relevant in practice
-  const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
+  const tabBar = document.getElementById('gameUI').querySelector('.eg-pilltabs');
   if (tabBar) tabBar.style.display = 'none';
   initRound();
 }
@@ -1861,7 +1784,7 @@ function finishPractice(showSummary) {
   practiceMode = false;
   practiceType = null;
   // Restore the difficulty tabs
-  const tabBar = document.getElementById('gameUI').querySelector('.diff-tabs');
+  const tabBar = document.getElementById('gameUI').querySelector('.eg-pilltabs');
   if (tabBar) tabBar.style.display = '';
   // Restore the scored-mode End game button
   const endBtn = document.getElementById('endGameBtn');
@@ -2109,9 +2032,9 @@ function updateTimer(){
   const val=document.getElementById('timerVal');
   fill.style.width=(pct*100)+'%';
   const type=TYPES[roundQs[current]?.t||'zero'];
-  fill.style.background=type?type.color:'var(--gold)';
+  fill.style.background=type?type.color:'var(--eg-gold-light)';
   val.textContent=timeLeft+'s';
-  val.style.color=timeLeft<=25?'var(--wrong)':'var(--gold)';
+  val.style.color=timeLeft<=25?'var(--wrong)':'var(--eg-gold-light)';
   val.classList.toggle('urgent',timeLeft<=25);
   fill.classList.toggle('urgent',timeLeft<=25);
 }
@@ -2178,7 +2101,7 @@ function loadQuestion(){
   const grid=document.getElementById('optionsGrid'); grid.innerHTML='';
   options.forEach((opt,i)=>{
     const card=document.createElement('div');
-    card.className='option-card';
+    card.className='eg-option';
     card.textContent=opt.text;
     card.dataset.correct=opt.correct;
     card.dataset.idx=i;
@@ -2187,9 +2110,9 @@ function loadQuestion(){
     card.addEventListener('dragstart',e=>{
       e.dataTransfer.setData('text',opt.text);
       e.dataTransfer.setData('correct',opt.correct);
-      card.classList.add('dragging');
+      card.classList.add('is-dragging');
     });
-    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    card.addEventListener('dragend',()=>card.classList.remove('is-dragging'));
     // Tap/click
     card.addEventListener('click', (e) => tapSelect(e.currentTarget, opt));
     grid.appendChild(card);
@@ -2213,7 +2136,7 @@ function loadQuestion(){
 function tapSelect(card, opt){
   if(answered) return;
   // Deselect previous
-  document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.eg-option').forEach(c=>c.classList.remove('is-selected'));
   if(selectedOption && selectedOption.text===opt.text){
     // Tapping same card again = confirm
     selectedOption=null;
@@ -2222,7 +2145,7 @@ function tapSelect(card, opt){
     return;
   }
   selectedOption=opt;
-  card.classList.add('selected');
+  card.classList.add('is-selected');
   // Show in drop zone as preview
   document.getElementById('dropHint').style.display='none';
   document.getElementById('droppedText').style.display='block';
@@ -2247,14 +2170,14 @@ function submitAnswer(text, isCorrect){
   document.getElementById('droppedText').textContent=text;
 
   // Mark all options
-  document.querySelectorAll('.option-card').forEach(card=>{
-    card.classList.remove('selected');
+  document.querySelectorAll('.eg-option').forEach(card=>{
+    card.classList.remove('is-selected');
     if(card.dataset.correct==='true'){
       card.style.borderColor='var(--correct)';
       card.style.background='var(--correct-dim)';
       card.style.color='var(--correct)';
     } else {
-      card.classList.add('used');
+      card.classList.add('is-used');
     }
   });
 
@@ -2338,9 +2261,9 @@ function endRound(){
   const submitAreaEl = document.getElementById('submitArea');
   if (submitAreaEl) {
     submitAreaEl.innerHTML = `
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" type="button" onclick="doSubmit()">Leaderboard</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
   }
   document.getElementById('endTitle').textContent=correct+'/'+total+' correct';

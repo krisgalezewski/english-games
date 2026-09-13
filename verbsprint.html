@@ -4,207 +4,125 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Irregular Verb Sprint — English Games</title>
-<link rel="stylesheet" href="theme.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
-main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:1rem; box-sizing:border-box; }
-
-.rules-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; width:100%; font-size:.82rem; color:var(--muted); line-height:1.75; }
-.rules-box strong { color:var(--text); }
-
-/* ── Mobile layout fixes ──────────────────────────────────────────
-   On narrow phones (≤480px) the verb card's side padding and the
-   input row's fixed-width label were leaving almost no room for the
-   actual input field, and content was sitting right at the screen
-   edge. These rules tighten spacing and let the label wrap above
-   its input instead of squeezing it sideways. */
-@media (max-width: 480px) {
-  main { padding:1rem .65rem 2rem; }
-  .verb-card { padding:1.1rem 1rem; border-radius:12px; }
-  .input-row { flex-direction:column; align-items:stretch; gap:.3rem; }
-  .input-label { min-width:0; }
-  .verb-input { width:100%; font-size:1.2rem; padding:.65rem .8rem; }
-  .sentence-display { font-size:1rem; padding:.25rem 0; }
-  .sentence-display .blank { min-width:60px; }
-  .end-card { padding:1.25rem 1rem; }
-  .review-grid { max-width:100%; }
-}
-
-/* Timer */
-.timer-wrap { width:100%; }
-.timer-track { width:100%; height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
-.timer-fill  { height:100%; background:var(--gold); border-radius:99px; transition:width .5s linear, background .4s; }
-.timer-fill.urgent { background:var(--wrong); }
-.timer-row   { display:flex; justify-content:space-between; margin-top:.3rem; }
-.timer-row span { font-family:'Space Mono',monospace; font-size:.65rem; color:var(--muted); }
-.timer-val   { color:var(--gold) !important; font-weight:700; }
-.timer-val.urgent { color:var(--wrong) !important; }
-
-/* HUD pills */
-.hud { display:flex; gap:.5rem; width:100%; flex-wrap:wrap; }
-.hud-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.4rem .9rem; text-align:center; flex:1; min-width:64px; }
-.hud-pill .val { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--gold); }
-.hud-pill .lbl { font-family:'Space Mono',monospace; font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+/* Playfield-only CSS — everything colour/type/chrome lives in styles.css. */
+main { max-width:580px; margin:0 auto; padding:8px 0 48px; display:flex; flex-direction:column; align-items:center; gap:18px; box-sizing:border-box; }
 
 /* Round dots */
-.dots { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
-.dot  { width:9px; height:9px; border-radius:50%; background:var(--border2); transition:background .3s; }
-.dot.correct { background:var(--correct); }
-.dot.partial { background:#b8860b; }
-.dot.wrong   { background:var(--wrong); }
+.dots { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.dot  { width:9px; height:9px; border-radius:50%; background:var(--eg-border-strong); transition:background .3s; }
+.dot.correct { background:var(--eg-green); }
+.dot.partial { background:var(--eg-gold-light); }
+.dot.wrong   { background:var(--eg-red); }
 .dot.skip    { background:rgba(255,255,255,.2); }
 
-/* Verb card */
-.verb-card {
-  width:100%; background:var(--surface); border:1px solid var(--border);
-  border-radius:14px; padding:1.5rem 1.75rem;
-  display:flex; flex-direction:column; gap:1rem;
-  animation:fadeIn .25s ease;
-}
-.verb-card.flash-correct { border-color:var(--correct); background:var(--correct-dim); }
-.verb-card.flash-wrong   { border-color:var(--wrong);   background:var(--wrong-dim);   animation:shake .35s; }
-
-/* Mode A: base form shown */
+/* Mode A: base form shown, on the cream eg-prompt ground */
 .base-verb {
-  font-family:'Playfair Display',serif;
-  font-size:clamp(2rem,8vw,3rem); font-weight:900;
-  color:var(--gold); text-align:center; letter-spacing:.02em;
+  font-size:clamp(32px,8vw,48px); font-weight:900; font-stretch:112%;
+  color:var(--eg-ink-on-light); text-align:center; letter-spacing:.01em; text-transform:uppercase;
 }
 .base-verb .group-tag {
-  display:block; font-family:'Space Mono',monospace;
-  font-size:.6rem; color:var(--muted); letter-spacing:.14em;
-  text-transform:uppercase; margin-top:.2rem; font-weight:400;
+  display:block; font-size:11px; color:#6B665E; letter-spacing:.16em;
+  text-transform:uppercase; margin-top:6px; font-weight:700;
 }
 
 /* Mode B: sentence shown */
 .sentence-display {
-  font-size:1.1rem; line-height:1.75; color:var(--text);
-  text-align:center; padding:.5rem 0;
-}
-.sentence-display .blank {
-  display:inline-block;
-  border-bottom:2px solid var(--gold);
-  min-width:80px; color:var(--gold);
-  font-family:'Space Mono',monospace;
-  font-size:.9rem; letter-spacing:.08em;
-  padding:0 .25rem; text-align:center;
-  vertical-align:middle;
+  font-size:19px; line-height:1.6; color:var(--eg-ink-on-light);
+  text-align:center; padding:4px 0; font-weight:600;
 }
 .form-hint {
-  font-family:'Space Mono',monospace; font-size:.65rem;
-  color:var(--muted); text-align:center; letter-spacing:.1em;
-  text-transform:uppercase;
+  font-size:11px; color:#6B665E; text-align:center; letter-spacing:.16em;
+  text-transform:uppercase; margin-top:10px; font-weight:700;
 }
 
-/* Input rows */
-.input-grid { display:flex; flex-direction:column; gap:.6rem; width:100%; }
-.input-row  { display:flex; gap:.5rem; align-items:center; }
+/* Input rows — built dynamically; each input reuses .eg-input */
+.input-grid { display:flex; flex-direction:column; gap:10px; width:100%; margin-top:16px; }
+.input-row  { display:flex; gap:10px; align-items:center; }
 .input-label {
-  font-family:'Space Mono',monospace; font-size:.62rem;
-  letter-spacing:.1em; text-transform:uppercase;
-  color:var(--muted); min-width:110px; flex-shrink:0;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--eg-ink-faint); min-width:120px; flex-shrink:0; font-weight:700;
 }
-.verb-input {
-  flex:1; background:var(--surface2); border:1.5px solid var(--border2);
-  border-radius:8px; padding:.55rem .9rem;
-  font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
-  color:var(--text); outline:none; transition:border-color .2s, background .2s;
-  text-transform:uppercase; letter-spacing:.04em;
-}
-.verb-input:focus  { border-color:var(--gold); background:var(--gold-dim); }
-.verb-input.ok     { border-color:var(--correct) !important; background:var(--correct-dim) !important; color:var(--correct); }
-.verb-input.err    { border-color:var(--wrong)   !important; background:var(--wrong-dim)   !important; color:var(--wrong); }
-.verb-input.readonly { opacity:.6; cursor:default; }
-.reveal-text { font-family:'Space Mono',monospace; font-size:.7rem; color:var(--correct); display:none; }
+.eg-input.is-readonly { opacity:.6; cursor:default; }
 
 /* Action row */
-.action-row { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; }
+.action-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
 /* Feedback */
-.feedback { min-height:1.3rem; font-size:.85rem; font-weight:600; text-align:center; font-family:'Space Mono',monospace; }
-.feedback.ok   { color:var(--correct); }
-.feedback.bad  { color:var(--wrong); }
-.feedback.info { color:var(--gold); }
+.feedback { min-height:20px; font-size:14px; font-weight:700; text-align:center; }
+.feedback.ok   { color:var(--eg-green-light); }
+.feedback.bad  { color:var(--eg-rose); }
+.feedback.info { color:var(--eg-gold-light); }
 
-/* End card — inline, non-blocking (matches CollocationCrash/WordChain style) */
-.end-card {
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
-  display:flex; flex-direction:column; align-items:center;
-  gap:1rem; padding:2rem 1.5rem; width:100%;
-  animation:fadeIn .4s ease;
-}
-.end-score { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:900; color:var(--gold); }
-.review-grid  { display:flex; flex-direction:column; gap:.35rem; width:100%; max-width:460px; max-height:38vh; overflow-y:auto; }
-.review-item  { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.45rem .9rem; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:.5rem; align-items:center; font-size:.8rem; cursor:pointer; transition:border-color .15s; }
-.review-item:hover { border-color:var(--gold); }
-.review-item.correct { border-left:3px solid var(--correct); }
-.review-item.partial { border-left:3px solid #b8860b; }
-.review-item.wrong   { border-left:3px solid var(--wrong); }
-.review-item.skip    { border-left:3px solid rgba(255,255,255,.2); opacity:.6; }
-.rv-base { font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); }
-.rv-form { font-family:'Space Mono',monospace; font-size:.7rem; }
-.rv-form.ok  { color:var(--correct); }
-.rv-form.bad { color:var(--wrong); text-decoration:line-through; }
-.rv-tag  { font-family:'Space Mono',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; }
-
-.lb-section { width:100%; max-width:580px; padding:0 1rem 2.5rem; }
-
-/* blink inactive tabs */
-@keyframes modePulse { 0%,100%{opacity:1} 50%{opacity:.55} }
-.diff-tab:not(.active) { animation:modePulse 2.8s ease-in-out infinite; }
-.diff-tab:not(.active):hover { animation:none; opacity:1; }
+/* Review grid (round summary) */
+.review-grid  { display:flex; flex-direction:column; gap:6px; width:100%; max-width:460px; max-height:38vh; overflow-y:auto; }
+.review-item  { background:var(--eg-card); border:1px solid var(--eg-border); border-radius:8px; padding:9px 14px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:center; font-size:13px; cursor:pointer; transition:border-color .15s; }
+.review-item:hover { border-color:var(--eg-teal-light); }
+.review-item.correct { border-left:3px solid var(--eg-green); }
+.review-item.partial { border-left:3px solid var(--eg-gold-light); }
+.review-item.wrong   { border-left:3px solid var(--eg-red); }
+.review-item.skip    { border-left:3px solid var(--eg-border-strong); opacity:.6; }
+.rv-base { font-weight:800; color:var(--eg-ink); }
+.rv-form { font-size:11px; }
+.rv-form.ok  { color:var(--eg-green-light); }
+.rv-form.bad { color:var(--eg-rose); text-decoration:line-through; }
+.rv-tag  { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--eg-ink-faint); }
 </style>
 </head>
 <body>
-<nav class="site-nav">
-  <a href="index.html" class="back">← Games</a>
-  <span class="game-title">⚡ Irregular Verb Sprint</span>
-  <span></span>
-</nav>
+<header class="eg-header">
+  <a href="index.html" class="eg-eyebrow" style="color:var(--eg-ink-muted);">← All games</a>
+  <span style="font-size:16px; font-weight:900; font-stretch:112%; letter-spacing:.04em; text-transform:uppercase;">Irregular Verb Sprint</span>
+</header>
 
 <main>
   <!-- Start screen — shown before the player has chosen to begin -->
-  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%">
-    <div class="diff-tabs">
-      <button class="diff-tab active" id="tabA" onclick="previewMode('easy')">Easy</button>
-      <button class="diff-tab"        id="tabB" onclick="previewMode('medium')">Medium</button>
-      <button class="diff-tab"        id="tabC" onclick="previewMode('hard')">Hard</button>
+  <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:18px;width:100%">
+    <div class="eg-pilltabs">
+      <button class="eg-pilltab active" id="tabA" onclick="previewMode('easy')">Easy</button>
+      <button class="eg-pilltab"        id="tabB" onclick="previewMode('medium')">Medium</button>
+      <button class="eg-pilltab"        id="tabC" onclick="previewMode('hard')">Hard</button>
     </div>
-    <div class="rules-box" style="font-size:.8rem">
-      <span id="rulesText">Type the correct irregular verb form before time runs out. <strong>Easy:</strong> past simple only. <strong>Medium:</strong> past simple + past participle. <strong>Hard:</strong> fill the blank in a full sentence.</span>
+    <div class="eg-card" style="width:100%">
+      <span class="eg-body--sm" id="rulesText">Type the correct irregular verb form before time runs out. <strong style="color:var(--eg-ink)">Easy:</strong> past simple only. <strong style="color:var(--eg-ink)">Medium:</strong> past simple + past participle. <strong style="color:var(--eg-ink)">Hard:</strong> fill the blank in a full sentence.</span>
     </div>
-    <button class="btn-primary" style="font-size:1rem;padding:.7rem 2.5rem" onclick="beginGame()">Start playing →</button>
+    <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Game UI -->
-  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:1rem;width:100%">
+  <div id="gameUI" style="display:none;flex-direction:column;align-items:center;gap:18px;width:100%">
     <!-- Difficulty tabs -->
-    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:.5rem">
-      <div class="diff-tabs">
-        <button class="diff-tab active" id="tabAGame" onclick="setMode('easy')">Easy</button>
-        <button class="diff-tab"        id="tabBGame" onclick="setMode('medium')">Medium</button>
-        <button class="diff-tab"        id="tabCGame" onclick="setMode('hard')">Hard</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:10px">
+      <div class="eg-pilltabs">
+        <button class="eg-pilltab active" id="tabAGame" onclick="setMode('easy')">Easy</button>
+        <button class="eg-pilltab"        id="tabBGame" onclick="setMode('medium')">Medium</button>
+        <button class="eg-pilltab"        id="tabCGame" onclick="setMode('hard')">Hard</button>
       </div>
       <div class="dots" id="dots"></div>
     </div>
 
     <!-- HUD -->
-    <div class="hud">
-      <div class="hud-pill"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
-      <div class="hud-pill"><div class="val" id="skipsVal">3</div><div class="lbl">Skips</div></div>
-      <div class="hud-pill"><div class="val" id="hintVal">1</div><div class="lbl">Hint</div></div>
-      <div class="hud-pill"><div class="val" id="streakVal">0</div><div class="lbl">Streak</div></div>
+    <div class="eg-hud" style="width:100%">
+      <div class="eg-stat"><div class="eg-stat__label">Score</div><div class="eg-stat__value" id="scoreVal">0</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Skips</div><div class="eg-stat__value" id="skipsVal">3</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Hint</div><div class="eg-stat__value" id="hintVal">1</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Streak</div><div class="eg-stat__value eg-stat__value--streak" id="streakVal">0</div></div>
     </div>
 
     <!-- Timer -->
-    <div class="timer-wrap">
-      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-      <div class="timer-row"><span>Time</span><span class="timer-val" id="timerVal">90s</span></div>
+    <div style="width:100%">
+      <div class="eg-progress"><div class="eg-progress__bar" id="timerFill" style="width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;"><span class="eg-eyebrow" style="font-size:10px;">Time</span><span class="eg-eyebrow" id="timerVal" style="font-size:10px;color:var(--eg-gold-light);">90s</span></div>
     </div>
 
     <!-- Verb card -->
-    <div class="verb-card" id="verbCard">
+    <div class="eg-prompt" style="width:100%" id="verbCard">
       <!-- Easy/Medium: base form -->
       <div id="baseView">
         <div class="base-verb" id="baseVerb">—<span class="group-tag" id="groupTag"></span></div>
@@ -221,48 +139,53 @@ main { max-width:580px; margin:0 auto; padding:1.25rem 1rem 2.5rem; display:flex
 
     <!-- Actions -->
     <div class="action-row">
-      <button class="btn-primary" id="submitBtn" onclick="submitAnswer()">Check ✓</button>
-      <button class="btn-ghost"   id="hintBtn"   onclick="useHint()">💡 Hint</button>
-      <button class="btn-ghost"   id="skipBtn"   onclick="skipVerb()">⏭ Skip (−5)</button>
+      <button class="eg-btn eg-btn--primary" id="submitBtn" onclick="submitAnswer()">Check</button>
+      <button class="eg-btn eg-btn--ghost"   id="hintBtn"   onclick="useHint()">Hint</button>
+      <button class="eg-btn eg-btn--ghost"   id="skipBtn"   onclick="skipVerb()">Skip (−5)</button>
     </div>
 
     <div class="feedback" id="feedback"></div>
   </div>
 
   <!-- End card -->
-  <div class="end-card" id="endCard" style="display:none">
-    <div class="eyebrow" id="endTitle">Round complete</div>
-    <div class="end-score" id="endScore">0 pts</div>
-    <p style="color:var(--muted);font-size:.88rem;text-align:center;max-width:340px" id="endMsg"></p>
-    <div class="review-grid" id="reviewGrid"></div>
-    <div id="submitArea" style="width:100%;max-width:460px">
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" onclick="doSubmit()">Leaderboard</button>
+  <div class="eg-tile eg-tile--teal-deep" id="endCard" style="display:none;width:100%;text-align:center;">
+    <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;" id="endTitle">Round complete</span>
+    <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
+    <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
+    <div class="review-grid" id="reviewGrid" style="margin-top:6px;"></div>
+    <div id="submitArea" style="width:100%;max-width:460px;margin-top:6px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-      <button class="btn-ghost" id="playAgainBtn" type="button" onclick="restartGame()">Play again</button>
-      <button class="btn-ghost" id="switchModeBtn" type="button" onclick="setMode(currentMode==='easy'?'medium':currentMode==='medium'?'hard':'easy')">Switch mode</button>
-      <a href="index.html" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">← All games</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
+      <button class="eg-btn eg-btn--ghost" id="playAgainBtn" type="button" onclick="restartGame()">Play again</button>
+      <button class="eg-btn eg-btn--ghost" id="switchModeBtn" type="button" onclick="setMode(currentMode==='easy'?'medium':currentMode==='medium'?'hard':'easy')">Switch mode</button>
+      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
     </div>
   </div>
 </main>
 
-<div class="lb-section">
-  <div class="lb-wrap">
-    <h2>🏆 Leaderboard</h2>
-    <div class="diff-tabs" style="margin-bottom:.75rem">
-      <button class="diff-tab active" id="lbTabE" onclick="switchLb('easy')">Easy</button>
-      <button class="diff-tab"        id="lbTabM" onclick="switchLb('medium')">Medium</button>
-      <button class="diff-tab"        id="lbTabH" onclick="switchLb('hard')">Hard</button>
+<div class="lb-section" style="max-width:580px; margin:0 auto; width:100%; padding:0 0 48px;">
+  <div class="eg-section-head" style="margin-top:0;">
+    <h2 class="eg-h2">Leaderboard</h2>
+    <div class="eg-pilltabs">
+      <button type="button" class="eg-pilltab active" id="lbTabE" onclick="switchLb('easy')">Easy</button>
+      <button type="button" class="eg-pilltab" id="lbTabM" onclick="switchLb('medium')">Medium</button>
+      <button type="button" class="eg-pilltab" id="lbTabH" onclick="switchLb('hard')">Hard</button>
     </div>
-    <table class="lb-table">
-      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-      <tbody id="lbBody"></tbody>
-    </table>
   </div>
+  <table class="eg-lb-table">
+    <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+    <tbody id="lbBody"></tbody>
+  </table>
 </div>
+
+<footer class="eg-footer" style="max-width:580px; margin:0 auto;">
+  <span>Made with care by Kris · for Kris's students</span>
+  <span style="font-weight:700; letter-spacing:.18em; text-transform:uppercase;">English Games</span>
+</footer>
 
 <script src="shared.js"></script>
 <script>
@@ -1168,7 +1091,7 @@ function loadVerb() {
     grid.innerHTML = `
       <div class="input-row">
         <span class="input-label">${s.f==='ps'?'Past simple':'Past participle'}</span>
-        <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false"
+        <input class="eg-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false"
                placeholder="type here…" autofocus/>
       </div>`;
     document.getElementById('inp0').focus();
@@ -1186,22 +1109,22 @@ function loadVerb() {
       grid.innerHTML = `
         <div class="input-row">
           <span class="input-label">Past simple</span>
-          <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
+          <input class="eg-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
         </div>
         <div class="input-row">
           <span class="input-label">Past participle</span>
-          <input class="verb-input readonly" id="inp1" value="${v.pp.toUpperCase()}" readonly/>
+          <input class="eg-input is-readonly" id="inp1" value="${v.pp.toUpperCase()}" readonly/>
         </div>`;
     } else {
       // Medium: type both
       grid.innerHTML = `
         <div class="input-row">
           <span class="input-label">Past simple</span>
-          <input class="verb-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
+          <input class="eg-input" id="inp0" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…" autofocus/>
         </div>
         <div class="input-row">
           <span class="input-label">Past participle</span>
-          <input class="verb-input" id="inp1" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…"/>
+          <input class="eg-input" id="inp1" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="…"/>
         </div>`;
       // Enter in PS → focus PP; Enter in PP → submit
       // Handled by global keydown
@@ -1231,13 +1154,13 @@ function submitAnswer() {
       score += pts; streak++;
       document.getElementById('scoreVal').textContent  = score;
       document.getElementById('streakVal').textContent = streak;
-      inp0.classList.add('ok');
+      inp0.classList.add('is-correct');
       document.getElementById('dot'+current).className='dot correct';
       results.push({verb:v, psTyped:typed, ppTyped:'', field:s.f, correct:true, partial:false, skipped:false, pts});
       showFeedback('✓ Correct! +'+pts+' pts', 'ok');
       advanceVerb(600);
     } else {
-      inp0.classList.add('err');
+      inp0.classList.add('is-wrong');
       streak = 0;
       document.getElementById('streakVal').textContent = 0;
       results.push({verb:v, psTyped:typed, ppTyped:'', field:s.f, correct:false, partial:false, skipped:false, pts:0});
@@ -1254,13 +1177,13 @@ function submitAnswer() {
       score += pts; streak++;
       document.getElementById('scoreVal').textContent  = score;
       document.getElementById('streakVal').textContent = streak;
-      inp0.classList.add('ok');
+      inp0.classList.add('is-correct');
       document.getElementById('dot'+current).className='dot correct';
       results.push({verb:v, psTyped:typed, ppTyped:v.pp, field:'ps', correct:true, partial:false, skipped:false, pts});
       showFeedback('✓ +'+pts+' pts', 'ok');
       advanceVerb(600);
     } else {
-      inp0.classList.add('err');
+      inp0.classList.add('is-wrong');
       streak = 0;
       document.getElementById('streakVal').textContent = 0;
       results.push({verb:v, psTyped:typed, ppTyped:v.pp, field:'ps', correct:false, partial:false, skipped:false, pts:0});
@@ -1283,7 +1206,7 @@ function submitAnswer() {
       score += pts; streak++;
       document.getElementById('scoreVal').textContent  = score;
       document.getElementById('streakVal').textContent = streak;
-      inp0.classList.add('ok'); inp1.classList.add('ok');
+      inp0.classList.add('is-correct'); inp1.classList.add('is-correct');
       document.getElementById('dot'+current).className='dot correct';
       results.push({verb:v, psTyped:t0, ppTyped:t1, field:'both', correct:true, partial:false, skipped:false, pts});
       showFeedback('✓ Both correct! +'+pts+' pts', 'ok');
@@ -1293,8 +1216,8 @@ function submitAnswer() {
       score += pts; streak = 0;
       document.getElementById('scoreVal').textContent  = score;
       document.getElementById('streakVal').textContent = 0;
-      if(ps_ok) { inp0.classList.add('ok'); inp1.classList.add('err'); }
-      else       { inp0.classList.add('err'); inp1.classList.add('ok'); }
+      if(ps_ok) { inp0.classList.add('is-correct'); inp1.classList.add('is-wrong'); }
+      else       { inp0.classList.add('is-wrong'); inp1.classList.add('is-correct'); }
       document.getElementById('dot'+current).className='dot partial';
       results.push({verb:v, psTyped:t0, ppTyped:t1, field:'both', correct:false, partial:true, skipped:false, pts});
       showFeedback('~ One correct (+'+pts+') · '+v.b.toUpperCase()+' / '+v.ps.toUpperCase()+' / '+v.pp.toUpperCase(), 'info');
@@ -1303,7 +1226,7 @@ function submitAnswer() {
       streak = 0;
       document.getElementById('scoreVal').textContent  = score;
       document.getElementById('streakVal').textContent = 0;
-      inp0.classList.add('err'); inp1.classList.add('err');
+      inp0.classList.add('is-wrong'); inp1.classList.add('is-wrong');
       document.getElementById('dot'+current).className='dot wrong';
       results.push({verb:v, psTyped:t0, ppTyped:t1, field:'both', correct:false, partial:false, skipped:false, pts:0});
       showFeedback('✗ '+v.b.toUpperCase()+' / '+v.ps.toUpperCase()+' / '+v.pp.toUpperCase(), 'bad');
@@ -1371,12 +1294,12 @@ function useHint() {
     document.getElementById('scoreVal').textContent = score;
   } else {
     const inp0 = document.getElementById('inp0');
-    if(inp0 && !inp0.classList.contains('ok')) {
+    if(inp0 && !inp0.classList.contains('is-correct')) {
       inp0.value = v.ps[0].toUpperCase();
     }
     if(currentMode==='medium') {
       const inp1 = document.getElementById('inp1');
-      if(inp1 && !inp1.classList.contains('ok')) inp1.value = v.pp[0].toUpperCase();
+      if(inp1 && !inp1.classList.contains('is-correct')) inp1.value = v.pp[0].toUpperCase();
     }
     showFeedback('Hint: first letter(s) revealed (−3 pts)', 'info');
     score = Math.max(0, score-3);
@@ -1417,9 +1340,9 @@ function endRound() {
   const submitAreaEl = document.getElementById('submitArea');
   if (submitAreaEl) {
     submitAreaEl.innerHTML = `
-      <div class="submit-row" style="margin-top:.5rem">
-        <input id="nameInput" class="text-input" placeholder="Your name" maxlength="24" style="flex:1"/>
-        <button class="btn-primary" type="button" onclick="doSubmit()">Leaderboard</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
   }
 

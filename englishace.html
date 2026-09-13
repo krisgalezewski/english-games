@@ -4,12 +4,16 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>English Ace — English Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <style>
-* { box-sizing:border-box; margin:0; padding:0; }
+/* Playfield-only CSS — everything colour/type/chrome lives in styles.css. */
 body {
-  background:#03050f; font-family:'DM Sans',sans-serif; color:#e8eaf6;
   min-height:100vh; display:flex; flex-direction:column; align-items:center;
   overflow:hidden; user-select:none; -webkit-user-select:none;
 }
@@ -23,7 +27,7 @@ body {
   position:fixed; inset:0; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:1rem; padding:5rem 1.5rem 2rem; z-index:100;
-  background:rgba(3,5,15,.93); backdrop-filter:blur(6px);
+  background:rgba(10,10,10,.93); backdrop-filter:blur(6px);
   overflow-y:auto;
 }
 .screen.hidden { display:none; }
@@ -33,148 +37,114 @@ body {
   position:fixed; top:0; left:0; right:0; height:48px; z-index:300;
   display:flex; align-items:center; justify-content:space-between;
   padding:0 1rem;
-  background:rgba(3,5,15,.85); border-bottom:1px solid rgba(255,255,255,.07);
+  background:rgba(10,10,10,.85); border-bottom:1px solid var(--eg-border);
   backdrop-filter:blur(8px);
 }
 #topNav a {
-  font-family:'Orbitron',monospace; font-size:.65rem; letter-spacing:.12em;
-  color:rgba(255,255,255,.45); text-decoration:none; transition:color .2s;
+  font-size:.65rem; letter-spacing:.12em;
+  color:var(--eg-ink-faint); text-decoration:none; transition:color .2s;
   text-transform:uppercase;
 }
-#topNav a:hover { color:#fff; }
+#topNav a:hover { color:var(--eg-ink); }
 #topNav .nav-title {
-  font-family:'Orbitron',monospace; font-size:.8rem; font-weight:700;
-  color:#4fc3f7; letter-spacing:.08em;
+  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:.9rem; font-weight:900;
+  color:var(--eg-ink); letter-spacing:.04em; text-transform:uppercase;
 }
 #muteBtn {
   height:34px; padding:0 .65rem; border-radius:17px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
-  color:#fff; font-size:.72rem; cursor:pointer;
+  background:var(--eg-card); border:1px solid var(--eg-border-strong);
+  color:var(--eg-ink); font-size:.72rem; cursor:pointer;
   display:flex; align-items:center; justify-content:center; gap:.3rem;
-  font-family:'Orbitron',monospace; letter-spacing:.06em; white-space:nowrap;
+  letter-spacing:.06em; white-space:nowrap;
   transition:background .2s;
 }
-#muteBtn:hover { background:rgba(255,255,255,.15); }
+#muteBtn:hover { background:var(--eg-card-hover); }
 
 #pauseBtn {
   height:34px; padding:0 .8rem; border-radius:17px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
-  color:#fff; font-size:.72rem; cursor:pointer;
+  background:var(--eg-card); border:1px solid var(--eg-border-strong);
+  color:var(--eg-ink); font-size:.72rem; cursor:pointer;
   display:none; align-items:center; justify-content:center; gap:.3rem;
-  font-family:'Orbitron',monospace; letter-spacing:.06em;
+  letter-spacing:.06em;
   transition:background .2s;
 }
-#pauseBtn:hover { background:rgba(255,255,255,.15); }
+#pauseBtn:hover { background:var(--eg-card-hover); }
 #pauseBtn.visible { display:flex; }
 
 /* Pause overlay */
 #pauseOverlay {
   position:fixed; inset:0; z-index:150;
-  background:rgba(3,5,15,.82); backdrop-filter:blur(6px);
+  background:rgba(10,10,10,.82); backdrop-filter:blur(6px);
   display:none; flex-direction:column;
   align-items:center; justify-content:center; gap:1.25rem;
 }
 #pauseOverlay.visible { display:flex; }
 #pauseOverlay .pause-title {
-  font-family:'Orbitron',monospace; font-size:2rem; font-weight:900;
-  color:#fff; letter-spacing:.08em;
+  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:2rem; font-weight:900;
+  color:var(--eg-ink); letter-spacing:.04em; text-transform:uppercase;
 }
 #pauseOverlay .pause-hint {
-  font-family:'Space Mono',monospace; font-size:.75rem;
-  color:rgba(255,255,255,.4); letter-spacing:.1em;
+  font-size:.75rem;
+  color:var(--eg-ink-faint); letter-spacing:.1em;
 }
 
 /* Track selector — shown during gameplay */
 #trackSelector {
   position:fixed; bottom:1rem; left:50%; transform:translateX(-50%);
   z-index:200; display:none;
-  background:rgba(3,5,15,.88); border:1px solid rgba(255,255,255,.12);
+  background:var(--eg-card); border:1px solid var(--eg-border-strong);
   border-radius:99px; padding:.3rem .4rem;
   display:flex; gap:.3rem; align-items:center;
   backdrop-filter:blur(8px);
 }
 #trackSelector .track-label {
-  font-family:'Orbitron',monospace; font-size:.58rem;
-  color:rgba(255,255,255,.35); letter-spacing:.1em; padding:0 .4rem;
+  font-size:.58rem;
+  color:var(--eg-ink-faint); letter-spacing:.1em; padding:0 .4rem;
   text-transform:uppercase;
-}
-.track-btn {
-  font-family:'Orbitron',monospace; font-size:.6rem; font-weight:700;
-  letter-spacing:.06em; padding:.28rem .75rem; border-radius:99px;
-  border:1px solid rgba(255,255,255,.15); background:transparent;
-  color:rgba(255,255,255,.5); cursor:pointer; transition:all .18s;
-  text-transform:uppercase; white-space:nowrap;
-}
-.track-btn:hover { border-color:rgba(79,195,247,.6); color:#4fc3f7; }
-.track-btn.active {
-  background:linear-gradient(135deg,#4fc3f7,#1565c0);
-  border-color:#4fc3f7; color:#fff;
 }
 
 /* ── Logo ── */
 .logo {
-  font-family:'Orbitron',monospace;
+  font-family:'Archivo',sans-serif; font-stretch:112%;
   font-size:clamp(2rem,8vw,3.2rem); font-weight:900;
-  letter-spacing:.06em; text-align:center; line-height:1.1;
+  letter-spacing:.02em; text-align:center; line-height:1.1; text-transform:uppercase;
 }
-.logo .ace { color:#fff; }
-.logo .english { color:#4fc3f7; }
-.tagline { font-size:.85rem; color:rgba(255,255,255,.5); text-align:center; max-width:300px; line-height:1.6; }
-.hiscore-display { font-family:'Orbitron',monospace; font-size:.72rem; color:#ffd54f; letter-spacing:.12em; }
+.logo .ace { color:var(--eg-ink); }
+.logo .english { color:var(--eg-gold-light); }
+.tagline { font-size:.85rem; color:var(--eg-ink-faint); text-align:center; max-width:300px; line-height:1.6; }
+.hiscore-display { font-size:.72rem; color:var(--eg-gold-light); letter-spacing:.12em; }
 
-/* ── Buttons ── */
-.btn {
-  background:linear-gradient(135deg,#4fc3f7,#1565c0); color:#fff; border:none;
-  border-radius:6px; padding:.7rem 2.2rem;
-  font-family:'Orbitron',monospace; font-size:.82rem; font-weight:700;
-  letter-spacing:.1em; cursor:pointer; transition:opacity .15s, transform .1s;
-  text-transform:uppercase; box-shadow:0 0 20px rgba(79,195,247,.3);
-}
-.btn:hover { opacity:.88; transform:scale(1.03); }
-.btn.secondary {
-  background:transparent; border:1px solid rgba(255,255,255,.2);
-  color:rgba(255,255,255,.6); box-shadow:none; font-size:.72rem;
-}
 .instructions {
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  background:var(--eg-card); border:1px solid var(--eg-border);
   border-radius:10px; padding:.9rem 1.1rem;
-  font-size:.78rem; color:rgba(255,255,255,.55); line-height:1.8;
+  font-size:.78rem; color:var(--eg-ink-muted); line-height:1.8;
   max-width:320px; text-align:left; width:100%;
 }
-.instructions strong { color:#4fc3f7; }
+.instructions strong { color:var(--eg-ink); }
 
 /* ── End screen ── */
 .end-score-big {
-  font-family:'Orbitron',monospace; font-size:clamp(2rem,9vw,3.5rem);
-  font-weight:900; color:#ffd54f; text-shadow:0 0 28px rgba(255,213,79,.4);
+  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:clamp(2rem,9vw,3.5rem);
+  font-weight:900; color:var(--eg-gold-light);
 }
 .end-stats-row { display:flex; gap:1.2rem; flex-wrap:wrap; justify-content:center; }
 .end-stat { text-align:center; }
-.end-stat .v { font-family:'Orbitron',monospace; font-size:1.3rem; font-weight:700; color:#4fc3f7; }
-.end-stat .l { font-size:.62rem; color:rgba(255,255,255,.4); letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
+.end-stat .v { font-family:'Archivo',sans-serif; font-stretch:112%; font-size:1.3rem; font-weight:900; color:var(--eg-ink); }
+.end-stat .l { font-size:.62rem; color:var(--eg-ink-faint); letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
 
 /* ── Leaderboard ── */
 .lb-wrap { width:100%; max-width:320px; }
-.lb-wrap h3 { font-family:'Orbitron',monospace; font-size:.72rem; letter-spacing:.12em; color:#ffd54f; margin-bottom:.5rem; }
-.lb-table { width:100%; border-collapse:collapse; font-size:.78rem; }
-.lb-table th { text-align:left; color:rgba(255,255,255,.3); font-weight:400; font-size:.62rem; letter-spacing:.1em; padding:.28rem .4rem; border-bottom:1px solid rgba(255,255,255,.07); }
-.lb-table td { padding:.32rem .4rem; border-bottom:1px solid rgba(255,255,255,.04); }
-.lb-table tbody tr:first-child td { color:#ffd54f; font-weight:600; }
-.submit-row { display:flex; gap:.5rem; margin-bottom:.65rem; }
-.submit-row input { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:4px; padding:.45rem .7rem; color:#fff; font-family:'DM Sans',sans-serif; font-size:16px; }
-.submit-row input:focus { outline:none; border-color:#4fc3f7; }
-.btn-sm { background:linear-gradient(135deg,#4fc3f7,#1565c0); color:#fff; border:none; border-radius:4px; padding:.45rem .9rem; font-family:'Orbitron',monospace; font-size:.62rem; font-weight:700; letter-spacing:.08em; cursor:pointer; }
 </style>
 </head>
 <body>
 
 <!-- Always-visible top nav -->
 <nav id="topNav">
-  <a href="index.html">← GAMES</a>
-  <span class="nav-title">✈ ENGLISH ACE</span>
+  <a href="index.html">← All games</a>
+  <span class="nav-title">English Ace</span>
   <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
     <button id="pauseBtn" title="Pause — Space on keyboard · Double-tap on mobile">⏸ PAUSE</button>
-    <span id="pauseSubHint" style="display:none;font-family:'Orbitron',monospace;font-size:.45rem;color:rgba(255,255,255,.3);letter-spacing:.08em;white-space:nowrap"></span>
+    <span id="pauseSubHint" style="display:none;font-size:.45rem;color:var(--eg-ink-faint);letter-spacing:.08em;white-space:nowrap"></span>
   </div>
   <button id="muteBtn" title="Music volume">🔊 100%</button>
 </nav>
@@ -182,15 +152,15 @@ body {
 <div id="pauseOverlay">
   <div class="pause-title">PAUSED</div>
   <div class="pause-hint" id="resumeHint">Tap ▶ RESUME or double-tap the screen</div>
-  <button class="btn" onclick="togglePause()">▶ RESUME</button>
+  <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="togglePause()">▶ RESUME</button>
 </div>
 
 <!-- Start screen -->
 <div class="screen" id="startScreen">
-  <div class="logo"><span class="english">ENGLISH</span><br><span class="ace">ACE ✈</span></div>
+  <div class="logo"><span class="english">ENGLISH</span><br><span class="ace">ACE</span></div>
   <div class="tagline">Fly into the correct answer. Dodge the rest. How long can you stay airborne?</div>
   <div class="hiscore-display" id="startHi">BEST: 0</div>
-  <button class="btn" onclick="startGame()">FLY →</button>
+  <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="startGame()">FLY →</button>
   <div class="instructions">
     <strong>STEER</strong> — drag the plane or use ← → keys<br>
     <strong>COLLECT</strong> — fly into the correct answer<br>
@@ -200,10 +170,12 @@ body {
     <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span>
   </div>
   <div class="lb-wrap">
-    <h3>🏆 LEADERBOARD</h3>
-    <table class="lb-table">
+    <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
+      <h2 class="eg-h2" style="font-size:1rem;">Leaderboard</h2>
+    </div>
+    <table class="eg-lb-table">
       <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
-      <tbody id="startLbBody"><tr><td colspan="3" style="color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+      <tbody id="startLbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -218,25 +190,29 @@ body {
     <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
   </div>
   <div class="lb-wrap">
-    <h3>🏆 LEADERBOARD</h3>
-    <div class="submit-row">
-      <input id="nameInput" placeholder="Your call sign" maxlength="20"/>
-      <button class="btn-sm" id="submitBtn">SUBMIT</button>
+    <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
+      <h2 class="eg-h2" style="font-size:1rem;">Leaderboard</h2>
     </div>
-    <table class="lb-table">
+    <div class="submit-row" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <input id="nameInput" class="eg-input" placeholder="Your call sign" maxlength="20" style="flex:1;min-width:120px;"/>
+      <button class="eg-btn eg-btn--sm eg-btn--primary" type="button" id="submitBtn">SUBMIT</button>
+    </div>
+    <table class="eg-lb-table">
       <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
-      <tbody id="lbBody"><tr><td colspan="3" style="color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+      <tbody id="lbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
     </table>
   </div>
-  <button class="btn" onclick="startGame()">FLY AGAIN →</button>
-  <button class="btn secondary" onclick="showStart()">MENU</button>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+    <button class="eg-btn eg-btn--primary" onclick="startGame()">FLY AGAIN →</button>
+    <button class="eg-btn eg-btn--ghost" onclick="showStart()">MENU</button>
+  </div>
 </div>
 
 <div id="trackSelector">
   <span class="track-label">♪</span>
-  <button class="track-btn active" id="track0" onclick="selectTrack(0)">— Dash</button>
-  <button class="track-btn"        id="track1" onclick="selectTrack(1)">- Hyphen</button>
-  <button class="track-btn"        id="track2" onclick="selectTrack(2)">… Ellipsis</button>
+  <button class="eg-pilltab active" id="track0" onclick="selectTrack(0)">— Dash</button>
+  <button class="eg-pilltab"        id="track1" onclick="selectTrack(1)">- Hyphen</button>
+  <button class="eg-pilltab"        id="track2" onclick="selectTrack(2)">… Ellipsis</button>
 </div>
 <canvas id="gameCanvas"></canvas>
 <script src="shared.js"></script>
@@ -835,7 +811,7 @@ function drawPlane(x,y,alpha){
 function drawToken(t){
   ctx.save(); ctx.globalAlpha=t.alpha;
   const fSize=canvas.width<420?11:15;
-  ctx.font=`bold ${fSize}px Orbitron, monospace`;
+  ctx.font=`bold ${fSize}px Archivo, sans-serif`;
   if(!t.w) t.w=ctx.measureText(t.text).width+(canvas.width<420?20:36);
   const wobbleX=Math.sin(frameCount*t.wobble+t.wobbleOff)*2;
   ctx.translate(t.x+wobbleX,t.y);
@@ -847,7 +823,7 @@ function drawToken(t){
   ctx.shadowBlur=0; ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2.5;
   roundRect(ctx,rx,ry,rw,rh,rad); ctx.stroke();
   ctx.fillStyle='rgba(255,255,255,0.6)'; roundRect(ctx,rx+2,ry+2,rw-4,rh*0.35,rad-2); ctx.fill();
-  ctx.fillStyle='#0a1628'; ctx.font=`bold ${fSize}px Orbitron, monospace`;
+  ctx.fillStyle='#0a1628'; ctx.font=`bold ${fSize}px Archivo, sans-serif`;
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.shadowColor='rgba(0,0,50,0.2)'; ctx.shadowBlur=2;
   ctx.fillText(t.text,0,0);
@@ -868,15 +844,15 @@ function drawHUD(){
   ctx.fillStyle='rgba(3,5,15,.85)'; ctx.fillRect(0,0,W,44);
   ctx.strokeStyle='rgba(79,195,247,.15)'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(0,44); ctx.lineTo(W,44); ctx.stroke();
-  ctx.fillStyle='#ffd54f'; ctx.font='bold 17px Orbitron, monospace';
+  ctx.fillStyle='#ffd54f'; ctx.font='bold 17px Archivo, sans-serif';
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.fillText(String(score).padStart(6,'0'),14,22);
   if(multiplier>1){
     ctx.fillStyle=streak>=5?'#ff6b6b':'#4fc3f7';
-    ctx.font='bold 12px Orbitron, monospace';
+    ctx.font='bold 12px Archivo, sans-serif';
     ctx.fillText('×'+multiplier,102,22);
   }
-  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='10px Orbitron, monospace';
+  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='10px Archivo, sans-serif';
   ctx.textAlign='center'; ctx.fillText('WAVE '+wave,W/2,12);
   const wPct=Math.max(0,1-waveTimer/WAVE_DUR);
   ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(W/2-55,22,110,4);
@@ -885,7 +861,7 @@ function drawHUD(){
   for(let i=0;i<5;i++){ ctx.globalAlpha=i<lives?1:.15; ctx.fillText('✈',W-10-i*20,22); }
   ctx.globalAlpha=1;
   if(slowTimer>0){
-    ctx.fillStyle='#b39ddb'; ctx.font='9px Orbitron, monospace';
+    ctx.fillStyle='#b39ddb'; ctx.font='9px Archivo, sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,36);
   }
@@ -894,10 +870,10 @@ function drawHUD(){
   ctx.beginPath(); ctx.moveTo(0,44); ctx.lineTo(W,44); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0,106); ctx.lineTo(W,106); ctx.stroke();
   if(currentQ){
-    ctx.fillStyle='rgba(79,195,247,.7)'; ctx.font='bold 9px Orbitron, monospace';
+    ctx.fillStyle='rgba(79,195,247,.7)'; ctx.font='bold 9px Archivo, sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('COMPLETE THE PHRASE',W/2,56);
-    ctx.fillStyle='#ffffff'; ctx.font='bold 20px Orbitron, monospace';
+    ctx.fillStyle='#ffffff'; ctx.font='bold 20px Archivo, sans-serif';
     ctx.shadowColor='rgba(79,195,247,0.6)'; ctx.shadowBlur=8;
     ctx.fillText(currentQ.q,W/2,82);
     ctx.shadowBlur=0;
@@ -913,7 +889,7 @@ function drawParticles(dt){
     if(p.life<=0) continue;
     ctx.globalAlpha=Math.max(0,p.life);
     if(p.type==='text'){
-      ctx.fillStyle=p.colour; ctx.font='bold 14px Orbitron, monospace';
+      ctx.fillStyle=p.colour; ctx.font='bold 14px Archivo, sans-serif';
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.txt,p.x,p.y);
     } else {
       ctx.fillStyle=p.colour;
