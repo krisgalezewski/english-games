@@ -233,6 +233,10 @@ html,body { height:100%; overflow:hidden; }
   <div class="game-left">
     <canvas id="gameCanvas"></canvas>
     <div class="col-labels" id="colLabels"></div>
+    <!-- Screen-reader-only status: this game's feedback (correct/wrong flash,
+         flying word, life-loss icon) is entirely visual/canvas-driven, so this
+         is the only way a non-visual player learns the outcome of each drop. -->
+    <div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </div>
   <div class="game-right">
     <!-- Lives -->
@@ -655,7 +659,7 @@ const WORD_BANK = [
   ['She was ___remarkably___ calm.', 'remarkably', 'adverb', 3],
   ['He behaved ___accordingly___.', 'accordingly', 'adverb', 3],
   ['She spoke ___briefly___ about the plan.', 'briefly', 'adverb', 3],
-  ['She ___hard___ly spoke.', 'hardly', 'adverb', 2],
+  ['She ___hardly___ spoke.', 'hardly', 'adverb', 2],
   ['He drove ___close___ to the edge.', 'close', 'adverb', 2],
   ['She sat ___near___ the window.', 'near', 'adverb', 2],
   ['He came ___straight___ home.', 'straight', 'adverb', 2],
@@ -671,10 +675,10 @@ const WORD_BANK = [
   ['A ___high___ fence surrounded the yard.', 'high', 'adjective', 2],
   ['She wore a ___deep___ blue coat.', 'deep', 'adjective', 2],
   ['The ___wrong___ answer cost him points.', 'wrong', 'adjective', 2],
-  ['He ___late___d the application.', 'lated', 'verb', 2],
-  ['She ___close___d the curtains.', 'closed', 'verb', 2],
-  ['He ___wrong___ed her badly.', 'wronged', 'verb', 2],
-  ['She ___near___ed the finish line.', 'neared', 'verb', 2],
+  ['He ___delayed___ the application.', 'delayed', 'verb', 2],
+  ['She ___closed___ the curtains.', 'closed', 'verb', 2],
+  ['He ___wronged___ her badly.', 'wronged', 'verb', 2],
+  ['She ___neared___ the finish line.', 'neared', 'verb', 2],
   ['The ___report___ was filed on time.', 'report', 'noun', 2],
   ['He gave a ___report___ to the board.', 'report', 'noun', 2],
   ['She ___reported___ the incident.', 'reported', 'verb', 2],
@@ -700,7 +704,7 @@ const WORD_BANK = [
   ['She gave a ___final___ warning.', 'final', 'adjective', 2],
   ['He reached the ___final___.', 'final', 'noun', 2],
   ['She made a ___sharp___ turn.', 'sharp', 'adjective', 2],
-  ['He ___turned___ ___sharp___ly left.', 'sharply', 'adverb', 2],
+  ['He turned ___sharply___ left.', 'sharply', 'adverb', 2],
   ['The ___total___ came to fifty pounds.', 'total', 'noun', 2],
   ['He was in ___total___ shock.', 'total', 'adjective', 2],
   ['She ___totalled___ the damages.', 'totalled', 'verb', 2],
@@ -1676,12 +1680,24 @@ function onDrop() {
   block.x     = block.targetX;
   block.y     = DROP_BOT;
   draw();
-  setTimeout(() => landBlock(block.colIdx), 50);
+  // Capture the column *now*, at the moment the player committed to drop —
+  // block.colIdx is still readable (and, via the arrow keys, still
+  // changeable) for the next 50ms while the landing animation plays, so
+  // reading `block.colIdx` fresh inside the timeout instead could score
+  // the word against whichever column the player nudged it to in that
+  // window, not the one it visibly dropped into.
+  const landingCol = block.colIdx;
+  setTimeout(() => landBlock(landingCol), 50);
 }
 
 // ══════════════════════════════════════════════════════════
 // LAND
 // ══════════════════════════════════════════════════════════
+function announce(msg) {
+  const el = document.getElementById('srStatus');
+  if (el) el.textContent = msg;
+}
+
 function landBlock(colIdx) {
   if (!block) return;
   const chosen  = activeCats[colIdx];
@@ -1724,6 +1740,7 @@ function landBlock(colIdx) {
     correctCount++;
     updateDot(wordsDone, 'correct');
     roundCorrect.push({ word:savedWord, pos:correct, sent:savedSentence });
+    announce(`Correct — "${savedWord}" is ${/^[aeiou]/i.test(CAT_LABELS[correct])?'an':'a'} ${CAT_LABELS[correct]}. +${pts} points.`);
 
     const col = CAT_COLOURS[correct];
     // Fly from landing position back to the exact gap coordinates
@@ -1748,6 +1765,7 @@ function landBlock(colIdx) {
     mistakes.push({ sent:savedSentence, word:savedWord, given:chosen, correct });
     roundWrong.push({ word:savedWord, pos:correct, given:chosen, sent:savedSentence });
     updateDot(wordsDone, 'wrong');
+    announce(`Not quite — "${savedWord}" is ${/^[aeiou]/i.test(CAT_LABELS[correct])?'an':'a'} ${CAT_LABELS[correct]}, not ${/^[aeiou]/i.test(CAT_LABELS[chosen])?'an':'a'} ${CAT_LABELS[chosen]}. Life lost.`);
 
     // Flash the correct column label
     const ci = activeCats.indexOf(correct);
@@ -2075,6 +2093,15 @@ function togglePause() {
   document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
   if (!paused && block && block.phase !== 'preview') startDropRAF();
 }
+
+// Auto-pause when the tab is backgrounded — otherwise a word already
+// falling keeps falling unseen and lands (very possibly in the wrong
+// column, costing one of only 3 lives) while nobody's there to steer it.
+// Deliberately doesn't auto-resume on return; the player un-pauses
+// (Space/Escape/P, or double-tap) whenever they're ready.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameActive && !paused) togglePause();
+});
 
 // ══════════════════════════════════════════════════════════
 // GAME FLOW

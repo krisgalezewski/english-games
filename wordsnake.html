@@ -198,7 +198,7 @@ html,body { height:100%; overflow:hidden; }
       <div class="word-letters" id="wordLetters"></div>
       <button class="eg-btn eg-btn--primary" id="bankBtn" style="padding:.4rem 1.1rem;font-size:.78rem" onclick="bankWord()">Bank word →</button>
     </div>
-    <div id="toastLayer"></div>
+    <div id="toastLayer" aria-live="polite" aria-atomic="false"></div>
   </div>
   <div class="game-right">
     <div class="hud-item"><div class="hud-val" id="scoreVal">0</div><div class="hud-lbl">Score</div></div>
@@ -845,6 +845,20 @@ function togglePause() {
   document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
   if (!paused) lastTick = performance.now();
 }
+
+// Auto-pause when the tab is backgrounded. requestAnimationFrame is
+// heavily throttled (often fully suspended) in a hidden tab in most
+// browsers, so this isn't the "timer burns for free" bug the other,
+// setInterval-driven games had — but without this, a snake left moving
+// unseen could still wrap around and crash into itself (using up a
+// snake-reset) with nobody there to react, which is exactly the kind of
+// "game screen not prioritised while in progress" issue this audit is
+// checking for. Deliberately does NOT auto-resume on return — the player
+// double-taps/presses space to un-pause when they're ready, same as a
+// manual pause.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameActive && !paused) togglePause();
+});
 
 // ══════════════════════════════════════════════════════════
 // INPUT

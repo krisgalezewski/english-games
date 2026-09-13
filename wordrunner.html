@@ -190,6 +190,11 @@ body { overflow:hidden; background:var(--eg-bg); }
 </div>
 
 <canvas id="gameCanvas"></canvas>
+<!-- Screen-reader-only status: this is a fast real-time action game, so
+     per-word pickups happen too often to announce without being noise —
+     this only speaks the meaningful, infrequent milestones (life lost,
+     round complete, game over). -->
+<div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <script src="shared.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════════════
@@ -308,6 +313,7 @@ const SUFFIX_WORDS = [
   {word:'KINDNESS',  correct:true},  {word:'DARKNESS',  correct:true},
   {word:'SADNESS',   correct:true},  {word:'WEAKNESS',  correct:true},
   {word:'HAPPINESS', correct:true},  {word:'FITNESS',   correct:true},
+  {word:'USELESSNESS',correct:true}, // real word (useless+ness) — was mismarked as an invalid "wrong suffix" example below; a student who correctly recognised it as valid English was being told to avoid it
   // -LY valid
   {word:'QUICKLY',   correct:true},  {word:'SLOWLY',    correct:true},
   {word:'KINDLY',    correct:true},  {word:'DARKLY',    correct:true},
@@ -330,7 +336,7 @@ const SUFFIX_WORDS = [
   {word:'QUICKLIER',  correct:false},{word:'SLOWLYING',  correct:false},
   {word:'ACCEPTABLER',correct:false},{word:'MOVABLENESS',correct:false},
   {word:'CREATIONER', correct:false},{word:'ACTIONFUL',  correct:false},
-  {word:'USELESSNESS',correct:false},{word:'FEARFULLESS',correct:false},
+  {word:'FEARFULLESS',correct:false},
   {word:'READABLEER', correct:false},{word:'RELIABLELY', correct:false},
   {word:'SOLUTIONFUL',correct:false},{word:'EDUCATIONING',correct:false},
 ];
@@ -841,6 +847,11 @@ function drawParticles(dt){
 function overlap(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;}
 
 // ── Master loop ───────────────────────────────────────────────────
+function announce(msg){
+  const el = document.getElementById('srStatus');
+  if (el) el.textContent = msg;
+}
+
 function masterLoop(ts){
   requestAnimationFrame(masterLoop);
   const dt=Math.min((ts-lastTime)/1000,.05);
@@ -925,6 +936,7 @@ function masterLoop(ts){
         burst(runner.x,runner.y,'#ef5350',18);
         textPop(runner.x,ry_top-25,'-1 ❤️','#ef5350');
         sfxMiss();
+        announce(`Hit "${w.text}" — wrong word for this round. ${lives} ${lives===1?'life':'lives'} left.`);
         if(lives<=0){endGame(false);return;}
       } else {
         // Shielded — absorb wrong word, show shield effect
@@ -963,7 +975,7 @@ function masterLoop(ts){
 
   // ── Round complete? ────────────────────────────────────────────
   if(wordsSpawned>=roundWordPool.length && words.filter(w=>!w.hit).length===0 && powerups.filter(p=>!p.hit).length===0){
-    if(round<10){round++;startRound();}
+    if(round<10){round++;announce(`Round ${round-1} complete. Starting round ${round} of 10.`);startRound();}
     else{endGame(true);}
     return;
   }
@@ -1003,6 +1015,7 @@ function startGame(){
 
 function endGame(won){
   state='idle';
+  announce(won ? `All 10 rounds complete! Final score ${score} points.` : `Out of lives. Final score ${score} points.`);
   // Switch back to peaceful menu music
   if(audioReady){ scheduleMusic(MENU_TRACK); Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm, 1); }
   if(score>bestScore){bestScore=score;localStorage.setItem('ar_best',bestScore);}
@@ -1037,6 +1050,16 @@ function togglePause(){
     if(audioReady)Tone.getTransport().start();
   }
 }
+
+// Auto-pause when the tab is backgrounded — rAF is heavily throttled (often
+// fully suspended) in a hidden tab, so words simply stop scrolling rather
+// than piling up, but a player who tabs away mid-jump can still come back
+// to an unseen collision costing a life. Reuses the existing togglePause()
+// so lastTime is correctly re-anchored on manual resume; deliberately does
+// not auto-resume itself.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'playing') togglePause();
+});
 
 function showMainMenu(){
   document.getElementById('endScreen').classList.add('hidden');

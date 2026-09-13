@@ -144,7 +144,7 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
       <button type="button" class="eg-btn eg-btn--ghost" onclick="clearAnswer()">Clear</button>
     </div>
 
-    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
+    <p class="eg-body--sm" id="feedback" aria-live="polite" aria-atomic="true" style="text-align:center;margin:0;min-height:1.3em;"></p>
   </div>
 
   <!-- End card -->
@@ -466,6 +466,7 @@ let diff = 'easy', wordBank = EASY_WORDS;
 let roundWords = [], current = 0, totalScore = 0, skipsLeft = 3, hintsLeft = 2;
 let currentLetters = [], placedIndices = [], timerInterval = null, timeLeft = START_TIME;
 let results = [];
+let advancing = false; // guards against double check/skip/hint during the post-correct-answer delay
 
 const RULES_BY_DIFF = {
   easy: 'Read the definition, then unscramble the letters to spell the word. <strong>8 words</strong> per round, <strong>90 seconds</strong> on the clock. <strong>3 skips</strong> (−10 pts) and <strong>2 hints</strong> (−5 pts each) available.',
@@ -525,6 +526,7 @@ function startTimer() {
   timeLeft = START_TIME;
   updateTimerUI();
   timerInterval = setInterval(()=>{
+    if (document.hidden) return;
     timeLeft--;
     updateTimerUI();
     if(timeLeft<=0){clearInterval(timerInterval);timeOut();}
@@ -559,6 +561,7 @@ function timeOut() {
 }
 
 function loadWord() {
+  advancing = false;
   if(current >= ROUND_SIZE){ clearInterval(timerInterval); endRound(); return; }
   const w = roundWords[current];
   document.getElementById('qCard').style.display = '';
@@ -647,6 +650,7 @@ function clearAnswer() {
 }
 
 function checkAnswer() {
+  if (roundEnded || advancing) return;
   const len = roundWords[current].w.length;
   let guess = '';
   for(let i=0;i<len;i++){
@@ -670,6 +674,7 @@ function checkAnswer() {
     // Bonus time for correct answer
     timeLeft = Math.min(timeLeft+10, START_TIME);
     updateTimerUI();
+    advancing = true;
     setTimeout(()=>{ current++; loadWord(); },900);
   } else {
     for(let i=0;i<len;i++) document.getElementById('ans'+i).classList.add('wrong');
@@ -679,6 +684,7 @@ function checkAnswer() {
 }
 
 function showHint() {
+  if (roundEnded || advancing) return;
   if(hintsLeft<=0){ showFeedback('No hints left!','bad'); return; }
   hintsLeft--;
   document.getElementById('hintsVal').textContent=hintsLeft;
@@ -701,6 +707,7 @@ function showHint() {
 }
 
 function skipWord(forced=false) {
+  if (!forced && (roundEnded || advancing)) return;
   if(!forced && skipsLeft<=0){ showFeedback('No skips left!','bad'); return; }
   if(!forced){ skipsLeft--; document.getElementById('skipsVal').textContent=skipsLeft; totalScore=Math.max(0,totalScore-10); document.getElementById('scoreVal').textContent=totalScore; }
   const w=roundWords[current];

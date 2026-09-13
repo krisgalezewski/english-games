@@ -45,7 +45,7 @@ main { max-width:620px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
 /* Conditional type colour coding — content-semantic, independent of the shared palette */
 :root {
-  --c0: #4caf50; --c1: #2196f3; --c2: #ff9800; --c3: #e91e63; --cm32: #9c27b0; --cm23: #00bcd4;
+  --c0: #4caf50; --c1: #2196f3; --c2: #ff9800; --c3: #e91e63; --cm32: #9c27b0; --cm23: #00bcd4; --cq: #607d8b;
 }
 
 /* Type badge — small colour-coded pill identifying which conditional this is */
@@ -187,7 +187,7 @@ main { max-width:620px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
     </div>
 
     <!-- Feedback panel (shown after answer) -->
-    <div class="feedback-panel" id="feedbackPanel">
+    <div class="feedback-panel" id="feedbackPanel" aria-live="polite" aria-atomic="true">
       <div id="fbType" class="fb-type"></div>
       <div id="fbRule" class="fb-rule"></div>
       <div id="fbWrong" class="fb-wrong" style="display:none"></div>
@@ -203,7 +203,7 @@ main { max-width:620px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
     <p class="eg-body" style="text-align:center;margin:0" id="practiceSummarySubtitle"></p>
     <div class="review-grid" id="practiceReviewGrid" style="max-height:55vh"></div>
     <!-- Feedback panel for practice summary item clicks -->
-    <div class="feedback-panel" id="practiceFeedbackPanel" style="display:none;width:100%;max-width:500px">
+    <div class="feedback-panel" id="practiceFeedbackPanel" aria-live="polite" aria-atomic="true" style="display:none;width:100%;max-width:500px">
       <div id="pFbType" class="fb-type"></div>
       <div id="pFbRule" class="fb-rule"></div>
       <div id="pFbWrong" class="fb-wrong" style="display:none"></div>
@@ -288,6 +288,8 @@ const TYPES = {
     rule:'Had + subject + past participle, would + infinitive. Inverted mixed conditional — unreal past condition, present result.' },
   invm23:{ label:'Mixed (2→3) — inversion', color:'var(--cm23)',
     rule:'Were + subject + adjective/noun, would have + past participle. Inverted mixed — unreal present state, past result.' },
+  condq: { label:'Conditional question', color:'var(--cq)',
+    rule:'A conditional sentence phrased as a question — any conditional type. Look at the tense pattern to work out which form the context needs.' },
 };
 
 // ── Question bank ───────────────────────────────────────────────────
@@ -2023,7 +2025,10 @@ function startTimer(){
   clearInterval(timerInterval);
   timeLeft=TIMES[currentDiff];
   updateTimer();
-  timerInterval=setInterval(()=>{timeLeft--;updateTimer();if(timeLeft<=0){clearInterval(timerInterval);autoEndRound();}},1000);
+  timerInterval=setInterval(()=>{
+    if (document.hidden) return;
+    timeLeft--;updateTimer();if(timeLeft<=0){clearInterval(timerInterval);autoEndRound();}
+  },1000);
 }
 
 function updateTimer(){
@@ -2105,6 +2110,15 @@ function loadQuestion(){
     card.textContent=opt.text;
     card.dataset.correct=opt.correct;
     card.dataset.idx=i;
+    // Keyboard accessibility: this is a plain <div> (needed so it can also
+    // be a native HTML5 drag source), so it isn't focusable or activatable
+    // by keyboard by default — give it the same reachability its sibling
+    // games get for free by using real <button> elements.
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); tapSelect(card, opt); }
+    });
     // Drag events
     card.draggable=true;
     card.addEventListener('dragstart',e=>{
@@ -2118,7 +2132,13 @@ function loadQuestion(){
     grid.appendChild(card);
   });
 
-  // Drop zone events
+}
+
+// Drop zone events — attached once (not per-question) so they don't pile
+// up across a round/session; the handler always reads the *current*
+// `answered` flag and the drag payload set at drag-start time, so a
+// single static listener is all this ever needs.
+function setupDropZone(){
   const dropZone=document.getElementById('dropZone');
   dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
   dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
@@ -2131,6 +2151,7 @@ function loadQuestion(){
     submitAnswer(text,isCorrect);
   });
 }
+setupDropZone();
 
 // ── Tap to select then confirm ───────────────────────────────────────
 function tapSelect(card, opt){
@@ -2304,15 +2325,14 @@ async function doSubmit(){
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────
-// ── Defensive event delegation fallback for end-card buttons ─────────
-document.getElementById('endCard').addEventListener('click', (e) => {
-  if(e.target.id === 'playAgainBtn' || e.target.closest('#playAgainBtn')){
-    restartGame();
-  }
-  if(e.target.id === 'switchLevelBtn' || e.target.closest('#switchLevelBtn')){
-    switchEndDiff();
-  }
-});
+// Note: the end-card "Play again" / "Switch level" buttons already have
+// their own onclick="restartGame()" / onclick="switchEndDiff()" attributes
+// in the HTML above — there used to *also* be a delegated click listener
+// on #endCard that called the same functions a second time on every click
+// (harmless in effect since both functions are idempotent-ish, but it
+// doubled up dropZone listener registration and did twice the DOM work
+// on every restart). Removed the redundant delegated listener; the
+// inline onclick handlers are sufficient on their own.
 
 switchLb('beginner');
 </script>

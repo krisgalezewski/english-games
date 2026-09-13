@@ -86,7 +86,7 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
     <div class="eg-options" id="optsGrid"></div>
 
-    <div class="eg-feedback" id="feedback" style="width:100%; display:none;">
+    <div class="eg-feedback" id="feedback" style="width:100%; display:none;" aria-live="polite" aria-atomic="true">
       <div>
         <div class="eg-eyebrow" id="feedbackLabel"></div>
         <div class="eg-body--sm" id="explanation" style="margin-top:4px;"></div>
@@ -250,9 +250,9 @@ const EASY_QS = [
    pattern:'___ exercise',
    explanation:'"Do exercise" is the correct collocation for physical activity.',
    example:'It\'s important to do exercise every day.'},
-  {noun:'the dishes', correct:'do', distractors:['make','wash','clean'],
+  {noun:'the dishes', correct:'do', distractors:['make','have','take'],
    pattern:'___ the dishes',
-   explanation:'"Do the dishes" is the standard expression for washing plates and cutlery.',
+   explanation:'"Do the dishes" is the standard fixed expression for washing up after a meal. ("Wash the dishes" is also fine — it\'s literally true, just less of a fixed collocation — so it isn\'t used as a wrong option here.)',
    example:'Who\'s going to do the dishes tonight?'},
   {noun:'business', correct:'do', distractors:['make','have','take'],
    pattern:'___ business',
@@ -266,9 +266,9 @@ const EASY_QS = [
    pattern:'___ a photo',
    explanation:'We "take" a photo in English. "Make" and "do" are both wrong here.',
    example:'She took a photo of the sunset.'},
-  {noun:'a course', correct:'take', distractors:['do','attend','follow'],
+  {noun:'a course', correct:'take', distractors:['make','attend','follow'],
    pattern:'___ a course',
-   explanation:'In English you "take" a course, especially in formal or academic contexts.',
+   explanation:'In English you "take" a course, especially in formal or academic contexts. ("Do a course" is also common in everyday British English, but "take" is the safest, most widely accepted choice.)',
    example:'She decided to take a course in graphic design.'},
   {noun:'a calculated risk', correct:'take', distractors:['make','do','give'],
    pattern:'___ a calculated risk',

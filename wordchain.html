@@ -130,7 +130,7 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
         <input class="eg-input" id="wordInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type a word…" maxlength="20"/>
         <button type="button" class="eg-btn eg-btn--primary eg-btn--sm" onclick="submitWord()">→</button>
       </div>
-      <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
+      <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;" aria-live="polite" aria-atomic="true"></p>
     </div>
 
     <div class="wc-chain" id="chainDisplay"></div>
@@ -207,6 +207,11 @@ let timeLeft = START_TIME, timerInterval = null;
 let lives = MAX_LIVES;
 let currentPOS = ''; // hard mode: current required part of speech
 let lbMode = 'easy';
+// True for the duration of a Hard-mode part-of-speech check (an async network
+// call). Without this, typing and submitting a second word while the first
+// check is still in flight could let both resolve and mutate the chain/score,
+// effectively scoring two words for one turn.
+let submitting = false;
 
 // ── Word list ──────────────────────────────────────────────────────
 async function loadWords() {
@@ -253,6 +258,7 @@ function startTimer() {
   clearInterval(timerInterval);
   updateTimerUI();
   timerInterval = setInterval(() => {
+    if (document.hidden) return; // don't burn the clock while the tab is backgrounded
     timeLeft = Math.max(0, timeLeft - 1);
     updateTimerUI();
     if (timeLeft <= 0) { clearInterval(timerInterval); endGame('time'); }
@@ -400,13 +406,21 @@ function renderChain() {
 
 // ── Word submission ────────────────────────────────────────────────
 async function submitWord() {
-  if (gameOver) return;
+  if (gameOver || submitting) return;
   const inp  = document.getElementById('wordInput');
   const word = inp.value.trim().toLowerCase().replace(/[^a-z]/g, '');
   inp.value  = '';
 
   if (!word) return;
+  submitting = true;
+  try {
+    return await submitWordInner(word, inp);
+  } finally {
+    submitting = false;
+  }
+}
 
+async function submitWordInner(word, inp) {
   // ── Validation (each failure costs a life) ─────────────────────
   // IMPORTANT: on every rejection, currentLetter is unchanged — the player
   // must try again with a word starting with the SAME letter as before.
@@ -437,12 +451,16 @@ async function submitWord() {
   if (mode === 'hard') {
     showFeedback('Checking…', 'info');
     const posSet = await getPartsOfSpeech(word);
+    // The round may have ended (time ran out) while this network check was
+    // in flight — don't let a late-arriving check mutate a chain/score that
+    // no longer belongs to the round the player is currently looking at.
+    if (gameOver) return;
     if (posSet.size === 0) {
       // API didn't know — give benefit of the doubt
       showFeedback('', '');
     } else if (!posSet.has(currentPOS)) {
       loseLife(`"${word}" is not a ${currentPOS} (−1 life)`);
-      if (lives > 0) { pickPOS(); renderPrompt(); }
+      if (lives > 0) { pickPOS(); renderPrompt(); flashPrompt(); }
       inp.focus();
       return;
     }

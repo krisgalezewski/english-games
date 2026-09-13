@@ -111,7 +111,7 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
       <button type="button" class="eg-btn eg-btn--ghost" id="endGameBtn" onclick="confirmEndGame()" style="display:none">End game</button>
     </div>
 
-    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
+    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;" aria-live="polite" aria-atomic="true"></p>
   </div>
 
   <!-- End card -->
@@ -255,7 +255,7 @@ const EASY_WORDS = [
   {word:'MYSTERIOUS',    def:'Difficult or impossible to understand, explain, or identify.',
    hint1:'Ends in <span class="hl">-ious-</span> (not <span class="hl">-eous</span>)',          hint2:'myster-<span class="hl">ious</span> (mystery → mysterious, <span class="hl">y</span> changes to <span class="hl">i</span>)', ex:'There was something mysterious about his disappearance.'},
   {word:'NEIGHBOUR',     def:'A person who lives near you.',
-   hint1:'Contains -<span class="hl">ei</span>- and a silent <span class="hl">-gh</span>',      hint2:'neigh-<span class="hl">bour</span> (neigh like a horse + bour)', ex:'Our neighbour always waters our plants when we\'re away.'},
+   hint1:'Contains -<span class="hl">ei</span>- and a silent <span class="hl">-gh</span>',      hint2:'neigh-<span class="hl">bour</span> (neigh like a horse + bour)', ex:'Our neighbour always waters our plants when we\'re away.', alts:['NEIGHBOR']},
   {word:'OCCASION',      def:'A particular time or instance of an event; a special event.',
    hint1:'Contains a double <span class="hl">-c-</span>, single <span class="hl">-s</span>',      hint2:'oc-<span class="hl">ca</span>-sion (double <span class="hl">c</span>, not double <span class="hl">s</span>)', ex:'We only use the good china on special occasions.'},
   {word:'OPINION',       def:'A view or judgement formed about something.',
@@ -285,7 +285,7 @@ const EASY_WORDS = [
   {word:'PROFESSION',    def:'A paid occupation, especially one requiring training or a qualification.',
    hint1:'Contains a double <span class="hl">-s</span>',                hint2:'profes-<span class="hl">sion</span> (profess + ion, double <span class="hl">s</span>)', ex:'Teaching is a very rewarding profession.'},
   {word:'PROGRAMME',     def:'A planned series of events or activities; a broadcast show.',
-   hint1:'Ends in <span class="hl">-mme-</span> (British spelling)',    hint2:'pro-<span class="hl">gramme</span> (British English has double <span class="hl">m</span> + <span class="hl">e</span>)', ex:'There\'s a new programme about wildlife on tonight.'},
+   hint1:'Ends in <span class="hl">-mme-</span> (British spelling)',    hint2:'pro-<span class="hl">gramme</span> (British English has double <span class="hl">m</span> + <span class="hl">e</span>)', ex:'There\'s a new programme about wildlife on tonight.', alts:['PROGRAM']},
   {word:'PURPOSE',       def:'The reason for which something is done or created.',
    hint1:'Ends in <span class="hl">-ose-</span> (not <span class="hl">-us-</span> or <span class="hl">-ice</span>)',     hint2:'pur-<span class="hl">pose</span> (pur + pose, two syllables)', ex:'What is the purpose of this meeting?'},
   {word:'RECEIVE',       def:'To be given or presented with something.',
@@ -379,7 +379,7 @@ const EASY_WORDS = [
   {word:'JEALOUS',       def:'Feeling envy towards someone or resentment of their advantages.',
    hint1:'Ends in <span class="hl">-ous-</span> (not <span class="hl">-us</span>)',             hint2:'jeal-<span class="hl">ous</span> (jeal + ous — contains "jealousy")', ex:'She felt jealous when her friend got the promotion instead of her.'},
   {word:'JUDGMENT',      def:'The ability to make sensible decisions; an official decision.',
-   hint1:'No <span class="hl">-e-</span> before <span class="hl">-ment-</span> (in British formal usage)',hint2:'judge → <span class="hl">judg</span>-<span class="hl">ment</span> (drop the <span class="hl">e</span> before -ment)', ex:'Use your own judgment when deciding what to do.'},
+   hint1:'No <span class="hl">-e-</span> before <span class="hl">-ment-</span> (in British formal usage)',hint2:'judge → <span class="hl">judg</span>-<span class="hl">ment</span> (drop the <span class="hl">e</span> before -ment)', ex:'Use your own judgment when deciding what to do.', alts:['JUDGEMENT']},
   {word:'KITCHEN',       def:'A room where food is prepared and cooked.',
    hint1:'Ends in <span class="hl">-en-</span> (not <span class="hl">-in</span>)',              hint2:'kitch-<span class="hl">en</span> (kitch + en — two syllables)', ex:'The smell of fresh bread filled the kitchen.'},
   {word:'MAINTENANCE',   def:'The process of keeping something in good condition.',
@@ -454,7 +454,7 @@ const HARD_WORDS = [
   {word:'ELOQUENT',       def:'Fluent or persuasive in speech or writing.',
    hint1:'Ends in <span class="hl">-uent-</span> (not <span class="hl">-ient</span>)',              hint2:'elo-<span class="hl">quent</span> (elo + quent — the <span class="hl">qu</span> makes a "kw" sound)', ex:'She gave an eloquent speech at the conference.'},
   {word:'ENCYCLOPEDIA',   def:'A comprehensive reference work containing articles on many subjects.',
-   hint1:'Contains -<span class="hl">pae</span>- or -<span class="hl">pe</span>- depending on spelling tradition',hint2:'ency-<span class="hl">clo</span>-pedia (en + cyclo + pedia)', ex:'I looked up the topic in an online encyclopedia.'},
+   hint1:'Contains -<span class="hl">pae</span>- or -<span class="hl">pe</span>- depending on spelling tradition',hint2:'ency-<span class="hl">clo</span>-pedia (en + cyclo + pedia)', ex:'I looked up the topic in an online encyclopedia.', alts:['ENCYCLOPAEDIA']},
   {word:'ENTHUSIASTIC',   def:'Having or showing intense and eager enjoyment or interest.',
    hint1:'Ends in <span class="hl">-astic-</span> (not <span class="hl">-asic</span>)',             hint2:'enthusi-<span class="hl">astic</span> (enthusiasm → enthusiastic)', ex:'The new student was enthusiastic about every subject.'},
   {word:'EXHILARATING',   def:'Making one feel very happy, animated, or elated.',
@@ -554,7 +554,7 @@ const HARD_WORDS = [
   {word:'ANACHRONISM',    def:'A thing belonging to a period other than the one in which it exists.',
    hint1:'Starts with <span class="hl">-ana</span>- and contains a silent <span class="hl">-ch</span>',hint2:'an-<span class="hl">ach</span>-ronism (the <span class="hl">ch</span> = "k" sound, Greek origin)', ex:'A knight using a mobile phone in the film is a deliberate anachronism.'},
   {word:'ARCHAEOLOGICAL', def:'Relating to archaeology; connected with the study of ancient remains.',
-   hint1:'Contains -<span class="hl">ae</span>- (British spelling)',       hint2:'archaeo-<span class="hl">log</span>-ical (archaeo + logical)', ex:'The team made an exciting archaeological discovery near the river.'},
+   hint1:'Contains -<span class="hl">ae</span>- (British spelling)',       hint2:'archaeo-<span class="hl">log</span>-ical (archaeo + logical)', ex:'The team made an exciting archaeological discovery near the river.', alts:['ARCHEOLOGICAL']},
   {word:'AUTHORITATIVE',  def:'Commanding and deserving respect; reliable and accurate.',
    hint1:'Ends in <span class="hl">-ative-</span> (not <span class="hl">-itive</span>)',            hint2:'authorit-<span class="hl">ative</span> (authority → authoritative)', ex:'She spoke in an authoritative tone that left no room for argument.'},
   {word:'BELLIGERENT',    def:'Hostile and aggressive; waging war.',
@@ -679,6 +679,9 @@ function buildDots() {
 
 function loadWord() {
   const w = roundWords[current];
+  // Reset per-word (was previously only reset in initRound(), which meant using the
+  // "Extra hint" once anywhere in a round permanently hid it for every later word).
+  extraHintUsed = false;
   document.getElementById('qMeta').textContent = `Word ${current+1} of ${ROUND_SIZE}`;
   document.getElementById('defText').textContent = w.def;
   document.getElementById('letterHint').textContent = `${w.word.length} letters`;
@@ -744,10 +747,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function checkSpelling() {
   const inp = document.getElementById('spellInput');
   const guess = inp.value.trim().toUpperCase();
-  const target = roundWords[current].word.toUpperCase();
+  const w = roundWords[current];
+  const target = w.word.toUpperCase();
+  // Accept legitimate alternative spellings (e.g. British/American variants) where the
+  // word data lists them, so a genuinely correct answer in the "other" tradition isn't
+  // marked wrong just because it doesn't match the one canonical spelling on file.
+  const accepted = [target].concat((w.alts || []).map(a => a.toUpperCase()));
   attempts++;
 
-  if (guess === target) {
+  if (accepted.includes(guess)) {
     inp.className = 'eg-input is-correct';
     let pts = 15;
     if (h1Shown) pts -= 3;

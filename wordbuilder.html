@@ -137,7 +137,7 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
       <button type="button" class="eg-btn eg-btn--ghost eg-btn--sm" onclick="shuffleRack()">Shuffle</button>
     </div>
 
-    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
+    <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;" aria-live="polite" aria-atomic="true"></p>
 
     <div style="width:100%;">
       <h3 class="eg-eyebrow" style="margin:0 0 10px;">Words found (<span id="foundCount">0</span>)</h3>
@@ -223,14 +223,14 @@ const LETTER_PTS = {
 // Each rack has a list of valid words that can be made from it
 const RACKS_EASY = [
   // 7 letters, player CAN reuse any letter
-  { letters:'AELRST', words:['ARE','ATE','EAR','EAT','ERA','ALE','ART','LEST','LATE','RATE','REAL','REST','SALE','SEAL','SEAT','STAR','TALE','TEAR','TEAL','EARL','LATER','LEAST','ALERT','ALTER','LASER','STALE','STARE','STEAL','RATEL','ALERTS','ALTERS','STELAR'] },
+  { letters:'AELRST', words:['ARE','ATE','EAR','EAT','ERA','ALE','ART','LEST','LATE','RATE','REAL','REST','SALE','SEAL','SEAT','STAR','TALE','TEAR','TEAL','EARL','LATER','LEAST','ALERT','ALTER','LASER','STALE','STARE','STEAL','RATEL','ALERTS','ALTERS'] },
   { letters:'AEINST', words:['ANT','ANE','ATE','EAT','SET','SIN','SIT','NET','TEN','TIE','SEA','ANTE','ANTI','NEAT','SANE','SINE','SITE','ANISE','INSET','SATIN','SAINT','STAIN','TINEA','NATES','STEIN'] },
   { letters:'EGLNOS', words:['LOG','ONE','NOG','SON','SOL','EON','LEG','GEL','GONE','LOGE','LONE','LONG','NOSE','ONES','SONG','SOLE','OGLE','SLOE','ENOL','NOEL','SNOG','GLEN','GELS','LONGES'] },
-  { letters:'ACDORS', words:['CAR','COD','COR','OAR','OCA','ORC','ROD','SAC','SOD','ARCO','CARD','CORD','OARS','RODS','SCAR','SCAD','SOAR','SORD','DOCS','DRACO','CORDS','CARDS','ROADS','ACORN'] },
-  { letters:'EGILNT', words:['GEL','GET','GIN','LEG','LET','LIE','LIT','NET','NIL','NIT','TIE','TIN','GELT','GILT','GLEN','LENT','LIEN','LITE','TING','TILE','TINE','INLET','TINGLE','LINTER'] },
+  { letters:'ACDORS', words:['CAR','COD','COR','OAR','OCA','ORC','ROD','SAC','SOD','ARCO','CARD','CORD','OARS','RODS','SCAR','SCAD','SOAR','SORD','DOCS','DRACO','CORDS','CARDS','ROADS'] },
+  { letters:'EGILNT', words:['GEL','GET','GIN','LEG','LET','LIE','LIT','NET','NIL','NIT','TIE','TIN','GELT','GILT','GLEN','LENT','LIEN','LITE','TING','TILE','TINE','INLET','TINGLE'] },
   { letters:'AENRST', words:['ANT','ARE','ART','EAR','EAT','ERA','NET','RAN','RAT','TAN','TAR','TEN','ANTE','EARN','NEAR','RANT','RATE','RENT','STAR','TERN','RANTS','EARNS','STERN','STARE','SNARE'] },
-  { letters:'AILRST', words:['AIR','AIT','ART','LAT','LIT','RAT','SAT','SIT','SLY','TAR','LAIR','LIRA','LIST','RAIL','RAIT','SALT','SILT','SLIT','SLAT','STAR','TAIL','TSAR','TRAIL','TRIALS','STRAIT'] },
-  { letters:'AEMNOR', words:['ARE','ARM','EAR','ERA','MAN','MAP','MAR','MORE','MANE','MARE','MEAN','MOAN','MOAR','NORM','OMEN','ONER','REAM','ROAM','ROAN','ROMAN','MANOR','MOANER','ROMANE'] },
+  { letters:'AILRST', words:['AIR','AIT','ART','LAT','LIT','RAT','SAT','SIT','TAR','LAIR','LIRA','LIST','RAIL','RAIT','SALT','SILT','SLIT','SLAT','STAR','TAIL','TSAR','TRAIL','TRIALS','STRAIT'] },
+  { letters:'AEMNOR', words:['ARE','ARM','EAR','ERA','MAN','MAR','MORE','MANE','MARE','MEAN','MOAN','NORM','OMEN','ONER','REAM','ROAM','ROAN','ROMAN','MANOR','MOANER'] },
   { letters:'AEGINR', words:['AGE','AIR','ARE','EAR','ERA','GIN','NAG','RAG','RAN','RIG','EARN','GAIN','GEAR','GRIN','NEAR','RAGE','RAIN','RANG','RANI','RING','ANGER','GRAIN','RANGE','REGAIN'] },
   { letters:'AEILMN', words:['AIL','AIM','AIN','ALE','ANI','LEI','LIE','MAN','MEN','NIL','LANE','LEAN','LIEN','LIME','LINE','MAIL','MAIN','MALE','MEAL','MEAN','MILE','MINE','NAIL'] },
   { letters:'AEORST', words:['ARE','ATE','EAR','EAT','ERA','ORE','OAR','OAT','ROT','SAT','SEA','SET','SOT','STAR','SEAT','TEAR','TEAS','TOES','TORE','ROAST','STORE','RATES'] },
@@ -254,15 +254,25 @@ const RACKS_EASY = [
 ];
 
 const RACKS_HARD = [
-  // 7 letters, each letter can only be used ONCE
-  { letters:'AEINRST', words:['ANT','ARE','ATE','EAR','EAT','ERA','IRE','NET','RAN','RAT','SIN','SIT','TAN','TAR','TEN','TIE','TIN','ANTE','ANTI','EARN','NEAR','RANT','RATE','RENT','SIRE','SITE','STAR','STEIN','STERN','TRAIN','STAINER','NASTIER','RETAINS','ENTAILS','ANESTRI'] },
-  { letters:'AELORST', words:['ALE','ALT','ARE','ATE','EAR','EAT','ERA','LAT','LOT','OAR','OAT','ORE','ROT','SOL','TAR','ALOE','ALSO','ALTO','EARL','LATE','LORE','OAST','ORAL','RATE','REAL','ROTE','SALE','SEAL','SLOE','SOAR','SOLE','TALE','TARO','TEAL','TORC','STORE','STOLE','TALON','LASTER','LOAFERS','OATMEAL'] },
-  { letters:'CDEHIRT', words:['DIE','DIT','HID','HIT','ICE','IRE','RED','RID','THE','ACHE','ACID','ARCH','ARID','CARE','CART','CHAD','CHAR','CHAT','CHID','CITE','DEAR','DIRE','DIRT','EACH','HAIR','HARD','HATE','HEAR','HEAT','HEIR','HIRE','IDEA','ITCH','RACE','RAID','RICH','RICE','RIDE','TIDE','TIRED','TRADE','TIRADE','THRICED'] },
-  { letters:'ABEILNS', words:['AIN','AIL','AIS','ALE','ANI','BAN','BIN','NAB','NIL','NIB','SAB','SIN','ABLE','BALE','BANE','BILE','CLAN','ISLE','LAIN','LANE','LEAN','LIEN','LINE','NAIL','NABS','AILS','BEANS','LINES','SNAIL','ALIEN','BLAINS','INALS'] },
-  { letters:'CEILNOT', words:['CON','COT','EON','ION','LIT','LOT','NIL','NOT','ONE','TIN','TON','CEIL','CITE','CLOT','COIL','COIN','COLE','CONE','COTE','ICON','LICE','LOIN','LONE','LORE','NICE','NOTE','ONCE','TILE','TINE','TOIL','TONE','ONICE','TONIC','NOETIC','NOTICE','ELOTION'] },
-  { letters:'ADEGILR', words:['AID','AIR','AGE','DAL','DIG','GAD','GAL','GEL','LAD','LAG','LID','RAD','RAG','RAN','RID','RIG','LAIR','LAID','LAND','LARD','DIAL','DIRE','GILD','GIRL','IDEA','IDLE','LIED','RAIL','RAID','RILE','RIDE','AGED','LAIRD','GRAIL','GILDAR','LIGARD'] },
-  { letters:'EGHILNS', words:['GEL','GIN','HEN','HIS','LEG','LIE','NIL','SHE','SIN','GELS','GENT','GLEN','GLIB','GIST','HENS','LIEN','LIEN','LIES','LINE','LEGS','NIGH','SHIN','SING','SLOE','SNIG','LENIS','SHINGLE','ENGLISH','LINGHES'] },
-  { letters:'ABEGNRS', words:['AGE','AIN','AIR','ARE','BAN','BAR','BEG','BIN','EAR','ERA','GAN','GIN','NAB','NAG','RAN','RIB','SAG','SIN','BANE','BARE','BARN','BEAN','BEAR','BIER','BILE','BRAN','GAIN','GARB','GEAR','GRAB','GRIN','REIN','RING','BRAIN','REIGN','GRAINS','BANGER','SNARE','BEGINS','BEARING'] },
+  // 7-8 letters, each letter can only be used ONCE
+  { letters:'AEINRST', words:['ANT','ARE','ATE','EAR','EAT','ERA','IRE','NET','RAN','RAT','SIN','SIT','TAN','TAR','TEN','TIE','TIN','ANTE','ANTI','EARN','NEAR','RANT','RATE','RENT','SIRE','SITE','STAR','STEIN','STERN','TRAIN','STAINER','NASTIER','RETAINS','ANESTRI'] },
+  { letters:'AELORST', words:['ALE','ALT','ARE','ATE','EAR','EAT','ERA','LAT','LOT','OAR','OAT','ORE','ROT','SOL','TAR','ALOE','ALSO','ALTO','EARL','LATE','LORE','OAST','ORAL','RATE','REAL','ROTE','SALE','SEAL','SLOE','SOAR','SOLE','TALE','TARO','TEAL','STORE','STOLE','LASTER'] },
+  // NOTE: this rack was originally 'CDEHIRT' (missing the A that roughly
+  // half its own word list needs — ACHE, ACID, ARCH, CARE, DEAR, HAIR, IDEA,
+  // TRADE etc. are all impossible without one) — restored the missing letter
+  // rather than gutting the list, since every affected word needs exactly
+  // one A and nothing else was wrong with them.
+  { letters:'ACDEHIRT', words:['DIE','DIT','HID','HIT','ICE','IRE','RED','RID','THE','ACHE','ACID','ARCH','ARID','CARE','CART','CHAD','CHAR','CHAT','CHID','CITE','DEAR','DIRE','DIRT','EACH','HAIR','HARD','HATE','HEAR','HEAT','HEIR','HIRE','IDEA','ITCH','RACE','RAID','RICH','RICE','RIDE','TIDE','TIRED','TRADE','TIRADE'] },
+  { letters:'ABEILNS', words:['AIN','AIL','AIS','ALE','ANI','BAN','BIN','NAB','NIL','NIB','SIN','ABLE','BALE','BANE','BILE','ISLE','LAIN','LANE','LEAN','LIEN','LINE','NAIL','NABS','AILS','BEANS','LINES','SNAIL','ALIEN','BLAINS'] },
+  { letters:'CEILNOT', words:['CON','COT','EON','ION','LIT','LOT','NIL','NOT','ONE','TIN','TON','CEIL','CITE','CLOT','COIL','COIN','COLE','CONE','COTE','ICON','LICE','LOIN','LONE','NICE','NOTE','ONCE','TILE','TINE','TOIL','TONE','TONIC','NOETIC','NOTICE'] },
+  { letters:'ADEGILR', words:['AID','AIR','AGE','DAL','DIG','GAD','GAL','GEL','LAD','LAG','LID','RAD','RAG','RID','RIG','LAIR','LAID','LARD','DIAL','DIRE','GILD','GIRL','IDEA','IDLE','LIED','RAIL','RAID','RILE','RIDE','AGED','LAIRD','GRAIL'] },
+  { letters:'EGHILNS', words:['GEL','GIN','HEN','HIS','LEG','LIE','NIL','SHE','SIN','GELS','GLEN','HENS','LIEN','LIES','LINE','LEGS','NIGH','SHIN','SING','SNIG','LENIS','SHINGLE','ENGLISH'] },
+  // NOTE: this rack was originally 'ABEGNRS' (missing the I that most of its
+  // own word list needs — AIN, AIR, BIN, GIN, GRIN, BRAIN, BEGINS, BEARING
+  // etc. are all impossible without one) — restored the missing letter
+  // rather than gutting the list, same fix as the CDEHIRT rack above.
+  // "BILE" also needs an L that still isn't in the rack, so it's dropped.
+  { letters:'ABEGINRS', words:['AGE','AIN','AIR','ARE','BAN','BAR','BEG','BIN','EAR','ERA','GAN','GIN','NAB','NAG','RAN','RIB','SAG','SIN','BANE','BARE','BARN','BEAN','BEAR','BIER','BRAN','GAIN','GARB','GEAR','GRAB','GRIN','REIN','RING','BRAIN','REIGN','GRAINS','BANGER','SNARE','BEGINS','BEARING'] },
   { letters:'AEGINRT', words:['AGE','AIR','ANT','ARE','ART','ATE','EAR','EAT','ERA','GAIT','GATE','GEAR','GIANT','GRATE','GREAT','RATING','GRANITE'] },
   { letters:'BEILNOT', words:['BIT','BOT','LIE','LIT','LOT','NIL','NOB','TIE','TIN','TOE','TON','BELT','BENT','BITE','BOIL','BOLT','LINE','LOIN','NOBLE','NOTE','TONE','TOIL'] },
   { letters:'CDEINOR', words:['CON','DIE','DIN','EON','ICE','ION','NOD','ODE','RID','ROD','CODE','CORD','DICE','DINE','DOER','NICE','RICE','RIDE','CIDER','CODER','CRONE','DECOR','DICER'] },
@@ -287,6 +297,9 @@ const RACKS_HARD = [
 
 // ── Simple dictionary for validation (common 3-8 letter words) ────
 // We use the dwyl word list if available, otherwise a local set
+// Embedded fallback word list (same one WordChain uses) for when the
+// network can't reach GitHub — see loadDict()'s catch block below.
+const WB_FALLBACK_WORDS = 'abbey abide able absent absorb abyss accent access accord ace ache ached aching acid acorn acquit across act active actual acumen acute adapt add adept adhere adjust adobe adroit adult advert aegis aerial affirm afford afield aflame afraid after again age aged ageing agency agenda aghast agile agitate ago agog agony agree ahead ahoy aid aided ailing aim air airway airy aisle albeit album alcove alert algae alien align all alley allot allow allude allure alms aloft alone along aloof aloud alpha alpine also alter alto alum amaze amber amble ambush amend amiable amidst amine amok among amount ample amps amuse amused angel anger angle angler angry anguish animal anime ankle annex annual anoint answer ant ante antic anvil anyone anyway apart ape apex aplenty apple apply aptly arable arc arcade arcane arch ardent are area arena argue aria arid arise ark arm armor army aroma arose around arouse array arrow art arty ash aside ask aspect aspire assail assemble assert ate atone attain attest attic attune audio auger augur august aunt authentic avenge aviate avid avoid awaken awash awe awed awful awhile awry axe aye back badge bag bagel bail bait bake bald bale ball balm ban band bane bang bank banter bar bare bark barn barter base bash basic basis bask bat batch bath bathe bay beach beacon bead beady beam bean bear beard beast beat beck beckon bed bee beef been beer beet beguile behave behold bell belle belong belt bench bend best bestow better bevel bewail bias bide big bile bill billow binary bind bird bisect bit bite blanch blazon bleach bless blew bliss blitz bloat blob bloc block blood bloom blossom blot blotch blow blown blue blunt board boat bode body bold bolt bond bonder bone bonnet bonus boo book boost bore borer boring born botch both bother bough bounce bout bow box boy boyish brag braid bran branch brand brash brave bravo brawn bray braze breach bream bred breed brew bribe brick bride bright brim brine brink brisk broach broad broil broke brood broth brow brown brows brunt brush bud budge buffer bug buggy build bulb bulge bulk bull bully bump bumpy bun bunch bundle bunk bunny buoy burden burg burgh burn burp burrow burst bus busy but buy buzz bypass cab cable cafe cage cake call calm came camp can candy cane cap cape car care cargo carol carry cart case cash cast cat catch catnap cause cave cavort cedar cell censure cent chafe chain chair chalk champ chant chaos charm chasm chaste cheer chef chess chest chide child chin china chip choke choose chop chord chose chow chrome chub chug ciao cipher city civil clad claim clam clamp clang clank clap clarify clash clasp classy clave claw clay clean clear cleft clench clerk clever cliche clink clip cloak clock clod clog clone clop close clot cloth cloud clout clown clue coal coat coax cob cobalt cobble cod code coded codify coffee coil cold collide colony colt coma combat comet comic comma compel comply concur condone cone confide conk convoy cook cool cop coral core corn cost coup couple coven cover covert cow cozy crab crack craft cram cramp crane crave crawl crazy creak create creed creek creep crest crimp crisis crisp crisped crop cross crow crowd crown cruise crusade crust cry crypt cubic cup curate curl curt curve cushion cusp cut cute cycle dab dabble dam damp dampen dance dapper dare dark darken darn dart dash day daze dazed dazzle dead deaf deal dean dear debar debate debut deceive deck decor decoy decree deep deer deferral define deflect deft delta deluge demo den dense dent deplete depot derby desire desk devil devote devout dew dial dice did die died differ dig digit dike dill dim dime dine diner ding dip dire dirty disco dish disk ditzy divert dizzy docile dock dodge dog dole dolt domain dome done doom door dork dorm dose dot dote double dove dowdy dowel down downy drag draw drawn dread dream dreary dress drew dried drift drink drip drive drool droop drop dross drove drug drum dry dryer dual dub duel dug dumb dump dun dune duo duress during dusk dust duty dwarf dwell each eagle ear earl early earn ease easel easily east eat ebony edge edgy eel eerie egg ego eight eject elapse elder elf elicit elk elm else embed embers emcee emerge emit emote empire empty enable enact end endow enrich ensue ensure entail enter entity entreat entry envy epic equal era errant erst escape essay etude evade eve even evenly event every evict evil evince ewe exact exalt exam excel exhaust exile expand expel expire expo extol exult eye fab fabled face fact factor fad fail fair fairly fall fame famous fan fancy far fare farm fast fat fate fathom fawn fax faze feat fee feeble feet feign feisty feline fell fellow fend fern fervent fester fete feud few fiasco fib fife fig figure file fill film fin find finest finish firm fish fist fit fix fizz flab flag flair flak flake flame flank flap flare flask flat flaw flea fleck flew flick flinch fling flint flit flop flora floss flour flow flown fluff fluke flunk flute fly flyer foam foamy foe foes fog fold folk fond font food fool for fore forego fork form formal fort forte forum foster foul found fox foyer frail frame franc frank fray freak free freely frenzy frog frolic from frond front frost froth frown frozen frugal fry fudge fuel fugue full fully fume fun fund fungi funky fur furl furtive fury fuss gag gale gang gap gape garb garner gas gate gather gauze gave gavel gawky gaze gear geld gelt gene gentle gentry get gibe giddy gifted gig gild gill gimp gin girlish gist give given glad glance glare gleam glean glee gleeful glen glib glide glimmer glint gloat globe gloomy glory gloss glove glow glue gnash gnat gnaw gnu goad goal gobs god goer golden gone gong good goof goose gore gorge gory got gouge gourd gout govern grab grace gracious grad grade grain gram grand grant grapple grasp grate gravel gray graze greed greet grew grid grieve grim grin grind grip grit groan groin gross grotto ground grout grove growl grub grudge guise gulf gull gum gun gust gusto gusty gut gypsy had haggle hail hale half hall halm halt ham hamper hand handy hang hard harden hardy hare hark harm harp harsh hash hasp haste hasten hasty hat hatch hate have haven hawk hay head heal heap heart hearty heat heavy hedge heel heir heist hell hello help hem her herb herbs here heroic heron hew hidden high hill hilt him hind hinge hint hip hippo hire his hiss hit hive hoax hobble hoe hog hoist holly homer hone honest hood hooded hoot hop hope horde horn horns host hot hour house hove how howl hub hue hug hull humid hump hunch hung hunk hunker hunt hurry husk hustle hut hyena icon icy ideal idle idyll ignite ill image imp impede imply impose inane inborn inch incur indent inert infer infix inflow info inform ink inn innate insane intent inter inure invoke ion ire iris irk island item ivory ivy jab jag jagged jam jar jaunt jaunty jaw jelly jerk jest jester jet jig jilt jitter job join joke jolly jolt jostle jot joust jovial jowl joy judge jug juicy jumble jumbo jump jungle junk juror just jut kazoo kebab keen keep keg kept kern ketch kid kin kit kitty knave kneel knife knob knoll knot knuckle lab label labyrinthine lace lack lad lady lag laid lame lament lamp land lane lanky lap lapel lard lark laser lash latch later lathe laud lavish law lawn laxly lay layer lea lead leader leaf leafy leaky lean leap leapt learn lease leash led ledge lees left leg legal lemon lend lens less lessen let lethal liar lid lied life lift likely limb lime limp linage line linear liner linger link lion lip lisp list lit live lively livid load loam lodge lofty log lonely loosen lore lorry lose loss lost lot louden lousy lover low lower lucid lumpy lunar lunge lure lurk lurking lusty lute lynx mace mad made magic maid mail main major make malt mana mane mangle manor mantle map maple march mark mars mart marvel mass mat match mate math maw maze mead meal mean meat medal mellow melt menace mentor mercy merit mime mind mine minor mint mirage mire mirth mist mix mixed moat mob mobile mock mod mode modern modest moist mold moldy moles molt money monk month mood moot mop moral more mortal mossy mound mount mourn mourner mouth mow muck mud muddy mug muggy mulch mull murk murky muse musk must muster mute muzzy nab nag nail name namely nap nape narrow nasal nasty nay near nearly neat need nerd nest nestle net nifty nil nimble nimbly nine nip nippy nit nob noble nod node noise none noon nor norm nose not notch note novel now nuance nude null nun nymph oak oaken oar oat oath obey obscure obtain occur odd ode odor off offend offer ohm oil old olive once one onion onset open opera oppose opt optic option opus orb orbit ordeal order ore organ other ought ounce our ours out outdo outer outrun oven over owe owed owl own oxide paced pacify pad paddle paddy page paid pail pain painfully paint pal palate pale palm pan panda pander panel pang panic pansy papal park parka pass past pat path pave paw pawn pay pea peach peak pearl peat pedal peel peer peg pelt pen pent perch peril perish permit pest pet petite petty phase photo piano pick pie pig pile pilfer pillar pin pine ping pit pity placid plaid plain plane plank plant plaque plat play plaza plead pleat plenty plod plot plow pluck plug plum plumb plump plunge plus ply poach pod poem poet poker polar poll pond ponder poor pop portal pose post pot potter pouch pout pow power praise pray prayer preen prefer press pretty prey price pride prim prime prism prismatic privy probe prod profit prolong prompt prone prong proof prop pros proven prowess psalm pub pubic pull pulp pulse pump pun punch pup pupal pupil pure purge pus push put puzzle pygmy quake quart queen quest queue quilt quit quiver quiz quota quote rabid rack radar radiant radix radon raft rag rage rail rain rake rally ram ramp rampage ran rand rang ranger rank ransom rant rap rapid rash rasher rat ravage raven raw ray rayon reach read ready real realm reap rebel reborn reckon red reedy ref reform refuge refund regard regret reign rein relay relic relive remain rend renown rent rep repay repent require rescue rest rev reveal revere revolt rhythm rice rich rick rid ride rife rift rim ring riot rip rise risk risky rite rivet road roam roar roast rob robe robin robust rock rocky rod rode roe role roll rood root rope rose rot rote rouge rough round rout rove row rowdy royal rub rube ruddy rude ruff rug rugged rugs rule rum run rune rung rupee rush rust rustic rusty rut rye sad sadly safe sag sage sail sake sale salt salvage same sample sane sang sank sap sash sat save saw say scald scale scant scare scarf scene scone scorch scorn scour scout scowl scram scrap scrawl screen screw scrub sea seal seam seamy seed seedy seek seem seen seep sentry sere serene serve set settle seven severe sew sewer sewn shady shake shaky shale shank shape share shark sharp she shed sheen sheer sheet shelf shell shield shift shimmer shin shine shiny ship shoal shock shod shop shore shorten shot show shrewd shrink shrunk shut shy side sieve sigh signal silk silky sill simple sin since sine sing sink sip sir sire siren sis sit sixth sixty ski skid skim skimp skin skip skull sky slab slam slant slap sleek sleepy sleet sleight slew slid slim slink slip slit sliver slob slop slope slow slug slum smack smash smear smell smile smock smoke smooth smug snag snail snake snaky snap snare sneak sneer sniff snore snuff soar sob sock sod sofa soil sold sole some son soot soothe sooty sordid sore sort soul sound soup sous south sow sown spa span spar spark speak speck sped speed spend spied spike spill spin spine spiral spire spirit spit spite spleen spoke spore spot spout spray sprig spry spur spy squall squander squint stab stable staid stain stale stalk stall stand star stark start starve stash state stay steak steal steam steel steep steer stem step stern stew stiff stifle still sting stink stir stirred stoical stoke stolen stomp stone stood stop straw stray stream strife string strive strong struck strum stub stuck stud study stuff stumble stump stung sty style suave sub subdue subtle such sue suite sulky sum sun sung sunk sunny sup sure surely surpass swam swan sway swerve swift swim swipe swirl swoop swum synth tab tail talk talon tame tan tang tangled tango tap taper tapir tar tardy taut tawny tax tea teal team tear tease teem tell tempo ten tend tender tenor tense tenure tepid term terse than that the thee them then theory third this thorn thou threw throng throw tie tile till tilt time timid tin tingle tip tire tithe title toad toast toddy toe toil token told toll tome ton tonal tone tong too took tool top topaz torch torment torn torrent toss total tough tow town toy tragic trap tray tread treed trend trial tribal trick tried trim trio tripe triple trite trivial troll tromp trough trout trove truck true truly trump trunk truss trust try tub tube tuber tuck tuft tug tulip tuner tunnel tuple turf tusk twang tweak twig twirl twitch two tycoon tying type ugly ulcers umbra unbend uncut under undo undue unfit union unique unit unite until unwrap upend upon upset urn use used usher utmost utter vacant vague vain vale valor valued valve van vane vanish vanquish vapor varied vast vat vault veer veil vein veiny vengeance venom vent verge verse vest via vibe vibrant video vigil vine viper viral visit visor vista vivid vividly vocal voice vouch vow wad wade wag wail wait wake waltz wander wane war warden ware wart was wasp wave waver wax wealth weary weave web wed wedge weigh weird weld went were west wet whack whale wheat wheel where whet which while white who whole whose why wick wicked wide widely widow wig wile will wilt wily win windy wine wing wisdom wish wisp wit with witty woe woke woken wolf womb won woo wood wool wore work world worm worn worry worse worthy wow wrap wrath wren writhe wrongly yacht yak yam yap yawn yearn yearning yell yew yield yip you young yucky zap zeal zealot zero zest zesty zinc zippy zit zodiac zone zoo zoom';
 let DICT = new Set();
 let dictLoaded = false;
 
@@ -300,8 +313,16 @@ async function loadDict() {
     });
     dictLoaded = true;
   } catch(e) {
-    // Fallback: use rack's own word list
-    dictLoaded = false;
+    // Fallback: this used to leave dictLoaded=false, which silently switches
+    // answer-checking to ONLY the small hand-curated per-rack word list — so
+    // on a network that can't reach GitHub (a real possibility on school
+    // networks, which often filter far more aggressively than they filter
+    // the main site itself), a student's genuinely valid word could be
+    // rejected as "not a recognised word" just for not being on that shorter
+    // list. Use the same broad, embedded fallback word list as WordChain
+    // instead, so validation stays dictionary-backed either way.
+    WB_FALLBACK_WORDS.split(' ').forEach(w => { if (w.length >= 3) DICT.add(w); });
+    dictLoaded = true;
   }
 }
 
@@ -482,13 +503,18 @@ function submitWord() {
   }
 
   // Word must be in dictionary (dwyl common English words, all lowercase)
-  // In rack list OR in loaded dictionary - but NOT if it looks like a proper noun
+  // In rack list OR in loaded dictionary.
   const inList = currentRack.words.map(w=>w.toLowerCase()).includes(word);
-  const inDict = dictLoaded ? DICT.has(word) : inList;
+  const inDict = dictLoaded && DICT.has(word);
 
-  // Extra filter: reject very short obscure words and words under 3 chars
-  // Also reject if word is only in list but not in dict (catches obscure entries)
-  const isValid = dictLoaded ? inDict : inList;
+  // Accept if EITHER source recognises it. Previously this was dictionary-only
+  // whenever a dictionary was loaded (`dictLoaded ? inDict : inList`) — every
+  // rack's own hand-curated word is a real, verified word, so there's no
+  // reason a word that's right there in the rack's own list should ever be
+  // rejected just because the loaded dictionary (especially the smaller
+  // embedded fallback used when the network can't reach GitHub) happens not
+  // to contain that particular common word.
+  const isValid = inList || inDict;
 
   if(!isValid){
     showFeedback(`"${word.toUpperCase()}" — not a recognised common word`,'bad');
@@ -520,11 +546,7 @@ function submitWord() {
       if (!document.querySelector('.def-modal-overlay')) {
         obs.disconnect();
         if (timeLeft > 0 && document.getElementById('endCard').style.display !== 'flex') {
-          timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerUI();
-            if (timeLeft <= 0) { clearInterval(timerInterval); endRound(); }
-          }, 1000);
+          timerInterval = setInterval(timerTick, 1000);
         }
       }
     });
@@ -562,16 +584,22 @@ function addTime(secs) {
   updateTimerUI();
 }
 
+// Shared tick — used by both the normal round timer and the "resume after
+// closing a definition modal" timer below — skips the countdown entirely
+// while the tab is hidden/backgrounded, so switching away doesn't silently
+// burn a round's time.
+function timerTick() {
+  if (document.hidden) return;
+  timeLeft--;
+  updateTimerUI();
+  if(timeLeft<=0){ clearInterval(timerInterval); endRound(); }
+}
 function startTimer() {
   clearInterval(timerInterval);
   roundTimeCap = timeForRound(roundNum);
   timeLeft = roundTimeCap;
   updateTimerUI();
-  timerInterval=setInterval(()=>{
-    timeLeft--;
-    updateTimerUI();
-    if(timeLeft<=0){ clearInterval(timerInterval); endRound(); }
-  },1000);
+  timerInterval=setInterval(timerTick,1000);
 }
 
 function updateTimerUI() {

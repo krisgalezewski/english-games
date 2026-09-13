@@ -216,6 +216,11 @@ body {
   <button class="eg-pilltab"        id="track2" onclick="selectTrack(2)">… Ellipsis</button>
 </div>
 <canvas id="gameCanvas"></canvas>
+<!-- Screen-reader-only status: this is a fast real-time action game, so
+     per-token pickups happen too often to announce without being noise —
+     this only speaks the meaningful, infrequent milestones (life lost,
+     wave up, game over). -->
+<div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <script src="shared.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
@@ -447,14 +452,14 @@ const QUESTIONS = [
   {q:'Past simple of BLOW',correct:'BLEW',wrong:['BLOWN','BLOWED','BLEWED']},
   {q:'Past simple of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
   {q:'Past simple of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
-  {q:'Past simple of BURN',correct:'BURNT',wrong:['BURNED','BORN','BRUNT']},
+  {q:'Past simple of BURN',correct:'BURNT',wrong:['BURNNED','BORN','BRUNT']},
   {q:'Past simple of COME',correct:'CAME',wrong:['COME','COMED','CAMED']},
   {q:'Past simple of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
   {q:'Past simple of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
   {q:'Past simple of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
   {q:'Past simple of DO',correct:'DID',wrong:['DONE','DOED','DIDED']},
   {q:'Past simple of DRAW',correct:'DREW',wrong:['DRAWN','DRAWED','DREWED']},
-  {q:'Past simple of DREAM',correct:'DREAMT',wrong:['DREAMED','DRAMT','DREMT']},
+  {q:'Past simple of DREAM',correct:'DREAMT',wrong:['DREAMD','DRAMT','DREMT']},
   {q:'Past simple of DRINK',correct:'DRANK',wrong:['DRUNK','DRINKED','DRANKED']},
   {q:'Past simple of DRIVE',correct:'DROVE',wrong:['DRIVEN','DRIVED','DROVED']},
   {q:'Past simple of EAT',correct:'ATE',wrong:['EATEN','EATED','ETE']},
@@ -476,7 +481,7 @@ const QUESTIONS = [
   {q:'Past simple of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
   {q:'Past simple of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
   {q:'Past simple of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
-  {q:'Past simple of LEARN',correct:'LEARNT',wrong:['LEARNED','LERNT','LEARND']},
+  {q:'Past simple of LEARN',correct:'LEARNT',wrong:['LEARNEDD','LERNT','LEARND']},
   {q:'Past simple of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
   {q:'Past simple of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
   {q:'Past simple of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
@@ -526,83 +531,83 @@ const QUESTIONS = [
   {q:'Past participle of BEGIN',correct:'BEGUN',wrong:['BEGAN','BEGINNED','BEGINED']},
   {q:'Past participle of BEND',correct:'BENT',wrong:['BENDED','BAND','BOND']},
   {q:'Past participle of BITE',correct:'BITTEN',wrong:['BIT','BITED','BITTED']},
-  {q:'Past participle of BLOW',correct:'BLOWN',wrong:['BLEW','BLOWED','BLOWED2']},
+  {q:'Past participle of BLOW',correct:'BLOWN',wrong:['BLEW','BLOWED','BLEWN']},
   {q:'Past participle of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
   {q:'Past participle of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
-  {q:'Past participle of BURN',correct:'BURNT',wrong:['BURNED','BORN','BRUNT2']},
+  {q:'Past participle of BURN',correct:'BURNT',wrong:['BURNNED','BORN','BRUNT']},
   {q:'Past participle of COME',correct:'COME',wrong:['CAME','COMED','COMEN']},
   {q:'Past participle of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
   {q:'Past participle of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
   {q:'Past participle of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
-  {q:'Past participle of DO',correct:'DONE',wrong:['DID','DOED','DIDED2']},
-  {q:'Past participle of DRAW',correct:'DRAWN',wrong:['DREW','DRAWED','DREWED2']},
-  {q:'Past participle of DREAM',correct:'DREAMT',wrong:['DREAMED','DRAMT','DREMT2']},
+  {q:'Past participle of DO',correct:'DONE',wrong:['DID','DOED','DIDED']},
+  {q:'Past participle of DRAW',correct:'DRAWN',wrong:['DREW','DRAWED','DREWED']},
+  {q:'Past participle of DREAM',correct:'DREAMT',wrong:['DREAMD','DRAMT','DREMT']},
   {q:'Past participle of DRINK',correct:'DRUNK',wrong:['DRANK','DRINKED','DRUNKEN']},
-  {q:'Past participle of DRIVE',correct:'DRIVEN',wrong:['DROVE','DRIVED','DROVED2']},
-  {q:'Past participle of EAT',correct:'EATEN',wrong:['ATE','EATED','ETE2']},
+  {q:'Past participle of DRIVE',correct:'DRIVEN',wrong:['DROVE','DRIVED','DROVED']},
+  {q:'Past participle of EAT',correct:'EATEN',wrong:['ATE','EATED','ETE']},
   {q:'Past participle of FEED',correct:'FED',wrong:['FEEDED','FEDED','FOOD']},
   {q:'Past participle of FIGHT',correct:'FOUGHT',wrong:['FIGHTED','FOUGHTED','FIGHED']},
   {q:'Past participle of FIND',correct:'FOUND',wrong:['FINDED','FOUNDED','FAND']},
-  {q:'Past participle of FLY',correct:'FLOWN',wrong:['FLEW','FLYED','FLEWED2']},
-  {q:'Past participle of FORBID',correct:'FORBIDDEN',wrong:['FORBADE','FORBIDED','FORBADED2']},
-  {q:'Past participle of FORGET',correct:'FORGOTTEN',wrong:['FORGOT','FORGETED','FORGOTED2']},
-  {q:'Past participle of FREEZE',correct:'FROZEN',wrong:['FROZE','FREEZED','FROZED2']},
+  {q:'Past participle of FLY',correct:'FLOWN',wrong:['FLEW','FLYED','FLEWED']},
+  {q:'Past participle of FORBID',correct:'FORBIDDEN',wrong:['FORBADE','FORBIDED','FORBADED']},
+  {q:'Past participle of FORGET',correct:'FORGOTTEN',wrong:['FORGOT','FORGETED','FORGOTED']},
+  {q:'Past participle of FREEZE',correct:'FROZEN',wrong:['FROZE','FREEZED','FROZED']},
   {q:'Past participle of GET',correct:'GOT',wrong:['GETED','GOTTEN','GETTED']},
-  {q:'Past participle of GO',correct:'GONE',wrong:['WENT','GOED','WENTED2']},
+  {q:'Past participle of GO',correct:'GONE',wrong:['WENT','GOED','WENTED']},
   {q:'Past participle of HANG',correct:'HUNG',wrong:['HANGED','HONG','HENG']},
   {q:'Past participle of HAVE',correct:'HAD',wrong:['HAVED','HAVD','HAVEED']},
   {q:'Past participle of HEAR',correct:'HEARD',wrong:['HEARED','HERD','HARD']},
-  {q:'Past participle of HIDE',correct:'HIDDEN',wrong:['HID','HIDED','HIDDED2']},
+  {q:'Past participle of HIDE',correct:'HIDDEN',wrong:['HID','HIDED','HIDDED']},
   {q:'Past participle of HIT',correct:'HIT',wrong:['HITED','HITTED','HET']},
   {q:'Past participle of HURT',correct:'HURT',wrong:['HURTED','HURTT','HART']},
   {q:'Past participle of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
   {q:'Past participle of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
   {q:'Past participle of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
-  {q:'Past participle of LEARN',correct:'LEARNT',wrong:['LEARNED','LERNT','LEARND']},
+  {q:'Past participle of LEARN',correct:'LEARNT',wrong:['LEARNEDD','LERNT','LEARND']},
   {q:'Past participle of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
   {q:'Past participle of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
   {q:'Past participle of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
-  {q:'Past participle of LIE',correct:'LAIN',wrong:['LAY','LIED','LAYED2']},
+  {q:'Past participle of LIE',correct:'LAIN',wrong:['LAY','LIED','LAYED']},
   {q:'Past participle of MAKE',correct:'MADE',wrong:['MAKED','MAKD','MOOD']},
   {q:'Past participle of MEAN',correct:'MEANT',wrong:['MEANED','MENT','MEND']},
   {q:'Past participle of PAY',correct:'PAID',wrong:['PAYED','PAYD','PEID']},
   {q:'Past participle of PUT',correct:'PUT',wrong:['PUTED','PUTTED','POT']},
   {q:'Past participle of READ',correct:'READ',wrong:['READED','RED','REDD']},
-  {q:'Past participle of RIDE',correct:'RIDDEN',wrong:['RODE','RIDED','RODED2']},
-  {q:'Past participle of RING',correct:'RUNG',wrong:['RANG','RINGED','RANGED2']},
+  {q:'Past participle of RIDE',correct:'RIDDEN',wrong:['RODE','RIDED','RODED']},
+  {q:'Past participle of RING',correct:'RUNG',wrong:['RANG','RINGED','RANGED']},
   {q:'Past participle of SAY',correct:'SAID',wrong:['SAYED','SAYD','SEID']},
-  {q:'Past participle of SEE',correct:'SEEN',wrong:['SAW','SEED','SAWED2']},
+  {q:'Past participle of SEE',correct:'SEEN',wrong:['SAW','SEED','SAWED']},
   {q:'Past participle of SELL',correct:'SOLD',wrong:['SELLED','SOLED','SELD']},
   {q:'Past participle of SEND',correct:'SENT',wrong:['SENDED','SENDD','SENTED']},
   {q:'Past participle of SET',correct:'SET',wrong:['SETED','SETTED','SAT']},
-  {q:'Past participle of SHAKE',correct:'SHAKEN',wrong:['SHOOK','SHAKED','SHOOKED2']},
+  {q:'Past participle of SHAKE',correct:'SHAKEN',wrong:['SHOOK','SHAKED','SHOOKED']},
   {q:'Past participle of SHINE',correct:'SHONE',wrong:['SHINED','SHON','SHEEN']},
   {q:'Past participle of SHUT',correct:'SHUT',wrong:['SHUTED','SHUTTED','SHOT']},
-  {q:'Past participle of SING',correct:'SUNG',wrong:['SANG','SINGED','SANGED2']},
-  {q:'Past participle of SINK',correct:'SUNK',wrong:['SANK','SINKED','SANKED2']},
+  {q:'Past participle of SING',correct:'SUNG',wrong:['SANG','SINGED','SANGED']},
+  {q:'Past participle of SINK',correct:'SUNK',wrong:['SANK','SINKED','SANKED']},
   {q:'Past participle of SIT',correct:'SAT',wrong:['SITED','SITTED','SETT']},
   {q:'Past participle of SLEEP',correct:'SLEPT',wrong:['SLEEPED','SLEPED','SLOPED']},
   {q:'Past participle of SPEND',correct:'SPENT',wrong:['SPENDED','SPENDD','SPENTED']},
   {q:'Past participle of STAND',correct:'STOOD',wrong:['STANDED','STOODED','STANDD']},
-  {q:'Past participle of STEAL',correct:'STOLEN',wrong:['STOLE','STEALED','STOLED2']},
+  {q:'Past participle of STEAL',correct:'STOLEN',wrong:['STOLE','STEALED','STOLED']},
   {q:'Past participle of STICK',correct:'STUCK',wrong:['STICKED','STUCKED','STACK']},
   {q:'Past participle of STING',correct:'STUNG',wrong:['STINGED','STANG','STUNGED']},
   {q:'Past participle of STRIKE',correct:'STRUCK',wrong:['STRIKED','STRACK','STRUCKED']},
-  {q:'Past participle of SWEAR',correct:'SWORN',wrong:['SWORE','SWEARED','SWORED2']},
+  {q:'Past participle of SWEAR',correct:'SWORN',wrong:['SWORE','SWEARED','SWORED']},
   {q:'Past participle of SWEEP',correct:'SWEPT',wrong:['SWEEPED','SWEPED','SWOOPED']},
-  {q:'Past participle of SWIM',correct:'SWUM',wrong:['SWAM','SWIMMED','SWAMED2']},
-  {q:'Past participle of TEAR',correct:'TORN',wrong:['TORE','TEARED','TORED2']},
+  {q:'Past participle of SWIM',correct:'SWUM',wrong:['SWAM','SWIMMED','SWAMED']},
+  {q:'Past participle of TEAR',correct:'TORN',wrong:['TORE','TEARED','TORED']},
   {q:'Past participle of TELL',correct:'TOLD',wrong:['TELLED','TOLED','TALD']},
-  {q:'Past participle of THROW',correct:'THROWN',wrong:['THREW','THROWED','THREWED2']},
+  {q:'Past participle of THROW',correct:'THROWN',wrong:['THREW','THROWED','THREWED']},
   {q:'Past participle of UNDERSTAND',correct:'UNDERSTOOD',wrong:['UNDERSTANDED','UNDERSTOODED','UNDERSTANDD']},
-  {q:'Past participle of WAKE',correct:'WOKEN',wrong:['WOKE','WAKED','WOKED2']},
-  {q:'Past participle of WEAR',correct:'WORN',wrong:['WORE','WEARED','WORED2']},
+  {q:'Past participle of WAKE',correct:'WOKEN',wrong:['WOKE','WAKED','WOKED']},
+  {q:'Past participle of WEAR',correct:'WORN',wrong:['WORE','WEARED','WORED']},
   {q:'Past participle of WIN',correct:'WON',wrong:['WINNED','WINED','WAN']},
 
   // ── Additional spelling ──
   {q:'Spell: a written agreement',correct:'CONTRACT',wrong:['CONTRAKT','KONTRACT','CONTRACTT']},
   {q:'Spell: to suggest',correct:'RECOMMEND',wrong:['RECCOMEND','RECOMEND','RECOMMENDD']},
-  {q:'Spell: a doctor for teeth',correct:'DENTIST',wrong:['DENTIST2','DENTHIST','DENTEST']},
+  {q:'Spell: a doctor for teeth',correct:'DENTIST',wrong:['DENTIS','DENTHIST','DENTEST']},
   {q:'Spell: relating to weather',correct:'METEOROLOGICAL',wrong:['METEROLOGICAL','METEOROLOGICLE','METEREOLOGICAL']},
   {q:'Spell: argument or disagreement',correct:'ARGUMENT',wrong:['ARGUEMENT','ARGUMENTT','ARGUMANT']},
   {q:'Spell: very large',correct:'ENORMOUS',wrong:['ENORMUS','ENORMOUSE','INORMOUS']},
@@ -610,7 +615,7 @@ const QUESTIONS = [
   {q:'Spell: to make something legal',correct:'LEGITIMATE',wrong:['LEGITAMATE','LEGITIMET','LEGETIMATE']},
   {q:'Spell: extremely happy',correct:'ECSTATIC',wrong:['EXTATIC','ECSTACTIC','ECTASTIC']},
   {q:'Spell: a sudden strong feeling',correct:'IMPULSE',wrong:['IMPULS','IMPULES','IMPULSSE']},
-  {q:'Spell: to make smaller',correct:'MINIMISE',wrong:['MINIMIZE2','MINIMASE','MINNIMISE']},
+  {q:'Spell: to make smaller',correct:'MINIMISE',wrong:['MINIMYSE','MINIMASE','MINNIMISE']},
   {q:'Spell: not able to be seen',correct:'INVISIBLE',wrong:['INVISABLE','INVISIBEL','INVISSIBLE']},
   {q:'Spell: a feeling of being thankful',correct:'GRATITUDE',wrong:['GRATTITUDE','GRATATUDE','GRADITUDE']},
   {q:'Spell: to make a mistake',correct:'BLUNDER',wrong:['BLUNDOR','BLONDER','BLUNDDER']},
@@ -620,7 +625,7 @@ const QUESTIONS = [
   {q:'Spell: easily broken',correct:'FRAGILE',wrong:['FRAGGILE','FRAJILE','FRAGIL']},
   {q:'Spell: a strong wish',correct:'DESIRE',wrong:['DESYRE','DESIER','DESSIRE']},
   {q:'Spell: showing care for detail',correct:'METICULOUS',wrong:['METICULOS','METICULLOUS','METICOULOUS']},
-  {q:'Spell: a person who travels for fun',correct:'TOURIST',wrong:['TOURRIST','TOURIST2','TOWRIST']},
+  {q:'Spell: a person who travels for fun',correct:'TOURIST',wrong:['TOURRIST','TOURIS','TOWRIST']},
   {q:'Spell: a place to learn',correct:'INSTITUTE',wrong:['INSTITUT','INSTUTUTE','INSTUITUTE']},
   {q:'Spell: relating to feelings',correct:'EMOTIONAL',wrong:['EMOTIONNAL','EMOSHONAL','EMOTONAL']},
   {q:'Spell: a place where goods are made',correct:'FACTORY',wrong:['FACTERY','FACTRY','FACTOURY']},
@@ -905,6 +910,11 @@ function overlap(ax,ay,aw,ah,bx,by,bw,bh){
 }
 
 // ── Master loop ────────────────────────────────────────────────────
+function announce(msg){
+  const el = document.getElementById('srStatus');
+  if (el) el.textContent = msg;
+}
+
 function masterLoop(ts){
   requestAnimationFrame(masterLoop);
   const dt=Math.min((ts-lastTime)/1000,.05);
@@ -929,7 +939,7 @@ function masterLoop(ts){
   if(slowTimer>0) slowTimer-=dt;
   if(plane.invincible>0) plane.invincible--;
   const activeTokens=tokens.filter(t=>!t.hit);
-  if(waveTimer<=0&&activeTokens.length===0){ wave++;waveTimer=WAVE_DUR;spawnTimer=0;sfxWaveUp();updateBpm(); }
+  if(waveTimer<=0&&activeTokens.length===0){ wave++;waveTimer=WAVE_DUR;spawnTimer=0;sfxWaveUp();updateBpm();announce(`Wave ${wave}. Score ${score}.`); }
   if(spawnTimer<=0&&activeTokens.length===0&&waveTimer>0){ spawnWave();spawnTimer=.5; }
 
   if(keys['ArrowLeft']||keys['a']||keys['A']) plane.targetX-=320*dt;
@@ -967,6 +977,7 @@ function masterLoop(ts){
           sfxWrong();lives--;streak=0;multiplier=1;plane.invincible=100;
           burst(plane.x,plane.y,'#ef5350',24);
           textPop(plane.x,plane.y-35,'✈ −1','#ef5350');
+          announce(`Hit "${t.text}" — wrong answer. ${lives} ${lives===1?'life':'lives'} left.`);
           if(lives<=0){endGame();return;}
         }
       }
@@ -1017,6 +1028,7 @@ function startGame(){
 function endGame(){
   // Set state FIRST — stops masterLoop from doing anything else
   state='idle';
+  announce(`Out of lives. Final score ${score}, reached wave ${wave}.`);
 
   // Hide game UI elements
   try {
@@ -1474,6 +1486,16 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&(state==='playing'||state==='paused')){
     e.preventDefault(); togglePause();
   }
+});
+
+// Auto-pause when the tab is backgrounded — same reasoning as the other
+// real-time games in this audit (WordSnake/WordDrop/Affix Runner): tokens
+// keep flying toward the plane unseen while hidden, risking a collision
+// with a wrong answer (losing a life) with nobody there to react. Reuses
+// togglePause() so lastTime is correctly re-anchored on manual resume;
+// deliberately doesn't auto-resume itself.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'playing') togglePause();
 });
 
 // ── Boot ───────────────────────────────────────────────────────────

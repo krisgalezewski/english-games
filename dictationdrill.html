@@ -181,7 +181,7 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
         <button type="button" class="eg-btn eg-btn--ghost" onclick="useHint()">Hint (<span id="hintsLeft">1</span>)</button>
         <button type="button" class="eg-btn eg-btn--ghost" onclick="skipItem()">Skip (<span id="skipsLeft">3</span>)</button>
       </div>
-      <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;"></p>
+      <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;" aria-live="polite" aria-atomic="true"></p>
     </div>
   </div>
 
@@ -485,6 +485,12 @@ let usedReplayThisItem = false;
 let timeLeft = 20, timerInterval = null;
 let speechRate = 1.0;
 let roundEnded = false;
+// True for the brief window between an item being resolved (correct/skip/
+// timeout) and the next item actually loading — advanceItem() bumps
+// `current` immediately but loadItem() only runs after a short delay, so
+// without this guard a rapid second submit/skip/hint/replay in that gap
+// would act on the wrong (already-advanced, not-yet-shown) item.
+let advancing = false;
 
 // ── Voice selection — prefer the best-quality British female voice ────
 // Different platforms expose very different voice lists. The previous
@@ -639,6 +645,7 @@ function restartRound() {
 }
 
 function loadItem() {
+  advancing = false;
   if (current >= roundItems.length) { endRound(); return; }
   const cfg = MODES[mode];
   document.getElementById('roundVal').textContent = `${current + 1} / ${roundItems.length}`;
@@ -690,6 +697,7 @@ function getCurrentAspect() {
 function playCurrent(isAutoPlay, onDone) {
   if (roundEnded || current >= roundItems.length) return;
   if (!isAutoPlay) {
+    if (advancing) return; // item already resolved, waiting to advance — nothing to replay yet
     if (replaysLeft <= 0) { showFeedback('No replays left for this item!', 'bad'); return; }
     replaysLeft--;
     usedReplayThisItem = true;
@@ -708,15 +716,20 @@ function playCurrent(isAutoPlay, onDone) {
 }
 
 // ── Timer ─────────────────────────────────────────────────────────────
+// Shared tick used by both startTimer() and resumeTimerAfterReplay() — skips
+// the countdown entirely while the tab is hidden/backgrounded, so switching
+// away doesn't silently burn the time a student has left to type.
+function timerTick() {
+  if (document.hidden) return;
+  timeLeft--;
+  updateTimerUI(MODES[mode].time);
+  if (timeLeft <= 0) { clearInterval(timerInterval); timeOut(); }
+}
 function startTimer(seconds) {
   clearInterval(timerInterval);
   timeLeft = seconds;
   updateTimerUI(seconds);
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerUI(MODES[mode].time);
-    if (timeLeft <= 0) { clearInterval(timerInterval); timeOut(); }
-  }, 1000);
+  timerInterval = setInterval(timerTick, 1000);
 }
 // Shows the timer bar at full, with no countdown running yet — used while
 // the very first playback of an item is still being heard, before typing
@@ -740,11 +753,7 @@ function resumeTimerAfterReplay() {
   _timeLeftBeforeReplay = null;
   updateTimerUI(MODES[mode].time);
   clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerUI(MODES[mode].time);
-    if (timeLeft <= 0) { clearInterval(timerInterval); timeOut(); }
-  }, 1000);
+  timerInterval = setInterval(timerTick, 1000);
 }
 function updateTimerUI(total) {
   const pct = Math.max(0, (timeLeft / total) * 100);
@@ -758,6 +767,7 @@ function updateTimerUI(total) {
 }
 function timeOut() {
   if (roundEnded) return;
+  document.getElementById('dictationInput').disabled = true; // same advance-window guard as submitAnswer()
   const correct = getCurrentCorrect();
   const aspect = getCurrentAspect();
   results.push({ correct, yours: '', status: 'skip', aspect });
@@ -777,14 +787,23 @@ function normaliseForCompare(s) {
     .replace(/\s+/g, ' ')
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
-    .replace(/\.+$/, ''); // a missing/extra trailing full stop shouldn't count against the student
+    .replace(/\.+$/, '') // a missing/extra trailing full stop shouldn't count against the student
+    // Canonicalise the handful of British-only spellings that appear in the
+    // word/phrase banks (colour, neighbour, favourite) to their American
+    // equivalent, applied to BOTH sides of the comparison — so a student
+    // who correctly transcribes what they heard isn't marked wrong just for
+    // spelling it the American way. The pronunciation is identical either
+    // way, so there's no legitimate reason to require one spelling only.
+    .replace(/\bcolour\b/g, 'color')
+    .replace(/\bneighbour\b/g, 'neighbor')
+    .replace(/\bfavourite\b/g, 'favorite');
 }
 function checkAnswer(typed, correct) {
   return normaliseForCompare(typed) === normaliseForCompare(correct);
 }
 
 function submitAnswer() {
-  if (roundEnded || current >= roundItems.length) return;
+  if (roundEnded || advancing || current >= roundItems.length) return;
   const input = document.getElementById('dictationInput');
   const typed = input.value.trim();
   if (!typed) return;
@@ -795,6 +814,10 @@ function submitAnswer() {
   if (isCorrect) {
     clearInterval(timerInterval);
     input.classList.add('is-correct');
+    input.disabled = true; // block a stray Enter/click during the advance delay below —
+                            // `current` bumps immediately in advanceItem() but the next
+                            // item isn't loaded until after the delay, so a second submit
+                            // in that gap would wrongly re-check this answer against it
     streak++; correctCount++;
     if (streak > bestStreak) bestStreak = streak;
     if (firstListen) firstTryCount++;
@@ -818,7 +841,7 @@ function submitAnswer() {
 }
 
 function useHint() {
-  if (roundEnded || current >= roundItems.length) return;
+  if (roundEnded || advancing || current >= roundItems.length) return;
   if (hintsLeft <= 0) { showFeedback('No hints left!', 'bad'); return; }
   hintsLeft--; hintUsed = true;
   document.getElementById('hintsLeft').textContent = hintsLeft;
@@ -830,10 +853,11 @@ function useHint() {
 }
 
 function skipItem() {
-  if (roundEnded || current >= roundItems.length) return;
+  if (roundEnded || advancing || current >= roundItems.length) return;
   if (skipsLeft <= 0) { showFeedback('No skips left!', 'bad'); return; }
   skipsLeft--;
   document.getElementById('skipsLeft').textContent = skipsLeft;
+  document.getElementById('dictationInput').disabled = true; // same advance-window guard as submitAnswer()
   clearInterval(timerInterval);
   score = Math.max(0, score - 8);
   document.getElementById('scoreVal').textContent = score;
@@ -846,6 +870,7 @@ function skipItem() {
 }
 
 function advanceItem(delay) {
+  advancing = true;
   current++;
   setTimeout(loadItem, delay);
 }

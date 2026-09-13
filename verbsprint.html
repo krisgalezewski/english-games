@@ -144,7 +144,7 @@ main { max-width:580px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
       <button class="eg-btn eg-btn--ghost"   id="skipBtn"   onclick="skipVerb()">Skip (−5)</button>
     </div>
 
-    <div class="feedback" id="feedback"></div>
+    <div class="feedback" id="feedback" aria-live="polite" aria-atomic="true"></div>
   </div>
 
   <!-- End card -->
@@ -347,7 +347,7 @@ const VERBS = [
   {b:'cut',     ps:'cut',      pp:'cut',       g:'A/A/A',
    s:[{t:'She ___ her finger while chopping vegetables.', f:'ps'},
       {t:'He ___ the meeting short due to an emergency.', f:'ps'},
-      {t:'The film was ___ by almost twenty minutes for cinema release.', f:'ps'},
+      {t:'The film was ___ by almost twenty minutes for cinema release.', f:'pp'},
       {t:'The budget had been ___ by twenty per cent.', f:'pp'},
       {t:'Her hair had been ___ very short for the summer.', f:'pp'},
       {t:'The power had been ___ off for most of the morning.', f:'pp'}]},
@@ -956,6 +956,7 @@ let roundVerbs = [], current = 0, score = 0, skips = 3, hints = 1, streak = 0;
 let timerInterval = null, timeLeft = 90;
 let results = []; // {verb, psTyped, ppTyped, correct, partial, skipped}
 let hintUsed = false;
+let advancing = false; // guards submit/hint/skip during the post-answer advanceVerb() delay
 
 // ── Mode switch ─────────────────────────────────────────────────────
 const RULES_BY_MODE = {
@@ -1036,7 +1037,10 @@ function startTimer() {
   clearInterval(timerInterval);
   timeLeft = TIMES[currentMode];
   updateTimer();
-  timerInterval = setInterval(()=>{ timeLeft--; updateTimer(); if(timeLeft<=0){clearInterval(timerInterval);timeOut();} },1000);
+  timerInterval = setInterval(()=>{
+    if (document.hidden) return;
+    timeLeft--; updateTimer(); if(timeLeft<=0){clearInterval(timerInterval);timeOut();}
+  },1000);
 }
 
 function updateTimer() {
@@ -1065,6 +1069,7 @@ function timeOut() {
 let currentSentenceIdx = 0;
 
 function loadVerb() {
+  advancing = false;
   if(current >= ROUND_SIZE){ clearInterval(timerInterval); endRound(); return; }
   const v = roundVerbs[current];
   document.getElementById('feedback').textContent = '';
@@ -1136,6 +1141,7 @@ function loadVerb() {
 
 // ── Submit ──────────────────────────────────────────────────────────
 function submitAnswer() {
+  if (advancing) return;
   const v    = roundVerbs[current];
   const inp0 = document.getElementById('inp0');
   const inp1 = document.getElementById('inp1');
@@ -1274,11 +1280,13 @@ function checkAnswer(typed, correct) {
 }
 
 function advanceVerb(delay) {
+  advancing = true;
   setTimeout(()=>{ current++; loadVerb(); }, delay);
 }
 
 // ── Hint ────────────────────────────────────────────────────────────
 function useHint() {
+  if (advancing) return;
   if(hints <= 0){ showFeedback('No hints left!','bad'); return; }
   if(hintUsed) return;
   hints--; hintUsed = true;
@@ -1309,6 +1317,7 @@ function useHint() {
 
 // ── Skip ────────────────────────────────────────────────────────────
 function skipVerb() {
+  if (advancing) return;
   if(skips <= 0){ showFeedback('No skips left!','bad'); return; }
   skips--;
   score = Math.max(0, score-5);
@@ -1432,17 +1441,16 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Defensive event delegation fallback for end-card buttons ─────────
-// Guarantees Play Again / Switch Mode always work even in edge cases
-// where inline onclick might not fire (e.g. focus-trap, stray overlay).
-document.getElementById('endCard').addEventListener('click', (e) => {
-  if(e.target.id === 'playAgainBtn' || e.target.closest('#playAgainBtn')){
-    restartGame();
-  }
-  if(e.target.id === 'switchModeBtn' || e.target.closest('#switchModeBtn')){
-    setMode(currentMode==='easy'?'medium':currentMode==='medium'?'hard':'easy');
-  }
-});
+// Note: the end-card "Play again" / "Switch mode" buttons already have
+// their own onclick="restartGame()" / onclick="setMode(...)" attributes
+// in the HTML above. There used to *also* be a delegated click listener
+// here calling the same functions a second time on every click — for
+// "Switch mode" this was a real, user-visible bug: since the inline
+// onclick's own ternary re-evaluates `currentMode` and the delegated
+// listener's ternary ran *after* the inline handler had already changed
+// it, a single click cycled the mode two steps forward (e.g. Easy jumped
+// straight to Hard) instead of one. Removed the redundant delegated
+// listener; the inline onclick handlers are sufficient on their own.
 
 // ── Boot ────────────────────────────────────────────────────────────
 switchLb('easy');

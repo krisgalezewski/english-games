@@ -90,6 +90,9 @@ main { max-width:600px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
 <!-- GAME -->
 <div id="phase-game" style="display:none">
+  <!-- Screen-reader-only status region: announces correct/wrong outcomes and game-over,
+       since all in-game feedback here is otherwise purely visual (flashes/shakes). -->
+  <div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   <div class="eg-hud" style="width:100%">
     <div class="eg-stat" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;">
       <div class="ws-timerwrap">
@@ -544,9 +547,9 @@ const WORD_EXAMPLES = {
   judicious:'A judicious use of resources can make a big difference.',
   imprudent:'It was imprudent to invest all your savings in a single stock.',
   naive:'She was naive to trust a stranger with her personal details.',
-  simple_adj:'The design was elegant and simple.',
   prosperous:'The town became prosperous after the factory opened.',
-  unassuming_adj:'He was unassuming and never boasted about his achievements.',
+  bold:'It was a bold decision to leave her stable job.',
+  subtle:'There was a subtle difference between the two translations.',
 };
 
 
@@ -566,6 +569,16 @@ let lastWords = [];       // recently shown words (last 3), used to enforce gap
 // the word pool exhausts and 'found' is cleared for recycling
 let foundItems = [];
 let allFound = new Set(); // permanent, never cleared
+// Modes 1/2 (button grid): guards against a rapid double-click on the just-answered
+// correct button, or a click on another button, during the delay before the next
+// word loads — without it, a second click during that window could push a duplicate
+// found entry or skip an extra word out of the queue silently.
+let advancing = false;
+
+function announce(msg) {
+  const el = document.getElementById('srStatus');
+  if (el) el.textContent = msg;
+}
 
 const MODE_DESC = {
   1: 'A word is shown. Pick its <strong>synonym</strong> (a word with a similar meaning) from the options. Wrong answer = −5 seconds.',
@@ -675,6 +688,7 @@ function buildQueue() {
 }
 
 function pickNextWord() {
+  advancing = false;
   if (wordQueue.length === 0) wordQueue = buildQueue();
   currentWord = wordQueue.shift();
   // Track last 3 words for gap enforcement
@@ -716,11 +730,14 @@ function buildMode1() {
 }
 
 function handleOpt1(chosen, correct, btn, parentRef) {
+  if (advancing) return;
   if (chosen === correct) {
+    advancing = true;
     btn.classList.add('is-correct');
     found.add('syn:'+correct);
     if (!allFound.has('syn:'+correct)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, false, parentRef);
+    announce(`Correct — "${correct}" is a synonym of "${parentRef.word}". Plus 10 points.`);
     setTimeout(() => {
       btn.classList.remove('is-correct');
       btn.blur(); // explicitly release focus before the grid is rebuilt
@@ -759,11 +776,14 @@ function buildMode2() {
 }
 
 function handleOpt2(chosen, correct, btn, parentRef) {
+  if (advancing) return;
   if (chosen === correct) {
+    advancing = true;
     btn.classList.add('is-correct');
     found.add('ant:'+correct);
     if (!allFound.has('ant:'+correct)) { finalScore += 10; document.getElementById('scoreVal').textContent = finalScore; document.getElementById('foundVal').textContent = parseInt(document.getElementById('foundVal').textContent||0)+1; }
     addFoundChip(correct, true, parentRef);
+    announce(`Correct — "${correct}" is an antonym of "${parentRef.word}". Plus 10 points.`);
     setTimeout(() => {
       btn.classList.remove('is-correct');
       btn.blur();
@@ -882,6 +902,9 @@ function handleTypeKey(e) {
 }
 
 function showHint() {
+  // Block while a correct/wrong flash is pending — the current word is about
+  // to change (or reset), so spending a hint on it now would just be wasted.
+  if (typeFeedbackTimer) return;
   if (hint1Used) return;
   hint1Used = true;
   document.getElementById('hintBtn').disabled = true;
@@ -897,6 +920,7 @@ function showHint() {
 }
 
 function showExtraHint() {
+  if (typeFeedbackTimer) return;
   if (!hint1Used || extraHintUsed) return;
   extraHintUsed = true;
   document.getElementById('extraHintBtn').disabled = true;
@@ -910,8 +934,8 @@ function showExtraHint() {
 }
 
 function skipTypeWord() {
+  if (typeFeedbackTimer) return;
   if (skipsLeft <= 0) return;
-  if (typeFeedbackTimer) { clearTimeout(typeFeedbackTimer); typeFeedbackTimer = null; }
   skipsLeft--;
   finalScore = Math.max(0, finalScore - 8);
   document.getElementById('scoreVal').textContent = finalScore;
@@ -921,10 +945,13 @@ function skipTypeWord() {
 function showTypeHint() { showHint(); } // backwards compat alias
 
 function submitTyped() {
-  // Cancel any pending flash→next-step timeout from a previous check —
-  // without this, a stale "wrong" cleanup could fire after a later
-  // correct answer and wipe out its green flash / clear the new input.
-  if (typeFeedbackTimer) { clearTimeout(typeFeedbackTimer); typeFeedbackTimer = null; }
+  // Block re-entry while a previous check's correct/wrong flash is still pending.
+  // Without this, a fast repeat Enter/Check press during that window could:
+  // (a) on a wrong guess, silently re-penalise for the same still-visible attempt, or
+  // (b) on a correct guess, re-run the check against a target that's already been
+  //     marked found (and so no longer counts as "valid"), flashing a false "wrong"
+  //     and cancelling the scheduled advance to the next word.
+  if (typeFeedbackTimer) { focusTypeInput(); return; }
 
   const input = document.getElementById('m3input');
   const target = m3targets[m3current];
@@ -959,6 +986,7 @@ function submitTyped() {
     hint1Used = false; extraHintUsed = false; revealedLetters = 1;
     document.getElementById('hintBtn').disabled = false;
     document.getElementById('extraHintBtn').disabled = true;
+    announce(`Correct — "${match}" is ${typeSub === 2 ? 'an antonym' : 'a synonym'} of "${parentRef.word}". Plus 10 points.`);
     typeFeedbackTimer = setTimeout(() => { typeFeedbackTimer = null; pickNextWord(); }, 650);
   } else {
     // Only an actually-incorrect check flashes red.
@@ -1039,6 +1067,7 @@ function showWordModal(word, isAnt, parentRef) {
 function penalise() {
   timeLeft = Math.max(0, timeLeft - 5);
   document.getElementById('timerNum').textContent = timeLeft;
+  announce(`Not quite. Five seconds lost — ${timeLeft} left.`);
   updateRing();
   const flash = document.createElement('div');
   flash.className = 'penalty-flash';
@@ -1052,6 +1081,7 @@ function runTimer() {
   clearInterval(timer);
   updateRing();
   timer = setInterval(() => {
+    if (document.hidden) return;
     timeLeft--;
     document.getElementById('timerNum').textContent = timeLeft;
     updateRing();
@@ -1093,6 +1123,7 @@ function endGame() {
   const foundCount = foundItems.length; // foundItems accumulates throughout the whole game;
   // found.size would be wrong if the word pool was exhausted and reset mid-game
   document.getElementById('resultHeadline').textContent = `${foundCount} word${foundCount===1?'':'s'} found · ${finalScore} pts`;
+  announce(`Time's up. ${foundCount} word${foundCount===1?'':'s'} found, final score ${finalScore}.`);
   document.getElementById('resultMsg').textContent =
     foundCount >= 20 ? '🎉 Outstanding — brilliant vocabulary!' :
     foundCount >= 12 ? '👏 Great work!' :

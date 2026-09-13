@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Leaderboard — English Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+<link rel="icon" href="favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+/* Page-only layout — chrome/colour/type all comes from styles.css */
+main { max-width:1100px; margin:0 auto; padding:0 0 48px; }
+.lb-hero p { max-width:56ch; }
+.lb-game-card { text-decoration:none; }
+.lb-game-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:auto; }
+.lb-game-top .name { font-weight:800; }
+.lb-game-top .score { font-weight:900; font-stretch:112%; }
+.lb-empty { color:var(--eg-ink-faint); font-style:italic; }
+</style>
+</head>
+<body>
+
+<header class="eg-header">
+  <a href="index.html" class="eg-eyebrow" style="color:var(--eg-ink-muted);">← All games</a>
+  <span style="font-size:16px; font-weight:900; font-stretch:112%; letter-spacing:.04em; text-transform:uppercase;">Leaderboard</span>
+</header>
+
+<main>
+
+<section class="lb-hero" style="padding:32px 0 8px;">
+  <div class="eg-eyebrow" style="margin-bottom:14px;">Every game · one shared board</div>
+  <h1 class="eg-h1" style="font-size:clamp(30px,4vw,48px);">See where you<br/>stand across all 14</h1>
+  <p class="eg-body" style="margin-top:16px;">The top score in every game, plus who's been playing the most overall. Tap a game to open its full board and add your own score.</p>
+</section>
+
+<section class="eg-tile eg-tile--teal-deep" style="margin:28px 0; min-height:0;">
+  <div class="eg-row" style="justify-content:space-between; align-items:center; margin:0;">
+    <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;">Most active players</span>
+    <span class="eg-eyebrow eg-eyebrow--on-color" id="activeCount" style="color:#9fc4ce;"></span>
+  </div>
+  <table class="eg-lb-table" style="margin-top:16px;">
+    <thead><tr><th>#</th><th>Player</th><th>Scores submitted</th></tr></thead>
+    <tbody id="activeBody"><tr><td colspan="3" class="lb-empty">Loading…</td></tr></tbody>
+  </table>
+</section>
+
+<div class="eg-section-head">
+  <h2 class="eg-h2">Top score, every game</h2>
+  <span class="eg-eyebrow" id="gamesMeta">Loading…</span>
+</div>
+
+<div class="eg-grid" id="gameGrid"></div>
+
+</main>
+
+<footer class="eg-footer" style="max-width:1100px; margin:0 auto;">
+  <span>Made with care by Kris · for Kris's students</span>
+  <span style="font-weight:700; letter-spacing:.18em; text-transform:uppercase;">English Games</span>
+</footer>
+
+<script src="shared.js"></script>
+<script>
+// ── Canonical game list ─────────────────────────────────────────────
+// `keys` is matched against the Supabase `game` column as an exact match
+// OR as a "<key>_..." prefix, which is how every multi-mode game (e.g.
+// PhrasalBlitz's phrasalblitz_particle/_verb/_type) namespaces its rows.
+// This intentionally avoids ranking scores *between* games (their scoring
+// systems aren't comparable) — each game gets its own top score instead.
+const LB_GAMES = [
+  { key:'wordsnake',        title:'WordSnake',              file:'wordsnake.html',        accent:'eg-card--teal'  },
+  { key:'worddrop',         title:'WordDrop',                file:'worddrop.html',         accent:'eg-card--rose'  },
+  { key:'affixrunner',      title:'Affix Runner',            file:'wordrunner.html',       accent:'eg-card--green' },
+  { key:'englishace',       title:'English Ace',             file:'englishace.html',       accent:''               },
+  { key:'conditionals',     title:'Conditional Constructor', file:'conditionals.html',     accent:'eg-card--gold'  },
+  { key:'verbsprint',       title:'Irregular Verb Sprint',   file:'verbsprint.html',        accent:'eg-card--teal'  },
+  { key:'wordspark',        title:'WordSpark',               file:'synonyms.html',          accent:'eg-card--teal'  },
+  { key:'phrasalblitz',     title:'PhrasalBlitz',            file:'phrasalblitz.html',      accent:'eg-card--gold'  },
+  { key:'spellit',          title:'SpellIt!',                file:'spellit.html',           accent:'eg-card--gold'  },
+  { key:'collocationcrash', title:'CollocationCrash',        file:'collocationcrash.html',  accent:'eg-card--rose'  },
+  { key:'wordchain',        title:'WordChain',               file:'wordchain.html',         accent:'eg-card--teal'  },
+  { key:'anagram',          title:'Anagram',                 file:'anagram.html',           accent:'eg-card--teal'  },
+  { key:'wordbuilder',      title:'Word Builder',            file:'wordbuilder.html',       accent:'eg-card--teal'  },
+  { key:'dictationdrill',   title:'Dictation Drill',         file:'dictationdrill.html',    accent:'eg-card--green' },
+];
+
+function belongsTo(row, key) {
+  return row.game === key || (typeof row.game === 'string' && row.game.indexOf(key + '_') === 0);
+}
+
+function renderGameGrid(rows) {
+  const grid = document.getElementById('gameGrid');
+  grid.innerHTML = '';
+  let gamesWithScores = 0;
+  LB_GAMES.forEach(g => {
+    const matches = rows.filter(r => belongsTo(r, g.key));
+    let best = null;
+    matches.forEach(r => { if (!best || r.score > best.score) best = r; });
+    if (best) gamesWithScores++;
+    const card = document.createElement('a');
+    card.href = g.file;
+    card.className = 'eg-card lb-game-card' + (g.accent ? ' ' + g.accent : '');
+    // Long one-word titles (e.g. "CollocationCrash") need a smaller size to
+    // avoid an ugly mid-word wrap at the card's fixed grid width — same fix
+    // index.html applies to the same title.
+    const titleStyle = g.title.replace(/\s/g,'').length > 13
+      ? ' style="font-size:clamp(17px,1.7vw,22px);"' : '';
+    card.innerHTML = `
+      <span class="eg-eyebrow">${matches.length} score${matches.length===1?'':'s'} logged</span>
+      <h4 class="eg-h4"${titleStyle}>${escHtml(g.title)}</h4>
+      <div class="lb-game-top">
+        ${best
+          ? `<span class="name eg-body--sm">🏆 ${escHtml(best.player_name)}</span><span class="score eg-body--sm">${best.score}</span>`
+          : `<span class="lb-empty eg-body--sm">No scores yet — be first!</span>`}
+      </div>
+      <span class="eg-link">Play →</span>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('gamesMeta').textContent = `${gamesWithScores} of ${LB_GAMES.length} games have a score on the board`;
+}
+
+function renderMostActive(rows) {
+  const counts = new Map();
+  rows.forEach(r => {
+    const name = (r.player_name || '').trim();
+    if (!name) return;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const tbody = document.getElementById('activeBody');
+  document.getElementById('activeCount').textContent = rows.length + ' scores total';
+  if (!ranked.length) {
+    tbody.innerHTML = `<tr><td colspan="3" class="lb-empty">No scores yet — be first to play!</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = ranked.map(([name, count], i) =>
+    `<tr><td>${i+1}</td><td>${escHtml(name)}</td><td>${count}</td></tr>`
+  ).join('');
+}
+
+async function loadLeaderboardHub() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/leaderboard?select=game,player_name,score&limit=5000`,
+      { headers: SB_HEADERS }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    renderMostActive(rows);
+    renderGameGrid(rows);
+  } catch (e) {
+    console.error('leaderboard hub load failed', e);
+    document.getElementById('activeBody').innerHTML =
+      `<tr><td colspan="3" class="lb-empty">Couldn't load the leaderboard — check your connection.</td></tr>`;
+    document.getElementById('gamesMeta').textContent = 'Couldn\'t load — check your connection';
+    // Still render the grid so every game is at least browsable/linkable.
+    renderGameGrid([]);
+  }
+}
+
+loadLeaderboardHub();
+</script>
+</body>
+</html>
