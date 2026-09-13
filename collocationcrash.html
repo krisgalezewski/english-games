@@ -46,22 +46,53 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen -->
   <div id="startScreen">
-    <div class="eg-grid" style="width:100%;">
-      <button type="button" class="eg-modecard is-selected" id="tabE" onclick="previewDiff('easy')">
-        <span class="eg-eyebrow">Mode 01</span>
-        <span class="eg-h4">Easy</span>
-        <span class="eg-body--sm">Common verb + noun pairings.</span>
+    <div class="eg-tile eg-tile--red" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 260 80" aria-hidden="true">
+          <path d="M100 20 H40 a14 14 0 0 0 -14 14 v12 a14 14 0 0 0 14 14 h60" fill="none" stroke="#f4efe6" stroke-width="8" stroke-linecap="round"/>
+          <path d="M160 20 h60 a14 14 0 0 1 14 14 v12 a14 14 0 0 1 -14 14 h-60" fill="none" stroke="#f4efe6" stroke-width="8" stroke-linecap="round" opacity=".5"/>
+          <path d="M120 40 h20" stroke="#f4efe6" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="130" cy="12" r="5" fill="#f4efe6" opacity=".6"/>
+          <circle cx="130" cy="68" r="5" fill="#f4efe6" opacity=".6"/>
+        </svg>
+      </div>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Collocations · Quiz</span>
+      <h1 class="eg-h3">CollocationCrash</h1>
+      <p class="eg-body">Which verb goes with which noun? Master the word partnerships that separate good English from great English.</p>
+
+      <div class="eg-grid" style="width:100%;">
+        <button type="button" class="eg-modecard is-selected" id="tabE" style="--eg-modecard-bg: var(--eg-well-red);" onclick="previewDiff('easy')">
+          <span class="eg-eyebrow">Mode 01</span>
+          <span class="eg-h4">Easy</span>
+          <span class="eg-body--sm">Common verb + noun pairings.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="tabH" style="--eg-modecard-bg: var(--eg-well-red);" onclick="previewDiff('hard')">
+          <span class="eg-eyebrow">Mode 02</span>
+          <span class="eg-h4">Hard</span>
+          <span class="eg-body--sm">Trickier, less common collocations.</span>
+        </button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span id="rulesText" class="eg-body--sm">Which verb goes with the noun shown? Choose the correct collocation from the options. <strong>10 questions</strong> per round, <strong>10 points</strong> each.</span>
+      </div>
+
+      <div class="hero-play-row">
+        <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="eg-modecard" id="tabH" onclick="previewDiff('hard')">
-        <span class="eg-eyebrow">Mode 02</span>
-        <span class="eg-h4">Hard</span>
-        <span class="eg-body--sm">Trickier, less common collocations.</span>
-      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>READ</strong> — a noun is shown, along with the pattern it fits<br>
+          <strong>CHOOSE</strong> — pick the verb that correctly collocates with it from the options<br>
+          <strong>SCORE</strong> — 10 points per correct answer, 10 questions per round<br>
+          <strong>EXPLAIN</strong> — each answer comes with a short explanation of the pairing<br>
+          <strong>SWITCH</strong> — change difficulty any time from the tabs above</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%;">
-      <span id="rulesText" class="eg-body--sm">Which verb goes with the noun shown? Choose the correct collocation from the options. <strong>10 questions</strong> per round, <strong>10 points</strong> each.</span>
-    </div>
-    <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Game UI -->
@@ -98,22 +129,22 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- End card -->
   <div id="endCard" style="display:none">
-    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-      <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;">Round complete</span>
+    <div class="eg-tile eg-tile--red" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color">Round complete</span>
       <h2 class="eg-display" id="finalScore" style="margin:6px 0 0;"></h2>
       <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
-    </div>
-    <div class="cc-review-grid" id="reviewGrid"></div>
-    <div id="submitArea" style="width:100%;">
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
-        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+      <div class="cc-review-grid" id="reviewGrid" style="margin-top:6px;"></div>
+      <div id="submitArea" style="width:100%;margin-top:6px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+          <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+        </div>
       </div>
-    </div>
-    <div class="cc-actions">
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="restartGame()">Play again</button>
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="ccSwitchLabel" style="margin-left:2px;"></span></button>
-      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      <div class="cc-actions" style="margin-top:10px;">
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="restartGame()">Play again</button>
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="ccSwitchLabel" style="margin-left:2px;"></span></button>
+        <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      </div>
     </div>
   </div>
 </main>

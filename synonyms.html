@@ -68,24 +68,57 @@ main { max-width:600px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
 <!-- INTRO -->
 <div id="phase-intro">
-  <div class="eg-pilltabs" style="align-self:center">
-    <button class="eg-pilltab active" id="mTab1" onclick="selectMode(1)">Find synonym</button>
-    <button class="eg-pilltab"        id="mTab2" onclick="selectMode(2)">Find antonym</button>
-    <button class="eg-pilltab"        id="mTab3" onclick="selectMode(3)">Type it</button>
-  </div>
-  <div class="eg-prompt" style="width:100%">
-    <div class="eg-prompt__label" id="introLabel">Today's word</div>
-    <div class="eg-prompt__text" id="introWord" style="min-height:1.2em"></div>
-  </div>
-  <div id="typeSubMode" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
-    <div class="eg-eyebrow">Type…</div>
-    <div class="eg-pilltabs">
-      <button class="eg-pilltab active" id="typeSub1" onclick="selectTypeSub(1)">synonyms</button>
-      <button class="eg-pilltab"        id="typeSub2" onclick="selectTypeSub(2)">antonyms</button>
+  <div class="eg-tile eg-tile--teal" style="width:100%;">
+    <div class="eg-art">
+      <svg viewBox="0 0 260 80" aria-hidden="true">
+        <circle cx="130" cy="40" r="14" fill="#f4efe6"/>
+        <g stroke="#f4efe6" stroke-width="5" stroke-linecap="round" opacity=".7">
+          <path d="M130 6 V18"/><path d="M130 62 V74"/><path d="M96 40 H84"/><path d="M176 40 H188"/>
+          <path d="M106 16 L114 24"/><path d="M154 64 L146 56"/><path d="M154 16 L146 24"/><path d="M106 64 L114 56"/>
+        </g>
+        <rect x="16" y="32" width="42" height="16" rx="8" fill="#f4efe6" opacity=".45"/>
+        <rect x="204" y="32" width="42" height="16" rx="8" fill="#f4efe6" opacity=".45"/>
+      </svg>
+    </div>
+    <span class="eg-eyebrow eg-eyebrow--on-color">Vocabulary · 3 modes</span>
+    <h1 class="eg-h3">WordSpark</h1>
+    <p class="eg-body">Find synonyms, find antonyms, or type them — three ways to build your vocabulary under pressure.</p>
+
+    <div class="eg-pilltabs" style="align-self:center">
+      <button class="eg-pilltab active" id="mTab1" onclick="selectMode(1)">Find synonym</button>
+      <button class="eg-pilltab"        id="mTab2" onclick="selectMode(2)">Find antonym</button>
+      <button class="eg-pilltab"        id="mTab3" onclick="selectMode(3)">Type it</button>
+    </div>
+    <div class="eg-prompt" style="width:100%;box-sizing:border-box;">
+      <div class="eg-prompt__label" id="introLabel">Today's word</div>
+      <div class="eg-prompt__text" id="introWord" style="min-height:1.2em"></div>
+    </div>
+    <div id="typeSubMode" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
+      <div class="eg-eyebrow eg-eyebrow--on-color">Type…</div>
+      <div class="eg-pilltabs">
+        <button class="eg-pilltab active" id="typeSub1" onclick="selectTypeSub(1)">synonyms</button>
+        <button class="eg-pilltab"        id="typeSub2" onclick="selectTypeSub(2)">antonyms</button>
+      </div>
+    </div>
+    <p class="eg-body" style="text-align:center;max-width:360px;align-self:center;" id="modeDesc"></p>
+
+    <div class="hero-play-row">
+      <button class="eg-btn eg-btn--primary" onclick="startGame()">Start playing →</button>
+    </div>
+
+    <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+      <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="instr-wrap" id="instrWrap">
+      <div class="instr-inner" id="instrDetail">
+        <p class="eg-body"><strong>TIME</strong> — 60 seconds on the clock, wrong answers cost 5 seconds<br>
+        <strong>HINT</strong> — reveal a letter for −3 points, or a fuller hint for −5<br>
+        <strong>SKIP</strong> — move on for −8 points<br>
+        <strong>EXTRA TIME</strong> — buy +30 seconds mid-round for −8 points<br>
+        <strong>SWITCH</strong> — change mode any time from the tabs above</p>
+      </div>
     </div>
   </div>
-  <p class="eg-body" style="text-align:center;max-width:360px;" id="modeDesc"></p>
-  <button class="eg-btn eg-btn--primary" onclick="startGame()">Start playing →</button>
 </div>
 
 <!-- GAME -->
@@ -171,8 +204,8 @@ main { max-width:600px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
 <!-- RESULT -->
 <div id="phase-result" style="display:none">
-  <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-    <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;" id="resultHeadline"></span>
+  <div class="eg-tile eg-tile--teal" style="width:100%;text-align:center;">
+    <span class="eg-eyebrow eg-eyebrow--on-color" id="resultHeadline"></span>
     <p class="eg-body" style="margin-top:10px;" id="resultMsg"></p>
     <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;" id="resultFound"></div>
   </div>

@@ -57,22 +57,56 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen -->
   <div id="startScreen">
-    <div class="eg-grid" style="width:100%;">
-      <button type="button" class="eg-modecard is-selected" id="tabE" onclick="previewDiff('easy')">
-        <span class="eg-eyebrow">Mode 01</span>
-        <span class="eg-h4">Easy</span>
-        <span class="eg-body--sm">Common words that trip people up.</span>
+    <div class="eg-tile eg-tile--gold" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 260 80" aria-hidden="true">
+          <g fill="#f4efe6">
+            <rect x="24" y="26" width="34" height="34" rx="8"/>
+            <rect x="66" y="26" width="34" height="34" rx="8" opacity=".75"/>
+            <rect x="150" y="26" width="34" height="34" rx="8" opacity=".5"/>
+            <rect x="192" y="26" width="34" height="34" rx="8" opacity=".35"/>
+          </g>
+          <rect x="108" y="26" width="34" height="34" rx="8" fill="none" stroke="#f4efe6" stroke-width="4" stroke-dasharray="7 6"/>
+          <rect x="112" y="66" width="26" height="6" rx="3" fill="#f4efe6"/>
+        </svg>
+      </div>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Spelling · Streak</span>
+      <h1 class="eg-h3">SpellIt!</h1>
+      <p class="eg-body">Read the definition, type the word. English spelling is famously tricky — how far can your streak go?</p>
+
+      <div class="eg-grid" style="width:100%;">
+        <button type="button" class="eg-modecard is-selected" id="tabE" style="--eg-modecard-bg: var(--eg-well-gold);" onclick="previewDiff('easy')">
+          <span class="eg-eyebrow">Mode 01</span>
+          <span class="eg-h4">Easy</span>
+          <span class="eg-body--sm">Common words that trip people up.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="tabH" style="--eg-modecard-bg: var(--eg-well-gold);" onclick="previewDiff('hard')">
+          <span class="eg-eyebrow">Mode 02</span>
+          <span class="eg-h4">Hard</span>
+          <span class="eg-body--sm">Longer, trickier words.</span>
+        </button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span id="rulesText" class="eg-body--sm">Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).</span>
+      </div>
+
+      <div class="hero-play-row">
+        <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="eg-modecard" id="tabH" onclick="previewDiff('hard')">
-        <span class="eg-eyebrow">Mode 02</span>
-        <span class="eg-h4">Hard</span>
-        <span class="eg-body--sm">Longer, trickier words.</span>
-      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>READ</strong> — a definition (and sometimes an example sentence) is shown for each word<br>
+          <strong>TYPE</strong> — spell the word correctly and hit → or press Enter<br>
+          <strong>HINT</strong> — two levels of letter hints, at −3 and −5 points<br>
+          <strong>SKIP</strong> — move on to the next word for −8 points, 3 skips per round<br>
+          <strong>STREAK</strong> — consecutive correct spellings build your streak</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%;">
-      <span id="rulesText" class="eg-body--sm">Read the definition and hints, then type the correctly spelled word. <strong>8 words</strong> per round. <strong>3 skips</strong> (−8 pts), plus two levels of hints (−3 and −5 pts).</span>
-    </div>
-    <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Game UI -->
@@ -116,22 +150,22 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- End card -->
   <div id="endCard" style="display:none">
-    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-      <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;">Round complete</span>
+    <div class="eg-tile eg-tile--gold" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color">Round complete</span>
       <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
       <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
-    </div>
-    <div class="sp-review-grid" id="wordsReview"></div>
-    <div id="submitArea" style="width:100%;">
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
-        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+      <div class="sp-review-grid" id="wordsReview" style="margin-top:6px;"></div>
+      <div id="submitArea" style="width:100%;margin-top:6px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+          <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+        </div>
       </div>
-    </div>
-    <div class="sp-actions">
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="restartGame()">Play again</button>
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="switchLabel" style="margin-left:2px;"></span></button>
-      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      <div class="sp-actions" style="margin-top:10px;">
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="restartGame()">Play again</button>
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')">Switch to <span id="switchLabel" style="margin-left:2px;"></span></button>
+        <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      </div>
     </div>
   </div>
 </main>

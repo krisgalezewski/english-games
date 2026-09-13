@@ -169,16 +169,40 @@ html,body { height:100%; overflow:hidden; }
 
 <!-- ══ INTRO ══ -->
 <div id="phase-intro" class="screen">
-  <div class="eg-card" style="width:100%;">
-    <span class="eg-eyebrow">How to play</span>
-    <p class="eg-body--sm" style="margin-top:10px;">Letters are scattered across the board. Steer your snake to collect them <strong>in order</strong> to spell a word — the letters join your <strong>current word</strong> at the top as you go.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">Whenever your current word is a real word, it glows green and a <strong>Bank Word</strong> button appears. Bank it to score and reset your snake — or keep going to try for something longer.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">Every <strong>5 words</strong> you bank, the snake gets a little faster — you'll get a warning the moment it speeds up.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">Picked up a letter you didn't want? Steer into the <strong>eraser cube ⌫</strong> to remove the most recent letter and carry on.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">The board wraps at the edges — fly off one side and you'll reappear on the other. You get <strong>5 snake resets</strong> for when you tangle into your own tail, and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
-    <p class="eg-body--sm" style="margin-top:8px;"><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause, R to reset the snake, N for a new board. <strong>Mobile:</strong> swipe to steer (chain directions in one drag — swipe up then right without lifting your finger), tap once to bank a word, double-tap to pause, or use the on-screen D-pad and buttons.</p>
+  <div class="eg-tile eg-tile--teal" style="width:100%;">
+    <div class="eg-art">
+      <svg viewBox="0 0 300 110" aria-hidden="true">
+        <path d="M24 84 L24 46 L86 46 L86 84 L148 84 L148 40 L210 40" fill="none" stroke="#f4efe6" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="228" cy="40" r="14" fill="#f4efe6"/>
+        <rect x="252" y="66" width="26" height="26" rx="6" fill="#f4efe6" opacity=".4"/>
+        <rect x="252" y="20" width="26" height="26" rx="6" fill="#f4efe6" opacity=".7"/>
+      </svg>
+    </div>
+    <div class="eg-row" style="justify-content:space-between; margin:0;">
+      <span class="eg-eyebrow eg-eyebrow--on-color">Vocabulary</span>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Endless</span>
+    </div>
+    <h1 class="eg-h3">WordSnake</h1>
+    <p class="eg-body">Steer your snake to collect scattered letters in order and spell real words. Bank a word to score and reset, or push your luck for something longer.</p>
+
+    <div class="hero-play-row">
+      <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.25rem" onclick="startGame()">Start playing →</button>
+    </div>
+
+    <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+      <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="instr-wrap" id="instrWrap">
+      <div class="instr-inner" id="instrDetail">
+        <p class="eg-body">Letters are scattered across the board. Steer your snake to collect them <strong>in order</strong> to spell a word — the letters join your <strong>current word</strong> at the top as you go.</p>
+        <p class="eg-body">Whenever your current word is a real word, it glows green and a <strong>Bank Word</strong> button appears. Bank it to score and reset your snake — or keep going to try for something longer.</p>
+        <p class="eg-body">Every <strong>5 words</strong> you bank, the snake gets a little faster — you'll get a warning the moment it speeds up.</p>
+        <p class="eg-body">Picked up a letter you didn't want? Steer into the <strong>eraser cube ⌫</strong> to remove the most recent letter and carry on.</p>
+        <p class="eg-body">The board wraps at the edges — fly off one side and you'll reappear on the other. You get <strong>5 snake resets</strong> for when you tangle into your own tail, and <strong>5 board resets</strong> to reshuffle the letters and eraser whenever you like.</p>
+        <p class="eg-body"><strong>Desktop:</strong> arrow keys / WASD to steer, Enter to bank a valid word, Space to pause, R to reset the snake, N for a new board. <strong>Mobile:</strong> swipe to steer (chain directions in one drag — swipe up then right without lifting your finger), tap once to bank a word, double-tap to pause, or use the on-screen D-pad and buttons.</p>
+      </div>
+    </div>
   </div>
-  <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-section" style="width:100%;">
     <div class="eg-section-head" style="margin-top:0;">
       <h2 class="eg-h2">Leaderboard</h2>

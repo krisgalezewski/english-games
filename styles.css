@@ -176,6 +176,21 @@ a:hover { color: #FFFFFF; }
    Never use alpha-muted text on a colour ground. */
 .eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-body { color: var(--eg-ink); }
 
+/* Accent-tinted chips (.eg-chip and its variants) are designed to sit on a
+   dark backdrop — their low-opacity accent-coloured background/text nearly
+   disappears against a matching-hued tile. On a colour tile, use a neutral
+   cream pod instead so found/missed word chips stay legible. */
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip,
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip--muted,
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip--ant {
+  background: rgba(244,239,230,.16); border-color: rgba(244,239,230,.4); color: var(--eg-ink);
+}
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip:hover,
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip--muted:hover,
+.eg-tile[class*="eg-tile--"]:not(.eg-tile--dark) .eg-chip--ant:hover {
+  background: rgba(244,239,230,.28);
+}
+
 /* --- Cards (the Long Game grid) ------------------------------------------ */
 
 .eg-card {
@@ -209,6 +224,26 @@ a:hover { color: #FFFFFF; }
 .eg-card .eg-art { border-radius: var(--eg-r-inner); padding: 14px; }
 .eg-art svg { width:100%; height:auto; display:block; }
 .eg-art svg[hidden] { display:none; }  /* fix: rotating game-of-the-week motifs must actually hide */
+
+/* --- Welcome-screen "more instructions" inline expander ------------------
+   Used on every game's welcome-screen hero tile (the same tile/art as its
+   index.html card) to reveal the full how-to-play text without a modal. */
+.hero-play-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.instr-toggle {
+  display:inline-flex; align-items:center; gap:.35rem;
+  background:none; border:none; padding:6px 0; margin:0;
+  font-family:'Archivo',sans-serif; font-size:12.5px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--eg-ink);
+  opacity:.8; cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.instr-toggle:hover { opacity:1; }
+.instr-chevron { display:inline-block; font-size:11px; transition:transform .2s ease; }
+.instr-toggle[aria-expanded="true"] .instr-chevron { transform:rotate(180deg); }
+
+.instr-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+.instr-wrap.open { grid-template-rows:1fr; }
+.instr-inner { overflow:hidden; }
+.instr-inner > p + p { margin-top:8px; }
 
 /* --- Buttons ------------------------------------------------------------- */
 

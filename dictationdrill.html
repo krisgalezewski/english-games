@@ -95,32 +95,70 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen -->
   <div id="startScreen">
-    <div class="eg-grid" style="width:100%;">
-      <button type="button" class="eg-modecard is-selected" id="ddTabEasyPreview" onclick="previewMode('easy')">
-        <span class="eg-eyebrow">Mode 01</span>
-        <span class="eg-h4">Easy</span>
-        <span class="eg-body--sm">Minimal pairs &amp; common words.</span>
+    <div class="eg-tile eg-tile--green" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 260 80" aria-hidden="true">
+          <g fill="#f4efe6">
+            <rect x="24" y="34" width="10" height="12" rx="5"/>
+            <rect x="46" y="26" width="10" height="28" rx="5" opacity=".8"/>
+            <rect x="68" y="14" width="10" height="52" rx="5"/>
+            <rect x="90" y="30" width="10" height="20" rx="5" opacity=".7"/>
+            <rect x="112" y="8" width="10" height="64" rx="5"/>
+            <rect x="134" y="24" width="10" height="32" rx="5" opacity=".8"/>
+            <rect x="156" y="34" width="10" height="12" rx="5" opacity=".6"/>
+            <rect x="178" y="20" width="10" height="40" rx="5" opacity=".8"/>
+            <rect x="200" y="30" width="10" height="20" rx="5" opacity=".6"/>
+            <rect x="222" y="36" width="10" height="8" rx="4" opacity=".45"/>
+          </g>
+        </svg>
+      </div>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Listening · Typing</span>
+      <h1 class="eg-h3">Dictation Drill</h1>
+      <p class="eg-body">Listen, then type exactly what you hear. Minimal pairs, tricky spelling, connected speech and full sentences — train your ear.</p>
+
+      <div class="eg-grid" style="width:100%;">
+        <button type="button" class="eg-modecard is-selected" id="ddTabEasyPreview" style="--eg-modecard-bg: var(--eg-well-green);" onclick="previewMode('easy')">
+          <span class="eg-eyebrow">Mode 01</span>
+          <span class="eg-h4">Easy</span>
+          <span class="eg-body--sm">Minimal pairs &amp; common words.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="ddTabMediumPreview" style="--eg-modecard-bg: var(--eg-well-green);" onclick="previewMode('medium')">
+          <span class="eg-eyebrow">Mode 02</span>
+          <span class="eg-h4">Medium</span>
+          <span class="eg-body--sm">Tricky spelling.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="ddTabConnectedPreview" style="--eg-modecard-bg: var(--eg-well-green);" onclick="previewMode('connected')">
+          <span class="eg-eyebrow">Mode 03</span>
+          <span class="eg-h4">Hard</span>
+          <span class="eg-body--sm">Connected speech.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="ddTabExpertPreview" style="--eg-modecard-bg: var(--eg-well-green);" onclick="previewMode('expert')">
+          <span class="eg-eyebrow">Mode 04</span>
+          <span class="eg-h4">Expert</span>
+          <span class="eg-body--sm">Full sentences.</span>
+        </button>
+      </div>
+      <div class="eg-card" id="rulesBoxPreview" style="width:100%;box-sizing:border-box;">
+        <span id="rulesTextPreview" class="eg-body--sm"></span>
+      </div>
+
+      <div class="hero-play-row">
+        <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="eg-modecard" id="ddTabMediumPreview" onclick="previewMode('medium')">
-        <span class="eg-eyebrow">Mode 02</span>
-        <span class="eg-h4">Medium</span>
-        <span class="eg-body--sm">Tricky spelling.</span>
-      </button>
-      <button type="button" class="eg-modecard" id="ddTabConnectedPreview" onclick="previewMode('connected')">
-        <span class="eg-eyebrow">Mode 03</span>
-        <span class="eg-h4">Hard</span>
-        <span class="eg-body--sm">Connected speech.</span>
-      </button>
-      <button type="button" class="eg-modecard" id="ddTabExpertPreview" onclick="previewMode('expert')">
-        <span class="eg-eyebrow">Mode 04</span>
-        <span class="eg-h4">Expert</span>
-        <span class="eg-body--sm">Full sentences.</span>
-      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>LISTEN</strong> — press ▶ to hear the item, and again to replay it (replays are limited)<br>
+          <strong>SPEED</strong> — switch between Normal and Slower playback<br>
+          <strong>TYPE</strong> — type exactly what you hear, then Check<br>
+          <strong>HINT / SKIP</strong> — a limited number of each are available per round<br>
+          <strong>MODES</strong> — Easy and Medium drill single words; Hard and Expert use connected speech and full sentences</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" id="rulesBoxPreview" style="width:100%;">
-      <span id="rulesTextPreview" class="eg-body--sm"></span>
-    </div>
-    <button type="button" class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Mode tabs — always visible during play -->
@@ -187,28 +225,28 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- End card -->
   <div id="endCard" style="display:none">
-    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-      <span class="eg-eyebrow eg-eyebrow--on-color" id="endReason" style="color:#9fc4ce;">Round complete</span>
+    <div class="eg-tile eg-tile--green" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color" id="endReason">Round complete</span>
       <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
       <div class="dd-end-stats" style="margin-top:14px;">
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">Correct</div><div class="eg-stat__value" id="endCorrect"></div></div>
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">Best streak</div><div class="eg-stat__value" id="endStreak"></div></div>
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">First listen</div><div class="eg-stat__value" id="endFirstTry"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">Correct</div><div class="eg-stat__value" id="endCorrect"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">Best streak</div><div class="eg-stat__value" id="endStreak"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">First listen</div><div class="eg-stat__value" id="endFirstTry"></div></div>
       </div>
       <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
-    </div>
 
-    <div class="dd-review-grid" id="reviewGrid"></div>
+      <div class="dd-review-grid" id="reviewGrid" style="margin-top:6px;"></div>
 
-    <div id="submitArea" style="width:100%;">
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
-        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+      <div id="submitArea" style="width:100%;margin-top:6px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+          <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+        </div>
       </div>
-    </div>
-    <div class="dd-actions">
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="restartRound()">Play again</button>
-      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      <div class="dd-actions" style="margin-top:10px;">
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="restartRound()">Play again</button>
+        <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      </div>
     </div>
   </div>
 </main>

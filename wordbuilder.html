@@ -80,22 +80,53 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen -->
   <div id="startScreen">
-    <div class="eg-grid" style="width:100%;">
-      <button type="button" class="eg-modecard is-selected" id="tabE" onclick="previewDiff('easy')">
-        <span class="eg-eyebrow">Mode 01</span>
-        <span class="eg-h4">Easy</span>
-        <span class="eg-body--sm">Reuse letters as many times as they appear.</span>
+    <div class="eg-tile eg-tile--teal" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 260 80" aria-hidden="true">
+          <g fill="#f4efe6">
+            <rect x="70" y="8" width="120" height="18" rx="6" opacity=".35"/>
+            <rect x="48" y="32" width="164" height="18" rx="6" opacity=".6"/>
+            <rect x="26" y="56" width="208" height="18" rx="6"/>
+          </g>
+        </svg>
+      </div>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Word builder · Rounds</span>
+      <h1 class="eg-h3">Word Builder</h1>
+      <p class="eg-body">Given a set of letters, make as many words as you can before time runs out. Longer words score more.</p>
+
+      <div class="eg-grid" style="width:100%;">
+        <button type="button" class="eg-modecard is-selected" id="tabE" style="--eg-modecard-bg: var(--eg-well-teal);" onclick="previewDiff('easy')">
+          <span class="eg-eyebrow">Mode 01</span>
+          <span class="eg-h4">Easy</span>
+          <span class="eg-body--sm">Reuse letters as many times as they appear.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="tabH" style="--eg-modecard-bg: var(--eg-well-teal);" onclick="previewDiff('hard')">
+          <span class="eg-eyebrow">Mode 02</span>
+          <span class="eg-h4">Hard</span>
+          <span class="eg-body--sm">Each letter in the rack can only be used once.</span>
+        </button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span id="rulesText" class="eg-body--sm">Build as many words as you can from the letters shown — letters can be reused. 5 rounds, 90 seconds each. Longer words score more points.</span>
+      </div>
+
+      <div class="hero-play-row">
+        <button type="button" class="eg-btn eg-btn--primary" id="startBtn" onclick="beginGame()" disabled>Loading…</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="eg-modecard" id="tabH" onclick="previewDiff('hard')">
-        <span class="eg-eyebrow">Mode 02</span>
-        <span class="eg-h4">Hard</span>
-        <span class="eg-body--sm">Each letter in the rack can only be used once.</span>
-      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>BUILD</strong> — tap letters from the rack to spell a word, then Submit<br>
+          <strong>SHUFFLE</strong> — reorder the rack if it helps you see new words<br>
+          <strong>SCORE</strong> — longer words earn more points<br>
+          <strong>ROUNDS</strong> — 5 rounds of 90 seconds, with a fresh letter set each round<br>
+          <strong>EASY VS HARD</strong> — Easy lets you reuse a letter as many times as it appears; Hard allows each letter once</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%;">
-      <span id="rulesText" class="eg-body--sm">Build as many words as you can from the letters shown — letters can be reused. 5 rounds, 90 seconds each. Longer words score more points.</span>
-    </div>
-    <button type="button" class="eg-btn eg-btn--primary" id="startBtn" onclick="beginGame()" disabled>Loading…</button>
   </div>
 
   <!-- Round info -->
@@ -147,41 +178,41 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- End card — inline, non-blocking -->
   <div id="endCard" style="display:none">
-    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-      <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;" id="endCardTitle">Round complete</span>
+    <div class="eg-tile eg-tile--teal" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color" id="endCardTitle">Round complete</span>
       <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
       <p class="eg-body" style="margin-top:10px;" id="endMsg"></p>
-    </div>
 
-    <div style="width:100%;max-width:440px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span class="eg-eyebrow" style="font-size:10.5px;">Words this round</span>
-        <span id="resultSummary" class="eg-body--sm"></span>
+      <div style="width:100%;max-width:440px;margin-top:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span class="eg-eyebrow eg-eyebrow--on-color" style="font-size:10.5px;">Words this round</span>
+          <span id="resultSummary" class="eg-body--sm" style="color:var(--eg-ink);"></span>
+        </div>
+        <div class="wb-results-grid" id="resultsGrid"></div>
       </div>
-      <div class="wb-results-grid" id="resultsGrid"></div>
-    </div>
 
-    <!-- Continue / stop decision -->
-    <div id="continueDecision" style="display:none;width:100%;max-width:440px;text-align:center">
-      <p class="eg-body" style="margin-bottom:12px;">Continue to the next round, or stop here and save your score?</p>
-      <div class="wb-actions">
-        <button type="button" class="eg-btn eg-btn--primary" id="continueBtn" onclick="nextRound()">Continue → Round <span id="nextRoundNum" style="margin-left:2px;"></span></button>
-        <button type="button" class="eg-btn eg-btn--ghost" onclick="stopAndShowSubmit()">Stop &amp; save score</button>
+      <!-- Continue / stop decision -->
+      <div id="continueDecision" style="display:none;width:100%;max-width:440px;text-align:center;margin-top:6px;">
+        <p class="eg-body" style="margin-bottom:12px;">Continue to the next round, or stop here and save your score?</p>
+        <div class="wb-actions">
+          <button type="button" class="eg-btn eg-btn--primary" id="continueBtn" onclick="nextRound()">Continue → Round <span id="nextRoundNum" style="margin-left:2px;"></span></button>
+          <button type="button" class="eg-btn eg-btn--ghost" style="border-color:rgba(244,239,230,.5);color:var(--eg-ink);" onclick="stopAndShowSubmit()">Stop &amp; save score</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Submit form -->
-    <div id="submitArea" style="width:100%;max-width:440px;display:none">
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
-        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+      <!-- Submit form -->
+      <div id="submitArea" style="width:100%;max-width:440px;display:none;margin-top:6px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+          <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+        </div>
       </div>
-    </div>
 
-    <div class="wb-actions">
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="confirmRestart()">Restart from round 1</button>
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')" id="switchBtn"></button>
-      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      <div class="wb-actions" style="margin-top:10px;">
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="confirmRestart()">Restart from round 1</button>
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="setDiff(diff==='easy'?'hard':'easy')" id="switchBtn"></button>
+        <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      </div>
     </div>
   </div>
 </main>

@@ -84,15 +84,57 @@ main { max-width:580px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen — shown before the player has chosen to begin -->
   <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:18px;width:100%">
-    <div class="eg-pilltabs">
-      <button class="eg-pilltab active" id="tabA" onclick="previewMode('easy')">Easy</button>
-      <button class="eg-pilltab"        id="tabB" onclick="previewMode('medium')">Medium</button>
-      <button class="eg-pilltab"        id="tabC" onclick="previewMode('hard')">Hard</button>
+    <div class="eg-tile eg-tile--teal-deep" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 300 110" aria-hidden="true">
+          <g fill="#f4efe6">
+            <rect x="20" y="42" width="68" height="26" rx="7"/>
+            <rect x="116" y="42" width="68" height="26" rx="7" opacity=".65"/>
+            <rect x="212" y="42" width="68" height="26" rx="7" opacity=".35"/>
+          </g>
+          <g stroke="#f4efe6" stroke-width="5" stroke-linecap="round" opacity=".7">
+            <path d="M94 55 H110"/><path d="M190 55 H206"/>
+          </g>
+          <g fill="#f4efe6" opacity=".5">
+            <rect x="20" y="82" width="34" height="8" rx="4"/>
+            <rect x="116" y="82" width="34" height="8" rx="4"/>
+            <rect x="212" y="82" width="34" height="8" rx="4"/>
+          </g>
+        </svg>
+      </div>
+      <div class="eg-row" style="justify-content:space-between; margin:0;">
+        <span class="eg-eyebrow eg-eyebrow--on-color">Verbs · Typing</span>
+        <span class="eg-eyebrow eg-eyebrow--on-color">3 modes</span>
+      </div>
+      <h1 class="eg-h3">Irregular Verb Sprint</h1>
+      <p class="eg-body">Type both forms of irregular verbs against the clock — three modes from structured drilling to full sentence completion.</p>
+
+      <div class="eg-pilltabs">
+        <button class="eg-pilltab active" id="tabA" onclick="previewMode('easy')">Easy</button>
+        <button class="eg-pilltab"        id="tabB" onclick="previewMode('medium')">Medium</button>
+        <button class="eg-pilltab"        id="tabC" onclick="previewMode('hard')">Hard</button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span class="eg-body--sm" id="rulesText">Type the correct irregular verb form before time runs out. <strong style="color:var(--eg-ink)">Easy:</strong> past simple only. <strong style="color:var(--eg-ink)">Medium:</strong> past simple + past participle. <strong style="color:var(--eg-ink)">Hard:</strong> fill the blank in a full sentence.</span>
+      </div>
+
+      <div class="hero-play-row">
+        <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>TYPE</strong> — enter the missing verb form(s) and hit Check (or press Enter)<br>
+          <strong>HINT</strong> — reveals one letter of the answer, limited uses per round<br>
+          <strong>SKIP</strong> — move on to the next verb at a 5-point penalty<br>
+          <strong>STREAK</strong> — consecutive correct answers build a scoring streak<br>
+          <strong>SWITCH</strong> — change mode any time from the tabs above the timer</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%">
-      <span class="eg-body--sm" id="rulesText">Type the correct irregular verb form before time runs out. <strong style="color:var(--eg-ink)">Easy:</strong> past simple only. <strong style="color:var(--eg-ink)">Medium:</strong> past simple + past participle. <strong style="color:var(--eg-ink)">Hard:</strong> fill the blank in a full sentence.</span>
-    </div>
-    <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Game UI -->

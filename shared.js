@@ -25,6 +25,20 @@ async function getLeaderboard(game, limit = 10) {
   } catch(e) { console.error('getLeaderboard failed', e); return []; }
 }
 
+// ── Welcome-screen "more instructions" inline expander ──────────────
+// Shared by every game's welcome-screen hero tile. Expects the standard
+// #instrToggle / #instrToggleLabel / #instrWrap ids (see styles.css for
+// the .instr-toggle/.instr-wrap/.instr-inner rules it drives).
+function toggleInstructions() {
+  const wrap = document.getElementById('instrWrap');
+  const btn = document.getElementById('instrToggle');
+  const label = document.getElementById('instrToggleLabel');
+  if (!wrap || !btn) return;
+  const open = wrap.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (label) label.textContent = open ? 'Less instructions' : 'More instructions';
+}
+
 // ── Daily seed ────────────────────────────────────────────────────
 function dailyIndex(max) {
   const d = new Date();

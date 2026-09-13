@@ -111,18 +111,52 @@ main { max-width:620px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 <main>
   <!-- Start screen — shown before the player has chosen to begin -->
   <div id="startScreen" style="display:flex;flex-direction:column;align-items:center;gap:18px;width:100%">
-    <!-- Practice button sits above the scored-mode tabs, visually distinct -->
-    <button class="btn-practice" onclick="showPracticeMenu()">Practice mode</button>
-    <div class="eg-pilltabs">
-      <button class="eg-pilltab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
-      <button class="eg-pilltab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
-      <button class="eg-pilltab"        id="tabC" onclick="previewDiff('advanced')">Advanced</button>
-      <button class="eg-pilltab"        id="tabD" onclick="previewDiff('expert')">Expert</button>
+    <div class="eg-tile eg-tile--gold" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 300 110" aria-hidden="true">
+          <rect x="16" y="34" width="96" height="42" rx="10" fill="#f4efe6"/>
+          <rect x="188" y="34" width="96" height="42" rx="10" fill="#f4efe6" opacity=".35"/>
+          <path d="M112 55 H188" stroke="#f4efe6" stroke-width="6"/>
+          <path d="M170 41 L188 55 L170 69" fill="none" stroke="#f4efe6" stroke-width="6" stroke-linecap="round"/>
+          <rect x="140" y="14" width="18" height="18" rx="5" fill="#f4efe6" opacity=".6"/>
+          <rect x="140" y="78" width="18" height="18" rx="5" fill="#f4efe6" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="eg-row" style="justify-content:space-between; margin:0;">
+        <span class="eg-eyebrow eg-eyebrow--on-color">Grammar · Drag &amp; drop</span>
+        <span class="eg-eyebrow eg-eyebrow--on-color">4 levels</span>
+      </div>
+      <h1 class="eg-h3">Conditional Constructor</h1>
+      <p class="eg-body">Drag the correct THEN clause to complete conditional sentences — four levels from beginner to expert with inversion.</p>
+
+      <div class="eg-pilltabs">
+        <button class="eg-pilltab active" id="tabA" onclick="previewDiff('beginner')">Beginner</button>
+        <button class="eg-pilltab"        id="tabB" onclick="previewDiff('intermediate')">Intermediate</button>
+        <button class="eg-pilltab"        id="tabC" onclick="previewDiff('advanced')">Advanced</button>
+        <button class="eg-pilltab"        id="tabD" onclick="previewDiff('expert')">Expert</button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span class="eg-body--sm" id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong style="color:var(--eg-ink)">Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
+      </div>
+
+      <div class="hero-play-row">
+        <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
+        <button class="eg-btn eg-btn--ghost" style="border-color:rgba(244,239,230,.5);color:var(--eg-ink);" onclick="showPracticeMenu()">Practice mode</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>PLAY</strong> — read the IF clause, then drag (or tap) the matching THEN clause into the drop zone<br>
+          <strong>SCORE</strong> — 20 points per correct answer, plus a streak bonus once you reach 2 in a row<br>
+          <strong>LEVELS</strong> — Beginner and Intermediate label each conditional type; Advanced and Expert don't, and Expert adds inversion and conditional questions<br>
+          <strong>PRACTICE</strong> — pick a single conditional type and drill it with no timer or scoring<br>
+          <strong>TIMER</strong> — scored rounds run against the clock (120–150s depending on level)</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%">
-      <span class="eg-body--sm" id="rulesText">Drag (or tap) the correct clause to complete each conditional sentence. <strong style="color:var(--eg-ink)">Beginner:</strong> zero, first and second conditionals, clearly labelled.</span>
-    </div>
-    <button class="eg-btn eg-btn--primary" onclick="beginGame()">Start playing →</button>
   </div>
 
   <!-- Practice menu — shown when the player clicks Practice mode -->

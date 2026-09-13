@@ -157,17 +157,41 @@ body {
 
 <!-- Start screen -->
 <div class="screen" id="startScreen">
-  <div class="logo"><span class="english">ENGLISH</span><br><span class="ace">ACE</span></div>
-  <div class="tagline">Fly into the correct answer. Dodge the rest. How long can you stay airborne?</div>
-  <div class="hiscore-display" id="startHi">BEST: 0</div>
-  <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="startGame()">FLY →</button>
-  <div class="instructions">
-    <strong>STEER</strong> — drag the plane or use ← → keys<br>
-    <strong>COLLECT</strong> — fly into the correct answer<br>
-    <strong>DODGE</strong> — avoid all other words<br>
-    <strong>STREAK</strong> — 3 correct → ×2 &nbsp;·&nbsp; 5 → ×3<br>
-    <strong>LIVES</strong> — 5 planes · wrong word = lose one<br>
-    <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span>
+  <div class="eg-tile eg-tile--dark" style="width:100%;max-width:420px;">
+    <div class="eg-art">
+      <svg viewBox="0 0 300 130" aria-hidden="true">
+        <path d="M18 104 C78 104 96 34 168 34" fill="none" stroke="#f4efe6" stroke-width="4" stroke-dasharray="10 12" opacity=".45"/>
+        <path d="M176 34 L230 56 L176 78 L190 56 Z" fill="#f4efe6"/>
+        <circle cx="258" cy="26" r="13" fill="#11736a"/>
+        <circle cx="268" cy="94" r="9" fill="#96162f"/>
+        <circle cx="214" cy="110" r="7" fill="#f4efe6" opacity=".4"/>
+      </svg>
+    </div>
+    <div class="eg-row" style="justify-content:space-between; margin:0;">
+      <span class="eg-eyebrow" style="color:var(--eg-ink-muted);">Action</span>
+      <span class="eg-eyebrow" style="color:var(--eg-ink-muted);">Mixed skills</span>
+    </div>
+    <h1 class="eg-h3">English Ace</h1>
+    <p class="eg-body">Fly your plane into correct answers, dodge the wrong ones. Collocations, spelling, phrasal verbs — under fire.</p>
+    <div class="hiscore-display" id="startHi">BEST: 0</div>
+
+    <div class="hero-play-row">
+      <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.25rem" onclick="startGame()">FLY →</button>
+    </div>
+
+    <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+      <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="instr-wrap" id="instrWrap">
+      <div class="instr-inner" id="instrDetail">
+        <p class="eg-body"><strong>STEER</strong> — drag the plane or use ← → keys<br>
+        <strong>COLLECT</strong> — fly into the correct answer<br>
+        <strong>DODGE</strong> — avoid all other words<br>
+        <strong>STREAK</strong> — 3 correct → ×2 &nbsp;·&nbsp; 5 → ×3<br>
+        <strong>LIVES</strong> — 5 planes · wrong word = lose one<br>
+        <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span></p>
+      </div>
+    </div>
   </div>
   <div class="lb-wrap">
     <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
@@ -182,30 +206,32 @@ body {
 
 <!-- End screen -->
 <div class="screen hidden" id="endScreen">
-  <div class="logo" style="font-size:1.3rem">MISSION<br>COMPLETE</div>
-  <div class="end-score-big" id="endScoreNum">0</div>
-  <div class="end-stats-row">
-    <div class="end-stat"><div class="v" id="endWave">1</div><div class="l">Wave</div></div>
-    <div class="end-stat"><div class="v" id="endCorrect">0</div><div class="l">Correct</div></div>
-    <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
+  <div class="eg-tile eg-tile--dark" style="width:100%;max-width:420px;">
+    <div class="logo" style="font-size:1.3rem">MISSION<br>COMPLETE</div>
+    <div class="end-score-big" id="endScoreNum">0</div>
+    <div class="end-stats-row">
+      <div class="end-stat"><div class="v" id="endWave">1</div><div class="l">Wave</div></div>
+      <div class="end-stat"><div class="v" id="endCorrect">0</div><div class="l">Correct</div></div>
+      <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
+    </div>
+    <div class="submit-row" style="display:flex; gap:8px; flex-wrap:wrap; margin:.5rem 0 0;">
+      <input id="nameInput" class="eg-input" placeholder="Your call sign" maxlength="20" style="flex:1;min-width:120px;"/>
+      <button class="eg-btn eg-btn--sm eg-btn--primary" type="button" id="submitBtn">SUBMIT</button>
+    </div>
+    <p id="submitMsg" class="eg-eyebrow" style="min-height:1.2em;margin:0;"></p>
+    <div class="hero-play-row" style="justify-content:center;">
+      <button class="eg-btn eg-btn--primary" onclick="startGame()">FLY AGAIN →</button>
+      <button class="eg-btn eg-btn--ghost" onclick="showStart()">MENU</button>
+    </div>
   </div>
   <div class="lb-wrap">
     <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
       <h2 class="eg-h2" style="font-size:1rem;">Leaderboard</h2>
     </div>
-    <div class="submit-row" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-      <input id="nameInput" class="eg-input" placeholder="Your call sign" maxlength="20" style="flex:1;min-width:120px;"/>
-      <button class="eg-btn eg-btn--sm eg-btn--primary" type="button" id="submitBtn">SUBMIT</button>
-    </div>
-    <p id="submitMsg" class="eg-eyebrow" style="min-height:1.2em;margin:0 0 8px;"></p>
     <table class="eg-lb-table">
       <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
       <tbody id="lbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
     </table>
-  </div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-    <button class="eg-btn eg-btn--primary" onclick="startGame()">FLY AGAIN →</button>
-    <button class="eg-btn eg-btn--ghost" onclick="showStart()">MENU</button>
   </div>
 </div>
 

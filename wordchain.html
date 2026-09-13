@@ -76,23 +76,56 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- Start screen -->
   <div id="startScreen" style="display:none;">
-    <div class="eg-grid" style="width:100%;">
-      <button type="button" class="eg-modecard is-selected" id="wcTabEasy" onclick="previewMode('easy')">
-        <span class="eg-eyebrow">Mode 01</span>
-        <span class="eg-h4">Classic</span>
-        <span class="eg-body--sm">Each word must start with the last letter of the one before it.</span>
+    <div class="eg-tile eg-tile--teal" style="width:100%;">
+      <div class="eg-art">
+        <svg viewBox="0 0 260 80" aria-hidden="true">
+          <g fill="none" stroke="#f4efe6" stroke-width="7">
+            <circle cx="70" cy="40" r="26"/>
+            <circle cx="130" cy="40" r="26" opacity=".7"/>
+            <circle cx="190" cy="40" r="26" opacity=".4"/>
+          </g>
+          <circle cx="96" cy="40" r="6" fill="#f4efe6"/>
+          <circle cx="156" cy="40" r="6" fill="#f4efe6" opacity=".6"/>
+        </svg>
+      </div>
+      <span class="eg-eyebrow eg-eyebrow--on-color">Word chain · Endless</span>
+      <h1 class="eg-h3">WordChain</h1>
+      <p class="eg-body">Each word must start with the last letter of the previous one. Build the longest chain you can.</p>
+
+      <div class="eg-grid" style="width:100%;">
+        <button type="button" class="eg-modecard is-selected" id="wcTabEasy" style="--eg-modecard-bg: var(--eg-well-teal);" onclick="previewMode('easy')">
+          <span class="eg-eyebrow">Mode 01</span>
+          <span class="eg-h4">Classic</span>
+          <span class="eg-body--sm">Each word must start with the last letter of the one before it.</span>
+        </button>
+        <button type="button" class="eg-modecard" id="wcTabHard" style="--eg-modecard-bg: var(--eg-well-teal);" onclick="previewMode('hard')">
+          <span class="eg-eyebrow">Mode 02</span>
+          <span class="eg-h4">Part of Speech</span>
+          <span class="eg-body--sm">Same rule, but each word must also match a required part of speech.</span>
+        </button>
+      </div>
+      <div class="eg-card" style="width:100%;box-sizing:border-box;">
+        <span class="eg-eyebrow" id="wcModeLabel">Classic mode</span>
+        <p class="eg-body--sm" style="margin:6px 0 0;" id="rulesText"><strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, no repeats. <strong>5 lives.</strong> Lose a life for a wrong letter, unknown word or repeat. 1 pt per letter; words of 4+ letters earn +1s bonus.</p>
+      </div>
+
+      <div class="hero-play-row">
+        <button type="button" class="eg-btn eg-btn--primary" id="startBtn" onclick="beginGame()" disabled>Loading…</button>
+      </div>
+
+      <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+        <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="eg-modecard" id="wcTabHard" onclick="previewMode('hard')">
-        <span class="eg-eyebrow">Mode 02</span>
-        <span class="eg-h4">Part of Speech</span>
-        <span class="eg-body--sm">Same rule, but each word must also match a required part of speech.</span>
-      </button>
+      <div class="instr-wrap" id="instrWrap">
+        <div class="instr-inner" id="instrDetail">
+          <p class="eg-body"><strong>CHAIN</strong> — type a word starting with the last letter of the one before it<br>
+          <strong>VALID</strong> — 3+ letters, no repeats, must be a real word (checked against a dictionary)<br>
+          <strong>LIVES</strong> — 5 lives; lose one for a wrong letter, unknown word, or repeat<br>
+          <strong>SCORE</strong> — 1 point per letter; words of 4+ letters earn a time bonus<br>
+          <strong>PART OF SPEECH</strong> — mode 2 adds a required word type for each link in the chain</p>
+        </div>
+      </div>
     </div>
-    <div class="eg-card" style="width:100%;">
-      <span class="eg-eyebrow" id="wcModeLabel">Classic mode</span>
-      <p class="eg-body--sm" style="margin:6px 0 0;" id="rulesText"><strong>Classic:</strong> Each word must start with the last letter of the previous one. 3+ letters, no repeats. <strong>5 lives.</strong> Lose a life for a wrong letter, unknown word or repeat. 1 pt per letter; words of 4+ letters earn +1s bonus.</p>
-    </div>
-    <button type="button" class="eg-btn eg-btn--primary" id="startBtn" onclick="beginGame()" disabled>Loading…</button>
   </div>
 
   <!-- Game UI -->
@@ -138,13 +171,13 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
   <!-- End card -->
   <div id="endCard" style="display:none">
-    <div class="eg-tile eg-tile--teal-deep" style="width:100%;text-align:center;">
-      <span class="eg-eyebrow eg-eyebrow--on-color" style="color:#9fc4ce;" id="endReason">Time's up!</span>
+    <div class="eg-tile eg-tile--teal" style="width:100%;text-align:center;">
+      <span class="eg-eyebrow eg-eyebrow--on-color" id="endReason">Time's up!</span>
       <h2 class="eg-display" id="endScore" style="margin:6px 0 0;"></h2>
       <div class="eg-hud" style="margin-top:18px;">
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">Words</div><div class="eg-stat__value" id="endWords"></div></div>
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">Longest</div><div class="eg-stat__value" id="endLongest"></div></div>
-        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:#9fc4ce;">Lives left</div><div class="eg-stat__value" id="endLives"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">Words</div><div class="eg-stat__value" id="endWords"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">Longest</div><div class="eg-stat__value" id="endLongest"></div></div>
+        <div class="eg-stat" style="background:rgba(244,239,230,.08);border-color:rgba(244,239,230,.16);"><div class="eg-stat__label" style="color:var(--eg-ink);opacity:.7;">Lives left</div><div class="eg-stat__value" id="endLives"></div></div>
       </div>
       <p class="eg-body" style="margin-top:14px;" id="endMsg"></p>
       <div id="submitArea" style="width:100%;max-width:420px;margin:14px auto 0;">
@@ -153,11 +186,11 @@ main { max-width:720px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
           <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
         </div>
       </div>
-    </div>
-    <div class="wc-actions">
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="replayMode()">Play again</button>
-      <button type="button" class="eg-btn eg-btn--ghost" onclick="backToMenu()">Change mode</button>
-      <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      <div class="wc-actions" style="margin-top:10px;">
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="replayMode()">Play again</button>
+        <button type="button" class="eg-btn eg-btn--ghost" onclick="backToMenu()">Change mode</button>
+        <a href="index.html" class="eg-btn eg-btn--ghost" style="text-decoration:none;">← All games</a>
+      </div>
     </div>
   </div>
 </main>

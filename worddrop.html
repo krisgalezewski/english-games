@@ -204,19 +204,50 @@ html,body { height:100%; overflow:hidden; }
 
 <!-- ══ INTRO ══ -->
 <div id="phase-intro" class="screen">
-  <div class="eg-card" style="width:100%;">
-    <span class="eg-eyebrow">How to play</span>
-    <p class="eg-body--sm" style="margin-top:10px;">A word teleports from its sentence to the top of the centre column and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
-    <p class="eg-body--sm" style="margin-top:8px;"><strong>On mobile:</strong> swipe left/right to move · swipe down to drop · double-tap to pause/resume. <strong>On desktop:</strong> arrow keys to move · ↓ or Space to drop · Escape to pause.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">You have <strong>3 lives</strong>. Each wrong category costs a life. Reach rounds 6, 11 and 16 to unlock a new category <em>and</em> earn a bonus life.</p>
-    <p class="eg-body--sm" style="margin-top:8px;">New categories unlock every 5 rounds. Speed increases as you progress.</p>
-    <div style="margin:12px 0 0">
-      <div class="eg-eyebrow" style="margin-bottom:8px">Starting categories</div>
+  <div class="eg-tile eg-tile--red" style="width:100%;">
+    <div class="eg-art">
+      <svg viewBox="0 0 300 110" aria-hidden="true">
+        <rect x="40" y="8" width="30" height="30" rx="7" fill="#f4efe6"/>
+        <rect x="135" y="24" width="30" height="30" rx="7" fill="#f4efe6" opacity=".6"/>
+        <rect x="230" y="4" width="30" height="30" rx="7" fill="#f4efe6" opacity=".35"/>
+        <g fill="none" stroke="#f4efe6" stroke-width="4" stroke-dasharray="8 10" opacity=".5">
+          <path d="M55 46 L55 76"/><path d="M150 62 L150 76"/><path d="M245 42 L245 76"/>
+        </g>
+        <g fill="#f4efe6">
+          <rect x="24" y="86" width="62" height="16" rx="8"/>
+          <rect x="119" y="86" width="62" height="16" rx="8" opacity=".6"/>
+          <rect x="214" y="86" width="62" height="16" rx="8" opacity=".35"/>
+        </g>
+      </svg>
+    </div>
+    <div class="eg-row" style="justify-content:space-between; margin:0;">
+      <span class="eg-eyebrow eg-eyebrow--on-color">Grammar</span>
+      <span class="eg-eyebrow eg-eyebrow--on-color">20 rounds</span>
+    </div>
+    <h1 class="eg-h3">WordDrop</h1>
+    <p class="eg-body">Words fall from their sentences — steer each one into the correct part of speech before it lands. New categories unlock every 5 rounds.</p>
+    <div>
+      <div class="eg-eyebrow eg-eyebrow--on-color" style="margin-bottom:8px">Starting categories</div>
       <div id="catPreview"></div>
     </div>
-    <p class="eg-body--sm" style="margin-top:8px;">20 rounds · Up to 5 categories · 3 lives</p>
+
+    <div class="hero-play-row">
+      <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.25rem" onclick="startGame()">Start playing →</button>
+    </div>
+
+    <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
+      <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="instr-wrap" id="instrWrap">
+      <div class="instr-inner" id="instrDetail">
+        <p class="eg-body">A word teleports from its sentence to the top of the centre column and falls. Steer it into the correct <strong>part of speech</strong> column before it lands.</p>
+        <p class="eg-body"><strong>On mobile:</strong> swipe left/right to move · swipe down to drop · double-tap to pause/resume. <strong>On desktop:</strong> arrow keys to move · ↓ or Space to drop · Escape to pause.</p>
+        <p class="eg-body">You have <strong>3 lives</strong>. Each wrong category costs a life. Reach rounds 6, 11 and 16 to unlock a new category <em>and</em> earn a bonus life.</p>
+        <p class="eg-body">New categories unlock every 5 rounds. Speed increases as you progress.</p>
+        <p class="eg-body">20 rounds · Up to 5 categories · 3 lives</p>
+      </div>
+    </div>
   </div>
-  <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.5rem" onclick="startGame()">Start playing →</button>
   <div class="lb-section" style="width:100%;">
     <div class="eg-section-head" style="margin-top:0;">
       <h2 class="eg-h2">Leaderboard</h2>
