@@ -879,45 +879,62 @@ function drawPowerup(p){
   ctx.restore();
 }
 
+// Small helper so the HUD's progress track/fill read as pills, matching the
+// site's .eg-progress component, instead of hard-edged canvas rectangles.
+function roundedRectPath(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
 function drawHUD(){
   ctx.save();
   const W=canvas.width;
-  ctx.fillStyle='rgba(3,5,15,.85)'; ctx.fillRect(0,0,W,44);
-  ctx.strokeStyle='rgba(79,195,247,.15)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(0,44); ctx.lineTo(W,44); ctx.stroke();
-  ctx.fillStyle='#ffd54f'; ctx.font='bold 17px Archivo, sans-serif';
+
+  // Top bar — dark translucent strip with a thin green accent (Arcade's own
+  // nav-underline colour), score in the site's gold-light so it reads the
+  // same as every other game's score readout.
+  ctx.fillStyle='rgba(8,8,18,.8)'; ctx.fillRect(0,0,W,44);
+  ctx.fillStyle='rgba(127,176,141,.5)'; ctx.fillRect(0,43,W,1); // --eg-green-light
+  ctx.fillStyle='#D9A520'; ctx.font='900 18px Archivo, sans-serif'; // --eg-gold-light
   ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillText(String(score).padStart(6,'0'),14,22);
+  ctx.fillText(String(score),14,22);
   if(multiplier>1){
-    ctx.fillStyle=streak>=5?'#ff6b6b':'#4fc3f7';
+    ctx.fillStyle='#CF4F66'; // --eg-rose
     ctx.font='bold 12px Archivo, sans-serif';
-    ctx.fillText('×'+multiplier,102,22);
+    ctx.fillText('×'+multiplier,String(score).length*11+22,22);
   }
-  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='10px Archivo, sans-serif';
+  ctx.fillStyle='#C9C3B8'; ctx.font='700 10px Archivo, sans-serif'; // --eg-ink-muted
   ctx.textAlign='center'; ctx.fillText('WAVE '+wave,W/2,12);
   const wPct=Math.max(0,1-waveTimer/WAVE_DUR);
-  ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(W/2-55,22,110,4);
-  ctx.fillStyle='#4fc3f7'; ctx.fillRect(W/2-55,22,110*wPct,4);
+  roundedRectPath(W/2-55,20,110,4,2);
+  ctx.fillStyle='rgba(255,255,255,.09)'; ctx.fill();
+  if(wPct>0){ roundedRectPath(W/2-55,20,Math.max(4,110*wPct),4,2); ctx.fillStyle='#7FB08D'; ctx.fill(); } // --eg-green-light
   ctx.font='14px serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
   for(let i=0;i<5;i++){ ctx.globalAlpha=i<lives?1:.15; ctx.fillText('✈',W-10-i*20,22); }
   ctx.globalAlpha=1;
   if(slowTimer>0){
-    ctx.fillStyle='#b39ddb'; ctx.font='9px Archivo, sans-serif';
+    ctx.fillStyle='#CF4F66'; ctx.font='700 9px Archivo, sans-serif'; // --eg-rose
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,36);
   }
-  ctx.fillStyle='rgba(14,60,120,.92)'; ctx.fillRect(0,44,W,62);
-  ctx.strokeStyle='rgba(79,195,247,.35)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(0,44); ctx.lineTo(W,44); ctx.stroke();
+
+  // Question banner — the site's own inverted "prompt" card (cream ground,
+  // black ink) used for every other game's question/prompt, instead of a
+  // flat saturated-blue box that didn't match the palette anywhere else.
+  ctx.fillStyle='#F4EFE6'; ctx.fillRect(0,44,W,62); // --eg-ink
+  ctx.strokeStyle='rgba(10,10,10,.08)'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(0,106); ctx.lineTo(W,106); ctx.stroke();
   if(currentQ){
-    ctx.fillStyle='rgba(79,195,247,.7)'; ctx.font='bold 9px Archivo, sans-serif';
+    ctx.fillStyle='#6B665E'; ctx.font='bold 9px Archivo, sans-serif'; // --eg-prompt__label
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('COMPLETE THE PHRASE',W/2,56);
-    ctx.fillStyle='#ffffff'; ctx.font='bold 20px Archivo, sans-serif';
-    ctx.shadowColor='rgba(79,195,247,0.6)'; ctx.shadowBlur=8;
+    ctx.fillStyle='#0A0A0A'; ctx.font='bold 20px Archivo, sans-serif'; // --eg-ink-on-light
     ctx.fillText(currentQ.q,W/2,82);
-    ctx.shadowBlur=0;
   }
   ctx.restore();
 }

@@ -82,54 +82,70 @@ html,body { height:100%; overflow:hidden; }
 .snake-toast.good { border-color:rgba(127,176,141,.5); color:var(--eg-green-light); }
 .snake-toast.bad  { border-color:rgba(207,79,102,.5); color:var(--eg-rose); }
 
-/* Right sidebar */
+/* Right sidebar — a stack of small bento cards (bg + radius + gap) instead
+   of one flat panel with divider lines, matching the rounded eg-stat/eg-card
+   look used across the rest of the site's game screens. */
 .game-right {
-  width:clamp(96px,23vw,150px); flex-shrink:0;
-  display:flex; flex-direction:column; align-items:center;
-  padding:.7rem .4rem .5rem; background:var(--eg-surface); border-left:1px solid var(--eg-border);
+  width:clamp(100px,23vw,158px); flex-shrink:0;
+  display:flex; flex-direction:column; gap:.5rem; align-items:stretch;
+  padding:.6rem .45rem; background:var(--eg-surface); border-left:1px solid var(--eg-border);
   overflow-y:auto;
 }
-.hud-item { width:100%; text-align:center; padding:.4rem 0; border-bottom:1px solid var(--eg-border); }
-.hud-item:last-of-type { border-bottom:none; }
+.hud-item {
+  width:100%; box-sizing:border-box; text-align:center; padding:.5rem .3rem;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
+}
 .hud-val { font-family:'Archivo',sans-serif; font-stretch:112%; font-size:clamp(1.05rem,2.6vw,1.4rem); font-weight:900; color:var(--eg-teal-light); line-height:1; }
 .hud-lbl { font-size:clamp(.42rem,.8vw,.52rem); letter-spacing:.08em; text-transform:uppercase; color:var(--eg-ink-faint); margin-top:.15rem; }
 
-.pip-block { width:100%; padding:.45rem 0; border-bottom:1px solid var(--eg-border); text-align:center; }
+.pip-block {
+  width:100%; box-sizing:border-box; padding:.5rem .35rem; text-align:center;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
+}
 .pip-lbl { font-size:.5rem; letter-spacing:.08em; text-transform:uppercase; color:var(--eg-ink-faint); margin-bottom:.3rem; }
-.pip-row { display:flex; gap:.2rem; justify-content:center; flex-wrap:wrap; margin-bottom:.35rem; }
+.pip-row { display:flex; gap:.2rem; justify-content:center; flex-wrap:wrap; margin-bottom:.4rem; }
 .pip { width:.55rem; height:.55rem; border-radius:50%; background:var(--eg-border-strong); transition:background .2s, transform .2s; }
 .pip.filled.snake { background:var(--eg-teal-light); }
 .pip.filled.board { background:var(--eg-gold-light); }
 .pip.spent { transform:scale(.6); opacity:.35; }
 .mini-btn {
-  width:100%; padding:.4rem .2rem; background:var(--eg-card); border:1px solid var(--eg-border-strong); border-radius:5px;
-  font-size:.52rem; letter-spacing:.05em; text-transform:uppercase;
-  color:var(--eg-ink-dim); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s;
+  width:100%; box-sizing:border-box; padding:.42rem .2rem;
+  background:transparent; border:1px solid var(--eg-border-strong); border-radius:var(--eg-r-pill);
+  font-size:.5rem; letter-spacing:.05em; text-transform:uppercase; font-weight:700;
+  color:var(--eg-ink-dim); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:background .12s, border-color .12s, color .12s;
   touch-action:manipulation;
 }
-.mini-btn:active { background:var(--eg-card-hover); }
+.mini-btn:hover:not(:disabled) { border-color:var(--eg-teal-light); color:var(--eg-teal-light); }
+.mini-btn:active:not(:disabled) { background:var(--eg-card-hover); }
 .mini-btn:disabled { opacity:.3; cursor:default; }
 
-.icon-btn-row { display:flex; gap:.4rem; margin:.5rem 0 .3rem; }
+.icon-btn-row { display:flex; gap:.4rem; margin:0; }
 .sound-btn {
-  flex:1; background:none; border:1px solid var(--eg-border-strong); border-radius:4px;
-  padding:.25rem .45rem; font-size:.85rem; cursor:pointer; color:var(--eg-ink-dim);
-  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  flex:1; background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
+  padding:.5rem .3rem; font-size:.9rem; cursor:pointer; color:var(--eg-ink-dim);
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:color .12s, border-color .12s;
 }
-.sound-btn:hover { color:var(--eg-ink); border-color:var(--eg-border-strong); }
+.sound-btn:hover { color:var(--eg-teal-light); border-color:var(--eg-border-strong); }
 
-/* D-pad */
+/* D-pad — set inside its own rounded card, buttons on a slightly lighter
+   surface so the whole thing reads as one bento module like the stat cards
+   above it, with a teal press-state tying it to WordSnake's own tile colour. */
+.dpad-card {
+  width:100%; box-sizing:border-box; padding:.45rem;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
+}
 .dpad {
   display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
-  gap:.22rem; width:100%; max-width:120px; aspect-ratio:1; margin-top:.4rem;
+  gap:.25rem; width:100%; aspect-ratio:1; margin:0 auto;
 }
 .dpad .d-btn {
-  background:var(--eg-card); border:1px solid var(--eg-border-strong); border-radius:6px;
+  background:var(--eg-surface); border:1px solid var(--eg-border-strong); border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:1rem; color:var(--eg-ink-dim); cursor:pointer; -webkit-tap-highlight-color:transparent;
-  transition:background .1s; touch-action:manipulation; user-select:none;
+  transition:background .1s, color .1s, border-color .1s; touch-action:manipulation; user-select:none;
 }
-.dpad .d-btn:active { background:var(--eg-card-hover); color:var(--eg-teal-light); }
+.dpad .d-btn:active { background:var(--eg-teal-light); color:var(--eg-ink-on-light); border-color:var(--eg-teal-light); }
 .d-up    { grid-column:2; grid-row:1; }
 .d-left  { grid-column:1; grid-row:2; }
 .d-right { grid-column:3; grid-row:2; }
@@ -137,12 +153,11 @@ html,body { height:100%; overflow:hidden; }
 
 /* Mobile: bigger tap targets across the sidebar controls */
 @media (max-width:600px) {
-  .game-right { width:clamp(120px,30vw,168px); padding:.6rem .35rem .6rem; }
-  .dpad { max-width:150px; gap:.3rem; }
+  .game-right { width:clamp(124px,30vw,172px); padding:.55rem .4rem; gap:.45rem; }
   .dpad .d-btn { font-size:1.3rem; min-height:0; }
   .mini-btn { padding:.6rem .2rem; font-size:.56rem; }
   .sound-btn { padding:.55rem; font-size:1rem; min-height:40px; }
-  .hud-item { padding:.3rem 0; }
+  .hud-item { padding:.45rem .3rem; }
 }
 
 /* ── Overlays ── */
@@ -244,11 +259,13 @@ html,body { height:100%; overflow:hidden; }
       <button class="sound-btn sound-toggle-btn" onclick="toggleSound()" title="Toggle sound">🔊</button>
     </div>
 
-    <div class="dpad" id="dpad">
-      <div class="d-btn d-up"    ontouchstart="onDpad(0,-1);event.preventDefault()" onmousedown="onDpad(0,-1)">↑</div>
-      <div class="d-btn d-left"  ontouchstart="onDpad(-1,0);event.preventDefault()" onmousedown="onDpad(-1,0)">←</div>
-      <div class="d-btn d-right" ontouchstart="onDpad(1,0);event.preventDefault()"  onmousedown="onDpad(1,0)">→</div>
-      <div class="d-btn d-down"  ontouchstart="onDpad(0,1);event.preventDefault()"  onmousedown="onDpad(0,1)">↓</div>
+    <div class="dpad-card">
+      <div class="dpad" id="dpad">
+        <div class="d-btn d-up"    ontouchstart="onDpad(0,-1);event.preventDefault()" onmousedown="onDpad(0,-1)">↑</div>
+        <div class="d-btn d-left"  ontouchstart="onDpad(-1,0);event.preventDefault()" onmousedown="onDpad(-1,0)">←</div>
+        <div class="d-btn d-right" ontouchstart="onDpad(1,0);event.preventDefault()"  onmousedown="onDpad(1,0)">→</div>
+        <div class="d-btn d-down"  ontouchstart="onDpad(0,1);event.preventDefault()"  onmousedown="onDpad(0,1)">↓</div>
+      </div>
     </div>
   </div>
 </div>

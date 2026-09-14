@@ -43,40 +43,47 @@ html,body { height:100%; overflow:hidden; }
   display:block; flex:1; width:100%; min-height:0;
   touch-action:none; user-select:none; -webkit-user-select:none;
 }
-.col-labels { display:flex; flex-shrink:0; }
+/* Each column reads as its own small bento "chip" sitting under the canvas —
+   a coloured top accent stripe (still the category's own colour, for
+   at-a-glance recognition) instead of a flat neutral divider line. */
+.col-labels { display:flex; flex-shrink:0; gap:2px; background:var(--eg-bg); padding:2px 2px 0; }
 .col-label {
   flex:1; text-align:center;
-  padding:.55rem .1rem;
+  padding:.6rem .1rem;
   font-family:'Archivo',sans-serif;
   font-size:.75rem; /* overridden by JS per column count */
   letter-spacing:.04em; text-transform:uppercase; font-weight:700;
-  background:var(--eg-bg); cursor:pointer;
+  background:var(--eg-surface); cursor:pointer;
   -webkit-tap-highlight-color:transparent; transition:background .12s;
-  border-top:1px solid var(--eg-border-strong);
+  border-top:3px solid currentColor;
+  border-radius:10px 10px 0 0;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .col-label:hover { background:var(--eg-card-hover); }
 .col-label.flash-good { animation:colGood .45s; }
 .col-label.flash-bad  { animation:colBad  .45s; }
-@keyframes colGood { 0%,100%{background:var(--eg-bg)} 45%{background:rgba(127,176,141,.25)} }
-@keyframes colBad  { 0%,100%{background:var(--eg-bg)} 45%{background:rgba(150,22,47,.3)} }
+@keyframes colGood { 0%,100%{background:var(--eg-surface)} 45%{background:rgba(127,176,141,.3)} }
+@keyframes colBad  { 0%,100%{background:var(--eg-surface)} 45%{background:rgba(150,22,47,.35)} }
 
-/* Right: HUD + controls */
+/* Right: HUD + controls — a stack of small bento cards (bg + radius + gap)
+   instead of one flat panel with divider lines, matching the rounded
+   eg-stat/eg-card look used across the rest of the site's game screens. */
 .game-right {
-  width:clamp(80px,20vw,115px);
+  width:clamp(84px,20vw,120px);
   flex-shrink:0; display:flex; flex-direction:column;
-  align-items:center; padding:.75rem .4rem .5rem;
+  align-items:stretch; padding:.6rem .4rem;
   background:var(--eg-surface); border-left:1px solid var(--eg-border);
-  gap:0;
-  overflow:hidden;
+  gap:.45rem;
+  overflow-y:auto;
 }
 /* Lives */
 .lives-row {
-  display:flex; gap:.35rem; justify-content:center;
-  margin-bottom:.6rem; flex-wrap:wrap;
+  display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap;
+  width:100%; box-sizing:border-box; padding:.4rem .3rem;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
 }
 .life {
-  font-size:1.2rem; transition:transform .3s, opacity .3s;
+  font-size:1.1rem; transition:transform .3s, opacity .3s;
   display:inline-block;
 }
 .life.lost { opacity:.18; transform:scale(.75); }
@@ -85,15 +92,16 @@ html,body { height:100%; overflow:hidden; }
 
 /* HUD stats */
 .hud-item {
-  width:100%; text-align:center;
-  padding:.45rem 0; border-bottom:1px solid var(--eg-border);
+  width:100%; box-sizing:border-box; text-align:center;
+  padding:.45rem .3rem;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
 }
-.hud-item:last-of-type { border-bottom:none; }
 .hud-val {
   font-family:'Archivo',sans-serif; font-stretch:112%;
-  font-size:clamp(1.1rem,2.8vw,1.5rem);
+  font-size:clamp(1.05rem,2.6vw,1.4rem);
   font-weight:900; color:var(--eg-rose); line-height:1;
 }
+.hud-val.hud-val--muted { color:var(--eg-ink-muted); font-size:clamp(.85rem,2vw,1.05rem); }
 .hud-lbl {
   font-family:'Archivo',sans-serif;
   font-size:clamp(.42rem,.8vw,.54rem);
@@ -103,9 +111,11 @@ html,body { height:100%; overflow:hidden; }
 
 /* Progress dots */
 .dots-col {
+  width:100%; box-sizing:border-box;
   display:flex; flex-direction:column; gap:.2rem;
-  align-items:center; padding:.5rem 0; flex:1;
+  align-items:center; padding:.5rem 0; flex:1; min-height:1.6rem;
   overflow:hidden;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
 }
 .pdot { width:.38rem; height:.38rem; border-radius:50%; background:var(--eg-border-strong); transition:background .2s; }
 .pdot.done-correct { background:var(--eg-green-light); }
@@ -114,37 +124,40 @@ html,body { height:100%; overflow:hidden; }
 
 /* Sound button */
 .sound-btn {
-  background:none; border:1px solid var(--eg-border-strong); border-radius:4px;
-  padding:.25rem .45rem; font-size:.9rem; cursor:pointer; color:var(--eg-ink-dim);
-  -webkit-tap-highlight-color:transparent;
-  margin-top:.35rem;
+  width:100%; box-sizing:border-box;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
+  padding:.4rem .3rem; font-size:.9rem; cursor:pointer; color:var(--eg-ink-dim);
+  -webkit-tap-highlight-color:transparent; transition:color .12s, border-color .12s;
 }
-.sound-btn:hover { color:var(--eg-ink); }
+.sound-btn:hover { color:var(--eg-rose); border-color:var(--eg-border-strong); }
 
-/* Arrow controls inside right panel */
+/* Arrow controls inside right panel — its own rounded card, like the D-pad
+   card in WordSnake/Affix Runner, so it reads as one bento module rather
+   than loose buttons floating in the sidebar. */
 .arrow-panel {
-  width:100%; display:flex; flex-direction:column;
-  gap:.3rem; padding:.4rem 0;
-  border-top:1px solid var(--eg-border); margin-top:.3rem;
+  width:100%; box-sizing:border-box; display:flex; flex-direction:column;
+  gap:.3rem; padding:.4rem;
+  background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-well);
 }
-.arrow-row { display:flex; gap:.25rem; justify-content:center; }
+.arrow-row { display:flex; gap:.3rem; justify-content:center; }
 .a-btn {
   flex:1; padding:.5rem .2rem;
-  background:var(--eg-card); border:1px solid var(--eg-border-strong); border-radius:6px;
+  background:var(--eg-surface); border:1px solid var(--eg-border-strong); border-radius:8px;
   font-size:1rem; text-align:center; cursor:pointer;
   -webkit-tap-highlight-color:transparent; color:var(--eg-ink-dim);
-  transition:background .1s;
+  transition:background .1s, color .1s, border-color .1s;
 }
-.a-btn:active { background:var(--eg-card-hover); }
+.a-btn:active { background:var(--eg-rose); color:var(--eg-ink-on-light); border-color:var(--eg-rose); }
 .a-drop {
-  width:100%; padding:.45rem;
-  background:var(--eg-card); border:1px solid var(--eg-border-strong); border-radius:6px;
-  font-family:'Archivo',sans-serif; font-size:.5rem;
+  width:100%; box-sizing:border-box; padding:.45rem;
+  background:var(--eg-surface); border:1px solid var(--eg-border-strong); border-radius:var(--eg-r-pill);
+  font-family:'Archivo',sans-serif; font-size:.5rem; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase;
   text-align:center; cursor:pointer; color:var(--eg-ink-dim);
   -webkit-tap-highlight-color:transparent;
-  transition:background .1s;
+  transition:background .1s, color .1s, border-color .1s;
 }
+.a-drop:hover { border-color:var(--eg-rose); color:var(--eg-rose); }
 .a-drop:active { background:var(--eg-card-hover); }
 
 /* ── Overlays ── */
@@ -274,8 +287,8 @@ html,body { height:100%; overflow:hidden; }
     <div class="lives-row" id="livesRow"></div>
     <!-- Stats -->
     <div class="hud-item"><div class="hud-val" id="scoreVal">0</div><div class="hud-lbl">Score</div></div>
-    <div class="hud-item"><div class="hud-val" id="streakVal" style="color:#aaa">0</div><div class="hud-lbl">Streak</div></div>
-    <div class="hud-item"><div class="hud-val" id="roundVal" style="font-size:.9rem;color:#aaa">1/20</div><div class="hud-lbl">Round</div></div>
+    <div class="hud-item"><div class="hud-val hud-val--muted" id="streakVal">0</div><div class="hud-lbl">Streak</div></div>
+    <div class="hud-item"><div class="hud-val hud-val--muted" id="roundVal">1/20</div><div class="hud-lbl">Round</div></div>
     <!-- Dots -->
     <div class="dots-col" id="progressDots"></div>
     <!-- Sound -->

@@ -825,32 +825,53 @@ function drawPowerup(p){
 }
 
 // ── Draw: HUD ─────────────────────────────────────────────────────
+// Small helper so the HUD's progress track/fill read as pills, matching the
+// site's .eg-progress component, instead of hard-edged canvas rectangles.
+function roundedRectPath(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
 function drawHUD() {
   ctx.save();
   const W = canvas.width;
 
-  // Top bar
+  // Top bar — a translucent strip with a thin bottom accent in the site's
+  // green (Affix Runner's own tile colour), echoing the coloured-underline
+  // treatment used on the index page's nav.
   ctx.fillStyle = 'rgba(8,8,18,.8)';
   ctx.fillRect(0,0,W,44);
+  ctx.fillStyle = 'rgba(127,176,141,.5)'; // --eg-green-light
+  ctx.fillRect(0,43,W,1);
 
-  // Score
-  ctx.fillStyle = '#ffd54f';
-  ctx.font = '900 16px Archivo, sans-serif';
+  // Score — plain number (no arcade-style zero padding), in the site's own
+  // gold-light so it reads as the same "score" colour used everywhere else.
+  ctx.fillStyle = '#D9A520'; // --eg-gold-light
+  ctx.font = '900 18px Archivo, sans-serif';
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(String(score).padStart(5,'0'), 14, 22);
+  ctx.fillText(String(score), 14, 22);
 
   // Round + type
   if (roundCfg) {
-    ctx.fillStyle = '#ffd54f';
+    ctx.fillStyle = '#C9C3B8'; // --eg-ink-muted
     ctx.font = '700 11px Archivo, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`Round ${round}/10 · ${roundCfg.label}`, W/2, 16);
-    // Progress
-    const pct = wordsSpawned / (roundCfg?.wordsPerRound || 1);
-    ctx.fillStyle = 'rgba(255,255,255,.07)';
-    ctx.fillRect(W/2-60,26,120,4);
-    ctx.fillStyle = '#ffd54f';
-    ctx.fillRect(W/2-60,26,120*pct,4);
+    // Progress — rounded pill track/fill
+    const pct = Math.max(0, Math.min(1, wordsSpawned / (roundCfg?.wordsPerRound || 1)));
+    roundedRectPath(W/2-60,25,120,4,2);
+    ctx.fillStyle = 'rgba(255,255,255,.09)';
+    ctx.fill();
+    if (pct > 0) {
+      roundedRectPath(W/2-60,25,Math.max(4,120*pct),4,2);
+      ctx.fillStyle = '#7FB08D'; // --eg-green-light
+      ctx.fill();
+    }
   }
 
   // Lives
