@@ -11,9 +11,9 @@
    ========================================================================== */
 
 const EG_GAMES = [
-  { slug: 'wordsnake',        title: 'WordSnake',              tag: 'Vocabulary',           blurb: 'Steer your snake to collect scattered letters in order and spell real words. Bank a word to score and reset, or push your luck for something longer.' },
-  { slug: 'worddrop',         title: 'WordDrop',               tag: 'Grammar',              blurb: 'Words fall from their sentences — steer each one into the correct part of speech before it lands. New categories unlock every 5 rounds.' },
-  { slug: 'wordrunner',       title: 'Affix Runner',           tag: 'Affixes',              blurb: 'Jump to collect words with correct affixes, duck to dodge the wrong ones. Master prefixes and suffixes across 10 rounds.' },
+  { slug: 'wordsnake',        title: 'WordSnake',              tag: 'Vocabulary',           blurb: 'Steer your snake to eat letters in order and spell a real word, then submit it. A red ⌫ tile undoes your last letter, and every tile burns down on its own fuse.' },
+  { slug: 'worddrop',         title: 'WordDrop',               tag: 'Grammar',              blurb: 'A word lifts out of its own sentence — catch it in the lane for its part of speech before it lands. Ten sentences to a level, then the lanes shuffle.' },
+  { slug: 'wordrunner',       title: 'Affix Climber',          tag: 'Affixes',              blurb: 'Every ledge is a word built from an affix, and half are inventions. Climb only the real ones while the decay line keeps rising from below.' },
   { slug: 'englishace',       title: 'English Ace',            tag: 'Action',               blurb: 'Fly your plane into correct answers, dodge the wrong ones. Collocations, spelling, phrasal verbs — under fire.' },
   { slug: 'conditionals',     title: 'Conditional Constructor',tag: 'Grammar',              blurb: 'Drag the correct THEN clause to complete conditional sentences — four levels from beginner to expert with inversion.' },
   { slug: 'verbsprint',       title: 'Irregular Verb Sprint',  tag: 'Verbs',                blurb: 'Type both forms of irregular verbs against the clock — three modes from structured drilling to full sentence completion.' },

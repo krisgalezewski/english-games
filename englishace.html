@@ -10,1601 +10,531 @@
 <link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <style>
-/* Playfield-only CSS — everything colour/type/chrome lives in styles.css. */
-body {
-  min-height:100vh; display:flex; flex-direction:column; align-items:center;
-  overflow:hidden; user-select:none; -webkit-user-select:none;
-}
-#gameCanvas {
-  display:block; touch-action:none; cursor:default;
-  position:fixed; top:48px; left:0;
-}
-
-/* ── Overlay screens ──
-   justify-content uses the `safe` keyword: plain `center` on a scrollable
-   flex container clips the top of any content taller than the viewport
-   (the browser centers first, then can't scroll into negative territory
-   to reach the overflow) — `safe center` falls back to start-alignment
-   once content overflows, so tall screens stay fully reachable by
-   scrolling while short ones still centre normally. */
-.screen {
-  position:fixed; inset:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:safe center;
-  gap:1rem; padding:5rem 1.5rem 2rem; z-index:100;
-  background:rgba(10,10,10,.93); backdrop-filter:blur(6px);
-  overflow-y:auto;
-}
-.screen.hidden { display:none; }
-
-/* ── Top nav bar (always visible) ── */
-#topNav {
-  position:fixed; top:0; left:0; right:0; height:48px; z-index:300;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 1rem;
-  background:rgba(10,10,10,.85); border-bottom:1px solid var(--eg-border);
-  backdrop-filter:blur(8px);
-}
-#topNav a {
-  font-size:.65rem; letter-spacing:.12em;
-  color:var(--eg-ink-faint); text-decoration:none; transition:color .2s;
-  text-transform:uppercase;
-}
-#topNav a:hover { color:var(--eg-ink); }
-#topNav .nav-title {
-  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:.9rem; font-weight:900;
-  color:var(--eg-ink); letter-spacing:.04em; text-transform:uppercase;
-}
-#muteBtn {
-  height:34px; padding:0 .65rem; border-radius:17px;
-  background:var(--eg-card); border:1px solid var(--eg-border-strong);
-  color:var(--eg-ink); font-size:.72rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:.3rem;
-  letter-spacing:.06em; white-space:nowrap;
-  transition:background .2s;
-}
-#muteBtn:hover { background:var(--eg-card-hover); }
-
-#pauseBtn {
-  height:34px; padding:0 .8rem; border-radius:17px;
-  background:var(--eg-card); border:1px solid var(--eg-border-strong);
-  color:var(--eg-ink); font-size:.72rem; cursor:pointer;
-  display:none; align-items:center; justify-content:center; gap:.3rem;
-  letter-spacing:.06em;
-  transition:background .2s;
-}
-#pauseBtn:hover { background:var(--eg-card-hover); }
-#pauseBtn.visible { display:flex; }
-
-/* Pause overlay */
-#pauseOverlay {
-  position:fixed; inset:0; z-index:150;
-  background:rgba(10,10,10,.82); backdrop-filter:blur(6px);
-  display:none; flex-direction:column;
-  align-items:center; justify-content:center; gap:1.25rem;
-}
-#pauseOverlay.visible { display:flex; }
-#pauseOverlay .pause-title {
-  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:2rem; font-weight:900;
-  color:var(--eg-ink); letter-spacing:.04em; text-transform:uppercase;
-}
-#pauseOverlay .pause-hint {
-  font-size:.75rem;
-  color:var(--eg-ink-faint); letter-spacing:.1em;
-}
-
-/* Track selector — shown during gameplay */
-#trackSelector {
-  position:fixed; bottom:1rem; left:50%; transform:translateX(-50%);
-  z-index:200; display:none;
-  background:var(--eg-card); border:1px solid var(--eg-border-strong);
-  border-radius:99px; padding:.3rem .4rem;
-  display:flex; gap:.3rem; align-items:center;
-  backdrop-filter:blur(8px);
-}
-#trackSelector .track-label {
-  font-size:.58rem;
-  color:var(--eg-ink-faint); letter-spacing:.1em; padding:0 .4rem;
-  text-transform:uppercase;
-}
-
-/* ── Logo ── */
-.logo {
-  font-family:'Archivo',sans-serif; font-stretch:112%;
-  font-size:clamp(2rem,8vw,3.2rem); font-weight:900;
-  letter-spacing:.02em; text-align:center; line-height:1.1; text-transform:uppercase;
-}
-.logo .ace { color:var(--eg-ink); }
-.logo .english { color:var(--eg-gold-light); }
-.tagline { font-size:.85rem; color:var(--eg-ink-faint); text-align:center; max-width:300px; line-height:1.6; }
-.hiscore-display { font-size:.72rem; color:var(--eg-gold-light); letter-spacing:.12em; }
-
-.instructions {
-  background:var(--eg-card); border:1px solid var(--eg-border);
-  border-radius:10px; padding:.9rem 1.1rem;
-  font-size:.78rem; color:var(--eg-ink-muted); line-height:1.8;
-  max-width:320px; text-align:left; width:100%;
-}
-.instructions strong { color:var(--eg-ink); }
-
-/* ── End screen ── */
-.end-score-big {
-  font-family:'Archivo',sans-serif; font-stretch:112%; font-size:clamp(2rem,9vw,3.5rem);
-  font-weight:900; color:var(--eg-gold-light);
-}
-.end-stats-row { display:flex; gap:1.2rem; flex-wrap:wrap; justify-content:center; }
-.end-stat { text-align:center; }
-.end-stat .v { font-family:'Archivo',sans-serif; font-stretch:112%; font-size:1.3rem; font-weight:900; color:var(--eg-ink); }
-.end-stat .l { font-size:.62rem; color:var(--eg-ink-faint); letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
-
-/* ── Leaderboard ── */
-.lb-wrap { width:100%; max-width:320px; }
+@keyframes drift { from { transform:translateX(0) } to { transform:translateX(-620px) } }
+.ea-play { border-radius:var(--eg-r-tile); background:#080B0D; border:1px solid var(--eg-border); overflow:hidden; position:relative; }
+.ea-fuelbar { height:6px; background:var(--eg-card); overflow:hidden; }
+.ea-fuelbar span { display:block; height:100%; width:100%; background:var(--eg-gold-light); }
+.ea-field { position:relative; height:470px; background:linear-gradient(#2E6FA8,#7FB6E0 68%,#B7D7EE); overflow:hidden; cursor:pointer; }
+.ea-clouds { position:absolute; inset:0; pointer-events:none; opacity:.45; }
+.ea-clouds span { position:absolute; border-radius:999px; background:rgba(255,255,255,.5); }
+.ea-wall { position:absolute; left:0; top:0; bottom:0; width:0; will-change:transform; }
+.ea-gate { position:absolute; left:0; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; min-height:64px; padding:0 30px; border-radius:999px; font-size:clamp(16px,2.1vw,21px); font-weight:900; font-stretch:110%; white-space:nowrap; box-shadow:0 12px 26px rgba(11,45,77,.22); transition:background .25s,color .25s; }
+.ea-gate::before { content:''; position:absolute; left:14%; top:-19px; width:52px; height:52px; border-radius:50%; background:inherit; }
+.ea-gate::after { content:''; position:absolute; right:13%; top:-27px; width:64px; height:64px; border-radius:50%; background:inherit; }
+.ea-gate span { position:relative; z-index:1; }
+.ea-can { position:absolute; left:0; top:0; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px; background:var(--eg-gold-light); color:var(--eg-ink-on-light); font-size:15px; font-weight:900; letter-spacing:.08em; white-space:nowrap; box-shadow:0 12px 26px rgba(11,45,77,.28); opacity:0; pointer-events:none; }
+.ea-pop { position:absolute; left:150px; top:0; font-size:20px; font-weight:900; font-stretch:110%; white-space:nowrap; opacity:0; pointer-events:none; text-shadow:0 2px 6px rgba(11,45,77,.35); }
+.ea-plane { position:absolute; left:58px; top:0; width:96px; height:64px; margin-top:-32px; will-change:transform; z-index:2; }
+.ea-grass { position:absolute; left:0; right:0; bottom:0; height:62px; background:#2F7D4F; border-top:5px solid #46A068; pointer-events:none; }
+.ea-grass span { position:absolute; inset:0; background-image:repeating-linear-gradient(80deg,rgba(255,255,255,.14) 0 3px,transparent 3px 16px); }
+.ea-banner-wrap { position:absolute; left:14px; right:14px; bottom:34px; pointer-events:none; }
+.ea-banner { background:#F6F1E2; color:#0B2D4D; padding:12px 40px; box-shadow:0 10px 24px rgba(11,45,77,.3); clip-path:polygon(0 0,100% 0,calc(100% - 22px) 50%,100% 100%,0 100%,22px 50%); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:clamp(17px,2.4vw,25px); font-weight:900; font-stretch:110%; line-height:1.25; text-align:center; text-wrap:balance; }
+.ea-blank { display:inline-flex; align-items:center; justify-content:center; width:58px; height:34px; border-radius:999px; background:#FFFFFF; border:2px solid #9FC4E2; color:#2E6FA8; font-size:19px; font-weight:900; }
+.ea-over { border-radius:var(--eg-r-tile); background:var(--eg-teal-deep); padding:clamp(24px,3vw,34px); display:flex; flex-direction:column; gap:16px; }
 </style>
 </head>
 <body>
-
-<!-- Always-visible top nav -->
-<nav id="topNav">
-  <a href="index.html">← All games</a>
-  <div style="display:flex;align-items:center;gap:14px">
-    <span class="nav-title">English Ace</span>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-      <button id="pauseBtn" title="Pause — Space on keyboard · Double-tap on mobile">⏸ PAUSE</button>
-      <span id="pauseSubHint" style="display:none;font-size:.45rem;color:var(--eg-ink-faint);letter-spacing:.08em;white-space:nowrap"></span>
-    </div>
-    <button id="muteBtn" title="Music volume">🔊 100%</button>
+<header class="eg-header">
+  <a href="index.html" class="eg-eyebrow" style="color:var(--eg-ink-muted);">← All games</a>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="eg-eyebrow">Best</span>
+    <span style="font-size:19px;font-weight:900;font-stretch:110%;color:var(--eg-gold-light);" id="bestVal">0</span>
   </div>
-</nav>
+</header>
 
-<div id="pauseOverlay">
-  <div class="pause-title">PAUSED</div>
-  <div class="pause-hint" id="resumeHint">Tap ▶ RESUME or double-tap the screen</div>
-  <button class="eg-btn eg-btn--primary" style="align-self:center" onclick="togglePause()">▶ RESUME</button>
-  <button class="eg-btn eg-btn--ghost" style="align-self:center" onclick="quitToMenu()">← English Ace menu</button>
-</div>
-
-<!-- Start screen -->
-<div class="screen" id="startScreen">
-  <div class="eg-tile eg-tile--dark" style="width:100%;max-width:420px;">
-    <div class="eg-art">
-      <svg viewBox="0 0 300 130" aria-hidden="true">
-        <path d="M18 104 C78 104 96 34 168 34" fill="none" stroke="#f4efe6" stroke-width="4" stroke-dasharray="10 12" opacity=".45"/>
-        <path d="M176 34 L230 56 L176 78 L190 56 Z" fill="#f4efe6"/>
-        <circle cx="258" cy="26" r="13" fill="#11736a"/>
-        <circle cx="268" cy="94" r="9" fill="#96162f"/>
-        <circle cx="214" cy="110" r="7" fill="#f4efe6" opacity=".4"/>
+<div id="phase-intro" style="max-width:1040px;margin:0 auto;">
+  <section class="eg-tile eg-tile--dark">
+    <div class="eg-art" style="overflow:hidden;">
+      <svg viewBox="0 0 520 200" aria-hidden="true" style="width:100%;height:auto;display:block;">
+        <defs><linearGradient id="ea-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6FA8"/><stop offset="0.7" stop-color="#7FB6E0"/><stop offset="1" stop-color="#B7D7EE"/></linearGradient></defs>
+        <rect width="520" height="200" fill="url(#ea-sky)"/>
+        <g fill="#FFFFFF" opacity=".4"><ellipse cx="80" cy="36" rx="46" ry="14"/><ellipse cx="300" cy="24" rx="34" ry="11"/></g>
+        <g><ellipse cx="392" cy="62" rx="74" ry="24" fill="#F6F9FC"/><circle cx="366" cy="48" r="20" fill="#F6F9FC"/><circle cx="404" cy="42" r="25" fill="#F6F9FC"/><text x="392" y="69" font-size="19" font-weight="900" fill="#0B2D4D" text-anchor="middle" font-family="Archivo">MAKE</text></g>
+        <g><ellipse cx="404" cy="128" rx="66" ry="22" fill="#F6F9FC"/><circle cx="382" cy="114" r="18" fill="#F6F9FC"/><circle cx="416" cy="110" r="22" fill="#F6F9FC"/><text x="404" y="134" font-size="19" font-weight="900" fill="#0B2D4D" text-anchor="middle" font-family="Archivo">DO</text></g>
+        <g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".6"><path d="M92 92 l-30 0M98 78 l-22 0M98 106 l-22 0"/></g>
+        <g fill="#F4EFE6" stroke="#0B2D4D" stroke-width="2.5" stroke-linejoin="round">
+          <path d="M118 92 l72 -16 l0 11 l14 5 l0 15 l-14 5 l0 11 z"/>
+          <path d="M152 80 l-30 -20 l16 0 l34 16 z" fill="#D9A520"/>
+          <path d="M152 104 l-30 20 l16 0 l34 -16 z" fill="#D9A520"/>
+        </g>
+        <rect x="0" y="176" width="520" height="24" fill="#2F7D4F"/>
+        <rect x="0" y="172" width="520" height="5" fill="#46A068"/>
+        <g fill="#F6F1E2"><path d="M40 150 h440 l-14 11 l14 11 H40 l14 -11 z"/></g>
+        <text x="260" y="168" font-size="15" font-weight="900" fill="#0B2D4D" text-anchor="middle" font-family="Archivo">SHE HAD TO ___ A DIFFICULT DECISION.</text>
       </svg>
     </div>
-    <div class="eg-row" style="justify-content:space-between; margin:0;">
-      <span class="eg-eyebrow" style="color:var(--eg-ink-muted);">Action</span>
-      <span class="eg-eyebrow" style="color:var(--eg-ink-muted);">Mixed skills</span>
+    <div>
+      <div class="eg-eyebrow" style="color:var(--eg-gold-light);margin-bottom:8px;">Action · Mixed skills</div>
+      <h1 class="eg-h1">English Ace</h1>
+      <p class="eg-body" style="max-width:460px;margin-top:10px;">Fly your plane into correct answers, dodge the wrong ones. Collocations, spelling, phrasal verbs — under fire. Fuel burns the whole time; three hits and you are down.</p>
     </div>
-    <h1 class="eg-h3">English Ace</h1>
-    <p class="eg-body">Fly your plane into correct answers, dodge the wrong ones. Collocations, spelling, phrasal verbs — under fire.</p>
-    <div class="hiscore-display" id="startHi">BEST: 0</div>
-
     <div class="hero-play-row">
-      <button class="eg-btn eg-btn--primary" style="font-size:1rem;padding:.75rem 2.25rem" onclick="startGame()">FLY →</button>
+      <button class="eg-btn eg-btn--primary" onclick="startGame()">Take off</button>
+      <span class="eg-body--sm" style="color:var(--eg-ink-faint);">↑ ↓ or 1–3 to change altitude · space to pause</span>
     </div>
-
     <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
       <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
     </button>
     <div class="instr-wrap" id="instrWrap">
       <div class="instr-inner" id="instrDetail">
-        <p class="eg-body"><strong>STEER</strong> — drag the plane or use ← → keys<br>
-        <strong>COLLECT</strong> — fly into the correct answer<br>
-        <strong>DODGE</strong> — avoid all other words<br>
-        <strong>STREAK</strong> — 3 correct → ×2 &nbsp;·&nbsp; 5 → ×3<br>
-        <strong>LIVES</strong> — 5 planes · wrong word = lose one<br>
-        <strong>PAUSE</strong> — <span id="pauseTip">tap ⏸ or press Space</span></p>
+        <p class="eg-body">A question banner sits above the runway; three cloud-shaped answers ride toward you in three lanes. Fly into the lane with the correct answer before it reaches your plane.</p>
+        <p class="eg-body">A correct answer clears in green and refuels you 15%; a wrong one flashes red and costs you 14% fuel — take three hits and you're shot down. Fuel also burns steadily the whole time, so watch the bar under the HUD and grab the gold "+25% FUEL" drop when one drifts by.</p>
+        <p class="eg-body">A streak of correct answers builds your score multiplier, and every 5 correct answers speeds the gates up a notch.</p>
+        <p class="eg-body"><strong>Desktop:</strong> ↑/↓ or W/S to change altitude, 1–3 to jump to a lane, space to pause. <strong>Mobile:</strong> tap the field at the height you want to fly.</p>
       </div>
     </div>
-  </div>
-  <div class="lb-wrap">
-    <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
-      <h2 class="eg-h2" style="font-size:1rem;">Leaderboard</h2>
+  </section>
+  <div class="lb-section" style="margin-top:28px;">
+    <div class="eg-section-head" style="margin-top:0;">
+      <h2 class="eg-h2">Leaderboard</h2>
     </div>
     <table class="eg-lb-table">
-      <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
-      <tbody id="startLbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBodyIntro"></tbody>
     </table>
   </div>
 </div>
 
-<!-- End screen -->
-<div class="screen hidden" id="endScreen">
-  <div class="eg-tile eg-tile--dark" style="width:100%;max-width:420px;">
-    <div class="logo" style="font-size:1.3rem">MISSION<br>COMPLETE</div>
-    <div class="end-score-big" id="endScoreNum">0</div>
-    <div class="end-stats-row">
-      <div class="end-stat"><div class="v" id="endWave">1</div><div class="l">Wave</div></div>
-      <div class="end-stat"><div class="v" id="endCorrect">0</div><div class="l">Correct</div></div>
-      <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Best streak</div></div>
+<div id="phase-game" style="max-width:1040px;margin:0 auto;display:none;">
+  <section class="ea-play">
+    <div class="eg-arcade-hud">
+      <span class="eg-arcade-cat" id="qType">COLLOCATION</span>
+      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Score</span><span class="eg-arcade-chip__value" id="scoreVal">0</span></span>
+      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Fuel</span><span class="eg-arcade-chip__value" id="fuelVal" style="color:var(--eg-gold-light);">100%</span></span>
+      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Hits</span><span class="eg-arcade-chip__value" id="hitVal" style="color:var(--eg-rose);">○ ○ ○</span></span>
+      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Mult</span><span class="eg-arcade-chip__value eg-arcade-chip__value--mult" id="multVal">×1</span></span>
+      <span class="eg-arcade-spacer"></span>
+      <button class="eg-arcade-pause" id="pauseBtn" onclick="togglePause()" title="Pause (space)">PAUSE</button>
     </div>
-    <div class="submit-row" style="display:flex; gap:8px; flex-wrap:wrap; margin:.5rem 0 0;">
-      <input id="nameInput" class="eg-input" placeholder="Your call sign" maxlength="20" style="flex:1;min-width:120px;"/>
-      <button class="eg-btn eg-btn--sm eg-btn--primary" type="button" id="submitBtn">SUBMIT</button>
+    <div class="ea-fuelbar"><span id="fuelBar"></span></div>
+
+    <div class="ea-field" id="field">
+      <div class="ea-clouds">
+        <span style="left:8%;top:10%;width:150px;height:44px;animation:drift 26s linear infinite;"></span>
+        <span style="left:52%;top:33%;width:210px;height:54px;background:rgba(255,255,255,.35);animation:drift 38s linear infinite;"></span>
+        <span style="left:78%;top:58%;width:130px;height:38px;animation:drift 31s linear infinite;"></span>
+      </div>
+      <div class="ea-wall" id="wall"></div>
+      <span class="ea-can" id="can">+25% FUEL</span>
+      <span class="ea-pop" id="pop">+0</span>
+      <span class="ea-plane" id="plane">
+        <svg viewBox="0 0 120 64" style="width:100%;height:100%;display:block;overflow:visible" aria-hidden="true">
+          <g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".55"><path d="M14 32 l-14 0M20 20 l-12 0M20 44 l-12 0"/></g>
+          <g fill="#F4EFE6" stroke="#0B2D4D" stroke-width="2.5" stroke-linejoin="round">
+            <path d="M34 32 l72 -16 l0 11 l14 5 l0 15 l-14 5 l0 11 z"/>
+            <path d="M68 20 l-30 -20 l16 0 l34 16 z" fill="#D9A520"/>
+            <path d="M68 44 l-30 20 l16 0 l34 -16 z" fill="#D9A520"/>
+          </g>
+        </svg>
+      </span>
+      <div class="ea-grass"><span></span></div>
+      <div class="ea-banner-wrap" id="bannerWrap">
+        <div class="ea-banner">
+          <span id="qPre"></span>
+          <span class="ea-blank" id="qBlank" style="display:none;">?</span>
+          <span id="qPost"></span>
+        </div>
+      </div>
+      <div class="eg-arcade-pause-overlay" id="pauseOverlay" style="display:none;">
+        <span class="lbl">PAUSED</span>
+        <button class="eg-btn eg-btn--primary" onclick="togglePause()">Resume</button>
+        <span class="hint">SPACEBAR</span>
+      </div>
     </div>
-    <p id="submitMsg" class="eg-eyebrow" style="min-height:1.2em;margin:0;"></p>
-    <div class="hero-play-row" style="justify-content:center;">
-      <button class="eg-btn eg-btn--primary" onclick="startGame()">FLY AGAIN →</button>
-      <button class="eg-btn eg-btn--ghost" onclick="showStart()">MENU</button>
+
+    <div style="padding:13px 20px 18px;background:#101010;">
+      <span class="eg-body--sm" style="color:var(--eg-ink-muted);font-weight:700;" id="noteLine">Fly into the right answer</span>
     </div>
-  </div>
-  <div class="lb-wrap">
-    <div class="eg-section-head" style="margin-top:0;margin-bottom:8px;">
-      <h2 class="eg-h2" style="font-size:1rem;">Leaderboard</h2>
+  </section>
+  <div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+</div>
+
+<div id="phase-result" style="max-width:1040px;margin:0 auto;display:none;">
+  <section class="ea-over">
+    <span class="eg-arcade-over__reason" id="overReason">Out of fuel</span>
+    <div class="eg-arcade-over__score" id="finalScore">0</div>
+    <div class="eg-arcade-statrow">
+      <div class="eg-arcade-statcard"><div class="eg-arcade-statcard__label">Correct</div><div class="eg-arcade-statcard__value" id="finalCorrect">0</div></div>
+      <div class="eg-arcade-statcard"><div class="eg-arcade-statcard__label">Best run</div><div class="eg-arcade-statcard__value" id="finalBestRun">0</div></div>
+      <div class="eg-arcade-statcard"><div class="eg-arcade-statcard__label">Hits taken</div><div class="eg-arcade-statcard__value" id="finalHits">0</div></div>
+    </div>
+    <div id="wrongWrap">
+      <span class="eg-eyebrow eg-eyebrow--on-color" style="opacity:.7;">What hit you</span>
+      <div class="eg-arcade-chiplist" id="wrongChips" style="margin-top:6px;"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="eg-btn eg-btn--primary" onclick="startGame()">Fly again</button>
+      <button class="eg-btn eg-btn--ghost" onclick="goToIntro()">Back to hangar</button>
+    </div>
+    <div id="submitArea" style="width:100%;max-width:420px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+      </div>
+    </div>
+  </section>
+  <div class="lb-section" style="margin-top:28px;">
+    <div class="eg-section-head" style="margin-top:0;">
+      <h2 class="eg-h2">Leaderboard</h2>
     </div>
     <table class="eg-lb-table">
-      <thead><tr><th>#</th><th>Pilot</th><th>Score</th></tr></thead>
-      <tbody id="lbBody"><tr><td colspan="3" style="color:var(--eg-ink-faint)">Loading…</td></tr></tbody>
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody id="lbBodyResult"></tbody>
     </table>
   </div>
 </div>
 
-<div id="trackSelector">
-  <span class="track-label">♪</span>
-  <button class="eg-pilltab active" id="track0" onclick="selectTrack(0)">— Dash</button>
-  <button class="eg-pilltab"        id="track1" onclick="selectTrack(1)">- Hyphen</button>
-  <button class="eg-pilltab"        id="track2" onclick="selectTrack(2)">… Ellipsis</button>
-</div>
-<canvas id="gameCanvas"></canvas>
-<!-- Screen-reader-only status: this is a fast real-time action game, so
-     per-token pickups happen too often to announce without being noise —
-     this only speaks the meaningful, infrequent milestones (life lost,
-     wave up, game over). -->
-<div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<script src="englishace-data.js"></script>
 <script src="shared.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// ENGLISH ACE — Single clean script block
-// ═══════════════════════════════════════════════════════════════════
-const canvas = document.getElementById('gameCanvas');
-const ctx    = canvas.getContext('2d');
-const NAV_H  = 48;
-
-function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight-NAV_H; }
-resize();
-window.addEventListener('resize', resize);
-
-// ── Questions ──────────────────────────────────────────────────────
-const QUESTIONS = [
-  // Collocations
-  {q:'___ a decision',correct:'MAKE',wrong:['DO','TAKE','HAVE']},
-  {q:'___ a mistake',correct:'MAKE',wrong:['DO','SAY','TAKE']},
-  {q:'___ progress',correct:'MAKE',wrong:['DO','REACH','WIN']},
-  {q:'___ an effort',correct:'MAKE',wrong:['DO','TAKE','GIVE']},
-  {q:'___ a suggestion',correct:'MAKE',wrong:['GIVE','SAY','DO']},
-  {q:'___ a promise',correct:'MAKE',wrong:['GIVE','DO','TAKE']},
-  {q:'___ a difference',correct:'MAKE',wrong:['DO','HAVE','GIVE']},
-  {q:'___ friends',correct:'MAKE',wrong:['DO','FIND','GET']},
-  {q:'___ a complaint',correct:'MAKE',wrong:['DO','GIVE','SAY']},
-  {q:'___ homework',correct:'DO',wrong:['MAKE','TAKE','HAVE']},
-  {q:'___ research',correct:'DO',wrong:['MAKE','RUN','TAKE']},
-  {q:'___ your best',correct:'DO',wrong:['MAKE','GIVE','TRY']},
-  {q:'___ a photo',correct:'TAKE',wrong:['MAKE','DO','SHOOT']},
-  {q:'___ a risk',correct:'TAKE',wrong:['MAKE','DO','RUN']},
-  {q:'___ a break',correct:'TAKE',wrong:['MAKE','DO','HAVE']},
-  {q:'___ notes',correct:'TAKE',wrong:['MAKE','WRITE','DO']},
-  {q:'___ advice',correct:'GIVE',wrong:['MAKE','SAY','TELL']},
-  {q:'___ a speech',correct:'GIVE',wrong:['MAKE','DO','SAY']},
-  {q:'___ a warning',correct:'GIVE',wrong:['MAKE','DO','SAY']},
-  {q:'___ a shower',correct:'HAVE',wrong:['TAKE','DO','MAKE']},
-  {q:'___ fun',correct:'HAVE',wrong:['MAKE','DO','GET']},
-  {q:'___ attention',correct:'PAY',wrong:['GIVE','MAKE','DO']},
-  {q:'___ a record',correct:'SET',wrong:['MAKE','BREAK','DO']},
-  // Phrasal verbs
-  {q:'give ___ (stop trying)',correct:'UP',wrong:['IN','ON','OUT']},
-  {q:'give ___ (distribute)',correct:'OUT',wrong:['UP','AWAY','OFF']},
-  {q:'give ___ (donate)',correct:'AWAY',wrong:['OUT','BACK','UP']},
-  {q:'give ___ (surrender)',correct:'IN',wrong:['UP','OUT','BACK']},
-  {q:'take ___ (start hobby)',correct:'UP',wrong:['ON','OFF','OUT']},
-  {q:'take ___ (depart)',correct:'OFF',wrong:['ON','UP','OUT']},
-  {q:'take ___ (control)',correct:'OVER',wrong:['ON','OFF','UP']},
-  {q:'turn ___ (refuse)',correct:'DOWN',wrong:['OFF','OUT','BACK']},
-  {q:'turn ___ (switch off)',correct:'OFF',wrong:['DOWN','OUT','BACK']},
-  {q:'turn ___ (arrive)',correct:'UP',wrong:['ON','OUT','IN']},
-  {q:'get ___ (recover)',correct:'OVER',wrong:['ON','BACK','OUT']},
-  {q:'get ___ (wake up)',correct:'UP',wrong:['ON','OUT','OVER']},
-  {q:'put ___ (postpone)',correct:'OFF',wrong:['ON','BACK','OUT']},
-  {q:'look ___ (investigate)',correct:'INTO',wrong:['UP','OUT','BACK']},
-  {q:'look ___ (find info)',correct:'UP',wrong:['INTO','OUT','BACK']},
-  {q:'call ___ (cancel)',correct:'OFF',wrong:['OUT','UP','BACK']},
-  {q:'run ___ (exhaust supply)',correct:'OUT',wrong:['UP','OFF','AWAY']},
-  {q:'break ___ (end relation)',correct:'UP',wrong:['DOWN','OFF','OUT']},
-  {q:'come ___ (find by chance)',correct:'ACROSS',wrong:['OVER','UP','IN']},
-  // Past simple
-  {q:'Past simple of WRITE',correct:'WROTE',wrong:['WRITTEN','WRITED','WRIT']},
-  {q:'Past simple of SPEAK',correct:'SPOKE',wrong:['SPOKEN','SPEAKED','SPAKE']},
-  {q:'Past simple of BREAK',correct:'BROKE',wrong:['BROKEN','BREAKED','BROKED']},
-  {q:'Past simple of KNOW',correct:'KNEW',wrong:['KNOWN','KNOWED','KNEWED']},
-  {q:'Past simple of TAKE',correct:'TOOK',wrong:['TAKEN','TAKED','TOOKED']},
-  {q:'Past simple of GIVE',correct:'GAVE',wrong:['GIVEN','GIVED','GAVED']},
-  {q:'Past simple of RUN',correct:'RAN',wrong:['RUNNED','RUNS','RUNED']},
-  {q:'Past simple of THINK',correct:'THOUGHT',wrong:['THINKED','THUNK','THINKT']},
-  {q:'Past simple of FALL',correct:'FELL',wrong:['FALLEN','FALLED','FELLT']},
-  {q:'Past simple of BRING',correct:'BROUGHT',wrong:['BRINGED','BRUNG','BRINGT']},
-  {q:'Past simple of CHOOSE',correct:'CHOSE',wrong:['CHOSEN','CHOOSED','CHOSED']},
-  {q:'Past simple of CATCH',correct:'CAUGHT',wrong:['CATCHED','CATCHT','COUGHT']},
-  {q:'Past simple of TEACH',correct:'TAUGHT',wrong:['TEACHED','TOUGHT','TEACHTED']},
-  {q:'Past simple of BUY',correct:'BOUGHT',wrong:['BUYED','BUIED','BOUGHTED']},
-  {q:'Past simple of GROW',correct:'GREW',wrong:['GROWN','GROWED','GREWED']},
-  {q:'Past simple of LOSE',correct:'LOST',wrong:['LOSED','LOSTED','LOSSED']},
-  {q:'Past simple of FEEL',correct:'FELT',wrong:['FEELED','FELLT','FEELT']},
-  {q:'Past simple of HOLD',correct:'HELD',wrong:['HOLDED','HOLTED','HELLED']},
-  {q:'Past simple of MEET',correct:'MET',wrong:['MEETED','METED','MEETT']},
-  {q:'Past simple of RISE',correct:'ROSE',wrong:['RISEN','RISED','ROSED']},
-  // Past participle
-  {q:'Past participle of WRITE',correct:'WRITTEN',wrong:['WROTE','WRITED','WRITTTEN']},
-  {q:'Past participle of SPEAK',correct:'SPOKEN',wrong:['SPOKE','SPEAKED','SPEOKEN']},
-  {q:'Past participle of BREAK',correct:'BROKEN',wrong:['BROKE','BREAKED','BROKED']},
-  {q:'Past participle of TAKE',correct:'TAKEN',wrong:['TOOK','TAKED','TOOKEN']},
-  {q:'Past participle of GIVE',correct:'GIVEN',wrong:['GAVE','GIVED','GAVEN']},
-  {q:'Past participle of CHOOSE',correct:'CHOSEN',wrong:['CHOSE','CHOOSED','CHOSED']},
-  {q:'Past participle of FALL',correct:'FALLEN',wrong:['FELL','FALLED','FALLN']},
-  {q:'Past participle of GROW',correct:'GROWN',wrong:['GREW','GROWED','GROWNE']},
-  // Spelling
-  {q:'Spell: essential',correct:'NECESSARY',wrong:['NESSECARY','NECESARY','NECCESSARY']},
-  {q:'Spell: place to stay',correct:'ACCOMMODATION',wrong:['ACCOMODATION','ACOMMODATION','ACCOMMODATON']},
-  {q:'Spell: feel ashamed',correct:'EMBARRASS',wrong:['EMBARASS','EMBARAS','EMBARRAS']},
-  {q:'Spell: an event',correct:'OCCURRENCE',wrong:['OCCURENCE','OCCURRANCE','OCURRENCE']},
-  {q:'Spell: a special right',correct:'PRIVILEGE',wrong:['PRIVILEDGE','PRIVELEGE','PRIVILAGE']},
-  {q:'Spell: to divide',correct:'SEPARATE',wrong:['SEPERATE','SEPERRATE','SEPARETE']},
-  {q:'Spell: a pledge',correct:'COMMITMENT',wrong:['COMITTMENT','COMMITTMENT','COMMITMANT']},
-  {q:'Spell: law-making body',correct:'PARLIAMENT',wrong:['PARLIMENT','PARLAIMENT','PARLIAMANT']},
-  {q:'Spell: month 2',correct:'FEBRUARY',wrong:['FEBUARY','FEBRURAY','FEBURARY']},
-  {q:'Spell: day 4',correct:'WEDNESDAY',wrong:['WENSDAY','WENDSDAY','WEDNSDAY']},
-  {q:'Spell: to overstate',correct:'EXAGGERATE',wrong:['EXAGERATE','EXAGGERRATE','EXAGGARATE']},
-  // Synonyms
-  {q:'Synonym of BRAVE',correct:'COURAGEOUS',wrong:['NERVOUS','TIMID','ANXIOUS']},
-  {q:'Synonym of SAD',correct:'MELANCHOLY',wrong:['JOYFUL','ELATED','GLEEFUL']},
-  {q:'Synonym of FAST',correct:'SWIFT',wrong:['SLOW','SLUGGISH','GRADUAL']},
-  {q:'Synonym of DIFFICULT',correct:'ARDUOUS',wrong:['SIMPLE','TRIVIAL','EASY']},
-  {q:'Synonym of HAPPY',correct:'ELATED',wrong:['GLOOMY','SULLEN','MISERABLE']},
-  {q:'Opposite of ANCIENT',correct:'MODERN',wrong:['OLDER','HISTORIC','ANTIQUE']},
-  {q:'Opposite of GENEROUS',correct:'STINGY',wrong:['KIND','GIVING','NOBLE']},
-
-  // ── Additional collocations ──
-  {q:'___ a phone call',correct:'MAKE',wrong:['DO','TAKE','HOLD']},
-  {q:'___ a loud noise',correct:'MAKE',wrong:['DO','HAVE','CREATE']},
-  {q:'___ a present',correct:'GIVE',wrong:['MAKE','TAKE','HOLD']},
-  {q:'___ breakfast',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a party',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ exercise',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
-  {q:'___ the dishes',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
-  {q:'___ a seat',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
-  {q:'___ a nap',correct:'TAKE',wrong:['MAKE','DO','HAVE']},
-  {q:'___ a visit',correct:'PAY',wrong:['MAKE','DO','GIVE']},
-  {q:'___ a small fortune',correct:'COST',wrong:['PAY','SPEND','EARN']},
-  {q:'___ money',correct:'SPEND',wrong:['PAY','COST','TAKE']},
-  {q:'___ time',correct:'SPEND',wrong:['PAY','TAKE','GIVE']},
-  {q:'___ a fence',correct:'CLIMB',wrong:['RAISE','LIFT','HOLD']},
-  {q:'___ your bed',correct:'MAKE',wrong:['DO','SET','LAY']},
-  {q:'___ a fortune (inherit)',correct:'INHERIT',wrong:['EARN','SPEND','MAKE']},
-  {q:'___ care of someone',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
-  {q:'___ part in a competition',correct:'TAKE',wrong:['MAKE','DO','HAVE']},
-  {q:'___ an exam',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
-  {q:'___ a deep breath',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
-  {q:'___ a prize',correct:'WIN',wrong:['EARN','MAKE','TAKE']},
-  {q:'___ a battle',correct:'FIGHT',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a wish',correct:'MAKE',wrong:['DO','TAKE','HOLD']},
-  {q:'___ an appointment',correct:'MAKE',wrong:['DO','TAKE','SET']},
-  {q:'___ a discovery',correct:'MAKE',wrong:['DO','FIND','TAKE']},
-  {q:'___ a profit',correct:'MAKE',wrong:['DO','EARN','TAKE']},
-  {q:'___ a loss',correct:'MAKE',wrong:['DO','LOSE','TAKE']},
-  {q:'___ peace',correct:'MAKE',wrong:['DO','HOLD','KEEP']},
-  {q:'___ a date',correct:'GO ON',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a diet',correct:'GO ON',wrong:['MAKE','DO','TAKE']},
-  {q:'___ control',correct:'TAKE',wrong:['MAKE','DO','HOLD']},
-  {q:'___ a chance',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
-  {q:'___ your word',correct:'KEEP',wrong:['MAKE','HOLD','TAKE']},
-  {q:'___ a secret',correct:'KEEP',wrong:['MAKE','HOLD','HAVE']},
-  {q:'___ the law',correct:'BREAK',wrong:['MAKE','DO','HOLD']},
-  {q:'___ the ice (figuratively)',correct:'BREAK',wrong:['MAKE','DO','MELT']},
-  {q:'___ a formal meeting',correct:'HOLD',wrong:['MAKE','DO','HAVE']},
-  {q:'___ an election',correct:'HOLD',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a grudge',correct:'HOLD',wrong:['MAKE','DO','KEEP']},
-  {q:'___ responsibility',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
-  {q:'___ the blame',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
-  {q:'___ offence',correct:'TAKE',wrong:['MAKE','DO','GIVE']},
-  {q:'___ a bath',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a baby (give birth)',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a good time',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ a word with someone',correct:'HAVE',wrong:['MAKE','DO','TAKE']},
-  {q:'___ business',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
-  {q:'___ a favour',correct:'DO',wrong:['MAKE','HAVE','TAKE']},
-  {q:'___ serious damage',correct:'DO',wrong:['MAKE','CAUSE','HAVE']},
-  {q:'___ your homework',correct:'DO',wrong:['MAKE','TAKE','HAVE']},
-
-  // ── Additional phrasal verbs ──
-  {q:'set ___ (start a journey)',correct:'OFF',wrong:['UP','OUT','DOWN']},
-  {q:'set ___ (establish)',correct:'UP',wrong:['OFF','OUT','DOWN']},
-  {q:'bring ___ (raise a child)',correct:'UP',wrong:['ON','OUT','BACK']},
-  {q:'bring ___ (introduce a topic)',correct:'UP',wrong:['ON','OUT','OVER']},
-  {q:'carry ___ (continue)',correct:'ON',wrong:['OUT','OVER','UP']},
-  {q:'carry ___ (execute a plan)',correct:'OUT',wrong:['ON','OVER','UP']},
-  {q:'check ___ (investigate)',correct:'OUT',wrong:['IN','UP','ON']},
-  {q:'check ___ (arrive at hotel)',correct:'IN',wrong:['OUT','UP','ON']},
-  {q:'clean ___ (tidy)',correct:'UP',wrong:['OUT','OFF','DOWN']},
-  {q:'come ___ (after looking)',correct:'ACROSS',wrong:['UP','OVER','INTO']},
-  {q:'cut ___ (interrupt)',correct:'IN',wrong:['OFF','OUT','DOWN']},
-  {q:'cut ___ (reduce)',correct:'DOWN',wrong:['OFF','OUT','IN']},
-  {q:'drop ___ (visit casually)',correct:'BY',wrong:['IN','OUT','OFF']},
-  {q:'drop ___ (quit)',correct:'OUT',wrong:['OFF','BY','DOWN']},
-  {q:'fall ___ (have an argument)',correct:'OUT',wrong:['DOWN','OVER','APART']},
-  {q:'figure ___ (understand)',correct:'OUT',wrong:['UP','IN','ON']},
-  {q:'find ___ (discover)',correct:'OUT',wrong:['UP','IN','ON']},
-  {q:'get ___ (proceed with)',correct:'ON WITH',wrong:['UP WITH','OUT WITH','OVER WITH']},
-  {q:'get ___ (avoid punishment)',correct:'AWAY WITH',wrong:['OFF WITH','OUT WITH','UP WITH']},
-  {q:'give ___ (stop annoying)',correct:'OVER',wrong:['UP','OUT','IN']},
-  {q:'go ___ (continue)',correct:'ON',wrong:['OFF','OUT','OVER']},
-  {q:'go ___ (explode)',correct:'OFF',wrong:['ON','OUT','UP']},
-  {q:'grow ___ (mature)',correct:'UP',wrong:['ON','OUT','OVER']},
-  {q:'hand ___ (submit)',correct:'IN',wrong:['OUT','OVER','DOWN']},
-  {q:'hand ___ (distribute)',correct:'OUT',wrong:['IN','OVER','DOWN']},
-  {q:'hang ___ (wait)',correct:'ON',wrong:['UP','OUT','AROUND']},
-  {q:'hold ___ (delay)',correct:'UP',wrong:['ON','OFF','BACK']},
-  {q:'keep ___ (continue)',correct:'ON',wrong:['UP','OUT','AWAY']},
-  {q:'keep ___ (maintain pace)',correct:'UP',wrong:['ON','OUT','AWAY']},
-  {q:'let ___ (disappoint)',correct:'DOWN',wrong:['OFF','OUT','IN']},
-  {q:'let ___ (release)',correct:'OUT',wrong:['DOWN','OFF','IN']},
-  {q:'look ___ (admire)',correct:'UP TO',wrong:['DOWN ON','OUT FOR','AFTER']},
-  {q:'look ___ (care for)',correct:'AFTER',wrong:['UP TO','OUT FOR','INTO']},
-  {q:'pass ___ (die)',correct:'AWAY',wrong:['OUT','OVER','ON']},
-  {q:'pass ___ (faint)',correct:'OUT',wrong:['AWAY','OVER','ON']},
-  {q:'pick ___ (select)',correct:'OUT',wrong:['UP','ON','OVER']},
-  {q:'pick ___ (collect)',correct:'UP',wrong:['OUT','ON','OVER']},
-  {q:'point ___ (indicate)',correct:'OUT',wrong:['UP','AT','ON']},
-  {q:'pull ___ (manage successfully)',correct:'OFF',wrong:['THROUGH','UP','OUT']},
-  {q:'pull ___ (recover from illness)',correct:'THROUGH',wrong:['OFF','UP','OUT']},
-  {q:'put ___ (tolerate)',correct:'UP WITH',wrong:['OUT WITH','UP FOR','DOWN WITH']},
-  {q:'put ___ (extinguish)',correct:'OUT',wrong:['OFF','DOWN','AWAY']},
-  {q:'run ___ (encounter)',correct:'INTO',wrong:['ACROSS','OVER','UP']},
-  {q:'run ___ (hit with a vehicle)',correct:'OVER',wrong:['INTO','ACROSS','DOWN']},
-  {q:'show ___ (boast)',correct:'OFF',wrong:['UP','OUT','AROUND']},
-  {q:'sort ___ (resolve)',correct:'OUT',wrong:['UP','THROUGH','OVER']},
-  {q:'stand ___ (represent)',correct:'FOR',wrong:['UP FOR','OUT','BY']},
-  {q:'stand ___ (be noticeable)',correct:'OUT',wrong:['UP','FOR','BY']},
-  {q:'stand ___ (support)',correct:'BY',wrong:['UP FOR','OUT','FOR']},
-  {q:'take ___ (resemble a relative)',correct:'AFTER',wrong:['ON','UP','OVER']},
-  {q:'think ___ (consider carefully)',correct:'OVER',wrong:['UP','OUT','THROUGH']},
-  {q:'throw ___ (vomit)',correct:'UP',wrong:['OUT','AWAY','OFF']},
-  {q:'try ___ (test)',correct:'OUT',wrong:['ON','UP','OVER']},
-  {q:'wear ___ (exhaust)',correct:'OUT',wrong:['DOWN','OFF','AWAY']},
-  {q:'work ___ (solve)',correct:'OUT',wrong:['UP','OVER','THROUGH']},
-
-  // ── Additional past simple ──
-  {q:'Past simple of ARISE',correct:'AROSE',wrong:['ARISEN','ARISED','ARISD']},
-  {q:'Past simple of AWAKE',correct:'AWOKE',wrong:['AWOKEN','AWAKED','AWAKD']},
-  {q:'Past simple of BEAR',correct:'BORE',wrong:['BORNE','BEARED','BEARD']},
-  {q:'Past simple of BEAT',correct:'BEAT',wrong:['BEATEN','BEATED','BETT']},
-  {q:'Past simple of BECOME',correct:'BECAME',wrong:['BECOME','BECOMED','BECAMED']},
-  {q:'Past simple of BEGIN',correct:'BEGAN',wrong:['BEGUN','BEGINNED','BEGANED']},
-  {q:'Past simple of BEND',correct:'BENT',wrong:['BENDED','BAND','BOND']},
-  {q:'Past simple of BITE',correct:'BIT',wrong:['BITTEN','BITED','BITTED']},
-  {q:'Past simple of BLOW',correct:'BLEW',wrong:['BLOWN','BLOWED','BLEWED']},
-  {q:'Past simple of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
-  {q:'Past simple of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
-  {q:'Past simple of BURN',correct:'BURNT',wrong:['BURNNED','BORN','BRUNT']},
-  {q:'Past simple of COME',correct:'CAME',wrong:['COME','COMED','CAMED']},
-  {q:'Past simple of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
-  {q:'Past simple of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
-  {q:'Past simple of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
-  {q:'Past simple of DO',correct:'DID',wrong:['DONE','DOED','DIDED']},
-  {q:'Past simple of DRAW',correct:'DREW',wrong:['DRAWN','DRAWED','DREWED']},
-  {q:'Past simple of DREAM',correct:'DREAMT',wrong:['DREAMD','DRAMT','DREMT']},
-  {q:'Past simple of DRINK',correct:'DRANK',wrong:['DRUNK','DRINKED','DRANKED']},
-  {q:'Past simple of DRIVE',correct:'DROVE',wrong:['DRIVEN','DRIVED','DROVED']},
-  {q:'Past simple of EAT',correct:'ATE',wrong:['EATEN','EATED','ETE']},
-  {q:'Past simple of FEED',correct:'FED',wrong:['FEEDED','FEDED','FOOD']},
-  {q:'Past simple of FIGHT',correct:'FOUGHT',wrong:['FIGHTED','FOUGHTED','FIGHED']},
-  {q:'Past simple of FIND',correct:'FOUND',wrong:['FINDED','FOUNDED','FAND']},
-  {q:'Past simple of FLY',correct:'FLEW',wrong:['FLOWN','FLYED','FLEWED']},
-  {q:'Past simple of FORBID',correct:'FORBADE',wrong:['FORBIDDEN','FORBIDED','FORBADED']},
-  {q:'Past simple of FORGET',correct:'FORGOT',wrong:['FORGOTTEN','FORGETED','FORGOTED']},
-  {q:'Past simple of FREEZE',correct:'FROZE',wrong:['FROZEN','FREEZED','FROZED']},
-  {q:'Past simple of GET',correct:'GOT',wrong:['GETED','GOTTEN','GETTED']},
-  {q:'Past simple of GO',correct:'WENT',wrong:['GONE','GOED','WENTED']},
-  {q:'Past simple of HANG',correct:'HUNG',wrong:['HANGED','HONG','HENG']},
-  {q:'Past simple of HAVE',correct:'HAD',wrong:['HAVED','HAVD','HAVEED']},
-  {q:'Past simple of HEAR',correct:'HEARD',wrong:['HEARED','HERD','HARD']},
-  {q:'Past simple of HIDE',correct:'HID',wrong:['HIDDEN','HIDED','HIDDED']},
-  {q:'Past simple of HIT',correct:'HIT',wrong:['HITED','HITTED','HET']},
-  {q:'Past simple of HURT',correct:'HURT',wrong:['HURTED','HURTT','HART']},
-  {q:'Past simple of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
-  {q:'Past simple of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
-  {q:'Past simple of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
-  {q:'Past simple of LEARN',correct:'LEARNT',wrong:['LEARNEDD','LERNT','LEARND']},
-  {q:'Past simple of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
-  {q:'Past simple of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
-  {q:'Past simple of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
-  {q:'Past simple of LIE',correct:'LAY',wrong:['LAIN','LIED','LAYED']},
-  {q:'Past simple of MAKE',correct:'MADE',wrong:['MAKED','MAKD','MOOD']},
-  {q:'Past simple of MEAN',correct:'MEANT',wrong:['MEANED','MENT','MEND']},
-  {q:'Past simple of PAY',correct:'PAID',wrong:['PAYED','PAYD','PEID']},
-  {q:'Past simple of PUT',correct:'PUT',wrong:['PUTED','PUTTED','POT']},
-  {q:'Past simple of READ',correct:'READ',wrong:['READED','RED','REDD']},
-  {q:'Past simple of RIDE',correct:'RODE',wrong:['RIDDEN','RIDED','RODED']},
-  {q:'Past simple of RING',correct:'RANG',wrong:['RUNG','RINGED','RANGED']},
-  {q:'Past simple of SAY',correct:'SAID',wrong:['SAYED','SAYD','SEID']},
-  {q:'Past simple of SEE',correct:'SAW',wrong:['SEEN','SEED','SAWED']},
-  {q:'Past simple of SELL',correct:'SOLD',wrong:['SELLED','SOLED','SELD']},
-  {q:'Past simple of SEND',correct:'SENT',wrong:['SENDED','SENDD','SENTED']},
-  {q:'Past simple of SET',correct:'SET',wrong:['SETED','SETTED','SAT']},
-  {q:'Past simple of SHAKE',correct:'SHOOK',wrong:['SHAKEN','SHAKED','SHOOKED']},
-  {q:'Past simple of SHINE',correct:'SHONE',wrong:['SHINED','SHON','SHEEN']},
-  {q:'Past simple of SHUT',correct:'SHUT',wrong:['SHUTED','SHUTTED','SHOT']},
-  {q:'Past simple of SING',correct:'SANG',wrong:['SUNG','SINGED','SANGED']},
-  {q:'Past simple of SINK',correct:'SANK',wrong:['SUNK','SINKED','SANKED']},
-  {q:'Past simple of SIT',correct:'SAT',wrong:['SITED','SITTED','SETT']},
-  {q:'Past simple of SLEEP',correct:'SLEPT',wrong:['SLEEPED','SLEPED','SLOPED']},
-  {q:'Past simple of SPEND',correct:'SPENT',wrong:['SPENDED','SPENDD','SPENTED']},
-  {q:'Past simple of STAND',correct:'STOOD',wrong:['STANDED','STOODED','STANDD']},
-  {q:'Past simple of STEAL',correct:'STOLE',wrong:['STOLEN','STEALED','STOLED']},
-  {q:'Past simple of STICK',correct:'STUCK',wrong:['STICKED','STUCKED','STACK']},
-  {q:'Past simple of STING',correct:'STUNG',wrong:['STINGED','STANG','STUNGED']},
-  {q:'Past simple of STRIKE',correct:'STRUCK',wrong:['STRIKED','STRACK','STRUCKED']},
-  {q:'Past simple of SWEAR',correct:'SWORE',wrong:['SWORN','SWEARED','SWORED']},
-  {q:'Past simple of SWEEP',correct:'SWEPT',wrong:['SWEEPED','SWEPED','SWOOPED']},
-  {q:'Past simple of SWIM',correct:'SWAM',wrong:['SWUM','SWIMMED','SWAMED']},
-  {q:'Past simple of TEAR',correct:'TORE',wrong:['TORN','TEARED','TORED']},
-  {q:'Past simple of TELL',correct:'TOLD',wrong:['TELLED','TOLED','TALD']},
-  {q:'Past simple of THROW',correct:'THREW',wrong:['THROWN','THROWED','THREWED']},
-  {q:'Past simple of UNDERSTAND',correct:'UNDERSTOOD',wrong:['UNDERSTANDED','UNDERSTOODED','UNDERSTANDD']},
-  {q:'Past simple of WAKE',correct:'WOKE',wrong:['WOKEN','WAKED','WOKED']},
-  {q:'Past simple of WEAR',correct:'WORE',wrong:['WORN','WEARED','WORED']},
-  {q:'Past simple of WIN',correct:'WON',wrong:['WINNED','WINED','WAN']},
-
-  // ── Additional past participle ──
-  {q:'Past participle of ARISE',correct:'ARISEN',wrong:['AROSE','ARISED','ARISEED']},
-  {q:'Past participle of AWAKE',correct:'AWOKEN',wrong:['AWOKE','AWAKED','AWAKEED']},
-  {q:'Past participle of BEAR',correct:'BORNE',wrong:['BORE','BEARED','BEARN']},
-  {q:'Past participle of BEAT',correct:'BEATEN',wrong:['BEAT','BEATED','BEATD']},
-  {q:'Past participle of BECOME',correct:'BECOME',wrong:['BECAME','BECOMED','BECOMEN']},
-  {q:'Past participle of BEGIN',correct:'BEGUN',wrong:['BEGAN','BEGINNED','BEGINED']},
-  {q:'Past participle of BEND',correct:'BENT',wrong:['BENDED','BAND','BOND']},
-  {q:'Past participle of BITE',correct:'BITTEN',wrong:['BIT','BITED','BITTED']},
-  {q:'Past participle of BLOW',correct:'BLOWN',wrong:['BLEW','BLOWED','BLEWN']},
-  {q:'Past participle of BREED',correct:'BRED',wrong:['BREEDED','BROOD','BRID']},
-  {q:'Past participle of BUILD',correct:'BUILT',wrong:['BUILDED','BUILED','BILT']},
-  {q:'Past participle of BURN',correct:'BURNT',wrong:['BURNNED','BORN','BRUNT']},
-  {q:'Past participle of COME',correct:'COME',wrong:['CAME','COMED','COMEN']},
-  {q:'Past participle of CUT',correct:'CUT',wrong:['CUTED','CUTTED','COT']},
-  {q:'Past participle of DEAL',correct:'DEALT',wrong:['DEALED','DELT','DEALD']},
-  {q:'Past participle of DIG',correct:'DUG',wrong:['DIGGED','DIGED','DEG']},
-  {q:'Past participle of DO',correct:'DONE',wrong:['DID','DOED','DIDED']},
-  {q:'Past participle of DRAW',correct:'DRAWN',wrong:['DREW','DRAWED','DREWED']},
-  {q:'Past participle of DREAM',correct:'DREAMT',wrong:['DREAMD','DRAMT','DREMT']},
-  {q:'Past participle of DRINK',correct:'DRUNK',wrong:['DRANK','DRINKED','DRUNKEN']},
-  {q:'Past participle of DRIVE',correct:'DRIVEN',wrong:['DROVE','DRIVED','DROVED']},
-  {q:'Past participle of EAT',correct:'EATEN',wrong:['ATE','EATED','ETE']},
-  {q:'Past participle of FEED',correct:'FED',wrong:['FEEDED','FEDED','FOOD']},
-  {q:'Past participle of FIGHT',correct:'FOUGHT',wrong:['FIGHTED','FOUGHTED','FIGHED']},
-  {q:'Past participle of FIND',correct:'FOUND',wrong:['FINDED','FOUNDED','FAND']},
-  {q:'Past participle of FLY',correct:'FLOWN',wrong:['FLEW','FLYED','FLEWED']},
-  {q:'Past participle of FORBID',correct:'FORBIDDEN',wrong:['FORBADE','FORBIDED','FORBADED']},
-  {q:'Past participle of FORGET',correct:'FORGOTTEN',wrong:['FORGOT','FORGETED','FORGOTED']},
-  {q:'Past participle of FREEZE',correct:'FROZEN',wrong:['FROZE','FREEZED','FROZED']},
-  {q:'Past participle of GET',correct:'GOT',wrong:['GETED','GOTTEN','GETTED']},
-  {q:'Past participle of GO',correct:'GONE',wrong:['WENT','GOED','WENTED']},
-  {q:'Past participle of HANG',correct:'HUNG',wrong:['HANGED','HONG','HENG']},
-  {q:'Past participle of HAVE',correct:'HAD',wrong:['HAVED','HAVD','HAVEED']},
-  {q:'Past participle of HEAR',correct:'HEARD',wrong:['HEARED','HERD','HARD']},
-  {q:'Past participle of HIDE',correct:'HIDDEN',wrong:['HID','HIDED','HIDDED']},
-  {q:'Past participle of HIT',correct:'HIT',wrong:['HITED','HITTED','HET']},
-  {q:'Past participle of HURT',correct:'HURT',wrong:['HURTED','HURTT','HART']},
-  {q:'Past participle of KEEP',correct:'KEPT',wrong:['KEEPED','KEPED','KEAPT']},
-  {q:'Past participle of LAY',correct:'LAID',wrong:['LAYED','LAYD','LEYD']},
-  {q:'Past participle of LEAD',correct:'LED',wrong:['LEADED','LEDED','LAIDED']},
-  {q:'Past participle of LEARN',correct:'LEARNT',wrong:['LEARNEDD','LERNT','LEARND']},
-  {q:'Past participle of LEAVE',correct:'LEFT',wrong:['LEAVED','LEAFT','LEFED']},
-  {q:'Past participle of LEND',correct:'LENT',wrong:['LENDED','LENDD','LENTED']},
-  {q:'Past participle of LET',correct:'LET',wrong:['LETED','LETTED','LIT']},
-  {q:'Past participle of LIE',correct:'LAIN',wrong:['LAY','LIED','LAYED']},
-  {q:'Past participle of MAKE',correct:'MADE',wrong:['MAKED','MAKD','MOOD']},
-  {q:'Past participle of MEAN',correct:'MEANT',wrong:['MEANED','MENT','MEND']},
-  {q:'Past participle of PAY',correct:'PAID',wrong:['PAYED','PAYD','PEID']},
-  {q:'Past participle of PUT',correct:'PUT',wrong:['PUTED','PUTTED','POT']},
-  {q:'Past participle of READ',correct:'READ',wrong:['READED','RED','REDD']},
-  {q:'Past participle of RIDE',correct:'RIDDEN',wrong:['RODE','RIDED','RODED']},
-  {q:'Past participle of RING',correct:'RUNG',wrong:['RANG','RINGED','RANGED']},
-  {q:'Past participle of SAY',correct:'SAID',wrong:['SAYED','SAYD','SEID']},
-  {q:'Past participle of SEE',correct:'SEEN',wrong:['SAW','SEED','SAWED']},
-  {q:'Past participle of SELL',correct:'SOLD',wrong:['SELLED','SOLED','SELD']},
-  {q:'Past participle of SEND',correct:'SENT',wrong:['SENDED','SENDD','SENTED']},
-  {q:'Past participle of SET',correct:'SET',wrong:['SETED','SETTED','SAT']},
-  {q:'Past participle of SHAKE',correct:'SHAKEN',wrong:['SHOOK','SHAKED','SHOOKED']},
-  {q:'Past participle of SHINE',correct:'SHONE',wrong:['SHINED','SHON','SHEEN']},
-  {q:'Past participle of SHUT',correct:'SHUT',wrong:['SHUTED','SHUTTED','SHOT']},
-  {q:'Past participle of SING',correct:'SUNG',wrong:['SANG','SINGED','SANGED']},
-  {q:'Past participle of SINK',correct:'SUNK',wrong:['SANK','SINKED','SANKED']},
-  {q:'Past participle of SIT',correct:'SAT',wrong:['SITED','SITTED','SETT']},
-  {q:'Past participle of SLEEP',correct:'SLEPT',wrong:['SLEEPED','SLEPED','SLOPED']},
-  {q:'Past participle of SPEND',correct:'SPENT',wrong:['SPENDED','SPENDD','SPENTED']},
-  {q:'Past participle of STAND',correct:'STOOD',wrong:['STANDED','STOODED','STANDD']},
-  {q:'Past participle of STEAL',correct:'STOLEN',wrong:['STOLE','STEALED','STOLED']},
-  {q:'Past participle of STICK',correct:'STUCK',wrong:['STICKED','STUCKED','STACK']},
-  {q:'Past participle of STING',correct:'STUNG',wrong:['STINGED','STANG','STUNGED']},
-  {q:'Past participle of STRIKE',correct:'STRUCK',wrong:['STRIKED','STRACK','STRUCKED']},
-  {q:'Past participle of SWEAR',correct:'SWORN',wrong:['SWORE','SWEARED','SWORED']},
-  {q:'Past participle of SWEEP',correct:'SWEPT',wrong:['SWEEPED','SWEPED','SWOOPED']},
-  {q:'Past participle of SWIM',correct:'SWUM',wrong:['SWAM','SWIMMED','SWAMED']},
-  {q:'Past participle of TEAR',correct:'TORN',wrong:['TORE','TEARED','TORED']},
-  {q:'Past participle of TELL',correct:'TOLD',wrong:['TELLED','TOLED','TALD']},
-  {q:'Past participle of THROW',correct:'THROWN',wrong:['THREW','THROWED','THREWED']},
-  {q:'Past participle of UNDERSTAND',correct:'UNDERSTOOD',wrong:['UNDERSTANDED','UNDERSTOODED','UNDERSTANDD']},
-  {q:'Past participle of WAKE',correct:'WOKEN',wrong:['WOKE','WAKED','WOKED']},
-  {q:'Past participle of WEAR',correct:'WORN',wrong:['WORE','WEARED','WORED']},
-  {q:'Past participle of WIN',correct:'WON',wrong:['WINNED','WINED','WAN']},
-
-  // ── Additional spelling ──
-  {q:'Spell: a written agreement',correct:'CONTRACT',wrong:['CONTRAKT','KONTRACT','CONTRACTT']},
-  {q:'Spell: to suggest',correct:'RECOMMEND',wrong:['RECCOMEND','RECOMEND','RECOMMENDD']},
-  {q:'Spell: a doctor for teeth',correct:'DENTIST',wrong:['DENTIS','DENTHIST','DENTEST']},
-  {q:'Spell: relating to weather',correct:'METEOROLOGICAL',wrong:['METEROLOGICAL','METEOROLOGICLE','METEREOLOGICAL']},
-  {q:'Spell: argument or disagreement',correct:'ARGUMENT',wrong:['ARGUEMENT','ARGUMENTT','ARGUMANT']},
-  {q:'Spell: very large',correct:'ENORMOUS',wrong:['ENORMUS','ENORMOUSE','INORMOUS']},
-  {q:'Spell: a list of things to do',correct:'AGENDA',wrong:['AGENDAH','AGENDER','EGENDA']},
-  {q:'Spell: to make something legal',correct:'LEGITIMATE',wrong:['LEGITAMATE','LEGITIMET','LEGETIMATE']},
-  {q:'Spell: extremely happy',correct:'ECSTATIC',wrong:['EXTATIC','ECSTACTIC','ECTASTIC']},
-  {q:'Spell: a sudden strong feeling',correct:'IMPULSE',wrong:['IMPULS','IMPULES','IMPULSSE']},
-  {q:'Spell: to make smaller',correct:'MINIMISE',wrong:['MINIMYSE','MINIMASE','MINNIMISE']},
-  {q:'Spell: not able to be seen',correct:'INVISIBLE',wrong:['INVISABLE','INVISIBEL','INVISSIBLE']},
-  {q:'Spell: a feeling of being thankful',correct:'GRATITUDE',wrong:['GRATTITUDE','GRATATUDE','GRADITUDE']},
-  {q:'Spell: to make a mistake',correct:'BLUNDER',wrong:['BLUNDOR','BLONDER','BLUNDDER']},
-  {q:'Spell: a person who studies the past',correct:'HISTORIAN',wrong:['HISTORYAN','HISTOREAN','HISTORIEN']},
-  {q:'Spell: clearly visible or obvious',correct:'CONSPICUOUS',wrong:['CONSPICIOUS','CONSPICUOS','CONSPICOUS']},
-  {q:'Spell: to make worse',correct:'AGGRAVATE',wrong:['AGRAVATE','AGGRIVATE','AGRAVVATE']},
-  {q:'Spell: easily broken',correct:'FRAGILE',wrong:['FRAGGILE','FRAJILE','FRAGIL']},
-  {q:'Spell: a strong wish',correct:'DESIRE',wrong:['DESYRE','DESIER','DESSIRE']},
-  {q:'Spell: showing care for detail',correct:'METICULOUS',wrong:['METICULOS','METICULLOUS','METICOULOUS']},
-  {q:'Spell: a person who travels for fun',correct:'TOURIST',wrong:['TOURRIST','TOURIS','TOWRIST']},
-  {q:'Spell: a place to learn',correct:'INSTITUTE',wrong:['INSTITUT','INSTUTUTE','INSTUITUTE']},
-  {q:'Spell: relating to feelings',correct:'EMOTIONAL',wrong:['EMOTIONNAL','EMOSHONAL','EMOTONAL']},
-  {q:'Spell: a place where goods are made',correct:'FACTORY',wrong:['FACTERY','FACTRY','FACTOURY']},
-  {q:'Spell: a place to keep money safe',correct:'TREASURY',wrong:['TRESURY','TREASSURY','TREASUREY']},
-  {q:'Spell: a feeling of worry',correct:'ANXIETY',wrong:['ANXIETTY','ANXIETEY','ANXEITY']},
-  {q:'Spell: a sudden burst of laughter',correct:'OUTBURST',wrong:['OUTBERST','OUTBUSRT','OUTBURTS']},
-  {q:'Spell: the study of living things',correct:'BIOLOGY',wrong:['BYOLOGY','BIOLLOGY','BIOLOGEY']},
-  {q:'Spell: relating to the body',correct:'PHYSICAL',wrong:['PHISICAL','PHYSICCAL','FYSICAL']},
-  {q:'Spell: to copy exactly',correct:'REPLICATE',wrong:['REPLICAITE','REPPLICATE','REPLICKATE']},
-  {q:'Spell: relating to numbers',correct:'NUMERICAL',wrong:['NUMERICLE','NUMARICAL','NUMERRICAL']},
-  {q:'Spell: a group of related companies',correct:'CONGLOMERATE',wrong:['CONGLOMORATE','CONGLOMERETE','CONGLOMMERATE']},
-  {q:'Spell: causing surprise',correct:'ASTONISHING',wrong:['ASTONNISHING','ASTONISHEING','ASTONISHIN']},
-  {q:'Spell: to find guilty',correct:'CONVICT',wrong:['CONVIKT','CONVICTT','KONVICT']},
-  {q:'Spell: extremely small',correct:'MINUSCULE',wrong:['MINISCULE','MINUSCLE','MINISKULE']},
-  {q:'Spell: a clear and exact explanation',correct:'PRECISE',wrong:['PRESISE','PRECIES','PRECYSE']},
-  {q:'Spell: a person who breaks the law',correct:'CRIMINAL',wrong:['CRIMMINAL','CRIMENAL','CRIMNAL']},
-  {q:'Spell: relating to the mind',correct:'PSYCHOLOGICAL',wrong:['PSYCOLOGICAL','PSYCHOLODGICAL','SYCHOLOGICAL']},
-  {q:'Spell: a celebration of a birth date',correct:'ANNIVERSARY',wrong:['ANNIVERSSARY','ANIVERSARY','ANNIVERSORY']},
-  {q:'Spell: a building for storing goods',correct:'WAREHOUSE',wrong:['WEARHOUSE','WAREHOUS','WAREHOSE']},
-  {q:'Spell: not easily upset',correct:'UNFLAPPABLE',wrong:['UNFLAPABLE','UNFLAPPABEL','UNFLAPABEL']},
-  {q:'Spell: a feeling of strong dislike',correct:'REPULSION',wrong:['REPULSHUN','REPPULSION','REPULTION']},
-  {q:'Spell: very thorough and complete',correct:'COMPREHENSIVE',wrong:['COMPREHENSSIVE','COMPRIHENSIVE','COMPREHENCIVE']},
-
-  // ── Additional synonyms ──
-  {q:'Synonym of ANGRY',correct:'FURIOUS',wrong:['CALM','SERENE','PLEASED']},
-  {q:'Synonym of TIRED',correct:'EXHAUSTED',wrong:['ENERGETIC','LIVELY','ALERT']},
-  {q:'Synonym of CLEVER',correct:'INTELLIGENT',wrong:['FOOLISH','NAIVE','DULL']},
-  {q:'Synonym of BEAUTIFUL',correct:'GORGEOUS',wrong:['UGLY','PLAIN','HIDEOUS']},
-  {q:'Synonym of STRONG',correct:'POWERFUL',wrong:['WEAK','FRAIL','FEEBLE']},
-  {q:'Synonym of QUIET',correct:'SILENT',wrong:['LOUD','NOISY','BOISTEROUS']},
-  {q:'Synonym of GENEROUS',correct:'CHARITABLE',wrong:['STINGY','SELFISH','MISERLY']},
-  {q:'Synonym of HONEST',correct:'TRUTHFUL',wrong:['DECEITFUL','DISHONEST','LYING']},
-  {q:'Synonym of STRANGE',correct:'PECULIAR',wrong:['NORMAL','ORDINARY','TYPICAL']},
-  {q:'Synonym of EXPENSIVE',correct:'COSTLY',wrong:['CHEAP','AFFORDABLE','INEXPENSIVE']},
-  {q:'Synonym of ANCIENT',correct:'ARCHAIC',wrong:['MODERN','RECENT','CONTEMPORARY']},
-  {q:'Synonym of HUGE',correct:'IMMENSE',wrong:['TINY','MINUTE','PETITE']},
-  {q:'Synonym of FUNNY',correct:'HILARIOUS',wrong:['SERIOUS','SOLEMN','GRAVE']},
-  {q:'Synonym of BORING',correct:'TEDIOUS',wrong:['EXCITING','FASCINATING','THRILLING']},
-  {q:'Synonym of POLITE',correct:'COURTEOUS',wrong:['RUDE','IMPOLITE','DISCOURTEOUS']},
-  {q:'Synonym of NERVOUS',correct:'ANXIOUS',wrong:['CALM','RELAXED','CONFIDENT']},
-  {q:'Synonym of STUBBORN',correct:'OBSTINATE',wrong:['FLEXIBLE','ADAPTABLE','OPEN-MINDED']},
-  {q:'Synonym of LOYAL',correct:'FAITHFUL',wrong:['DISLOYAL','TREACHEROUS','UNFAITHFUL']},
-  {q:'Synonym of CONFUSING',correct:'BAFFLING',wrong:['CLEAR','OBVIOUS','SIMPLE']},
-
-  // ── Additional opposites ──
-  {q:'Opposite of BRAVE',correct:'COWARDLY',wrong:['COURAGEOUS','BOLD','FEARLESS']},
-  {q:'Opposite of HONEST',correct:'DECEITFUL',wrong:['TRUTHFUL','SINCERE','GENUINE']},
-  {q:'Opposite of CONFIDENT',correct:'INSECURE',wrong:['ASSURED','CERTAIN','SELF-ASSURED']},
-  {q:'Opposite of CAUTIOUS',correct:'RECKLESS',wrong:['CAREFUL','PRUDENT','WARY']},
-  {q:'Opposite of FLEXIBLE',correct:'RIGID',wrong:['ADAPTABLE','PLIABLE','VERSATILE']},
-  {q:'Opposite of OPTIMISTIC',correct:'PESSIMISTIC',wrong:['HOPEFUL','POSITIVE','UPBEAT']},
-  {q:'Opposite of GENUINE',correct:'FAKE',wrong:['AUTHENTIC','REAL','SINCERE']},
+'use strict';
+const GAME_KEY = 'englishace';
+const LANES = 3, NOSE = 120, BURN = 2.4;
+const FALLBACK = [
+  { t: "COLLOCATION", q: "She had to ~ a difficult decision.", o: ["MAKE", "DO", "TAKE"], a: 0 },
+  { t: "PHRASAL VERB", q: "We had to ~ the meeting until Monday.", o: ["PUT OFF", "PUT ON", "PUT UP"], a: 0 },
+  { t: "SPELLING", q: "Which spelling is correct?", o: ["SEPARATE", "SEPERATE", "SEPARRATE"], a: 0 }
 ];
+const QUESTIONS = (window.ENGLISHACE_QUESTIONS && window.ENGLISHACE_QUESTIONS.length) ? window.ENGLISHACE_QUESTIONS : FALLBACK;
 
-// ── Stars ──────────────────────────────────────────────────────────
-const STARS = Array.from({length:200}, ()=>({
-  x:Math.random()*2000, y:Math.random()*2000,
-  r:Math.random()*1.4+0.2, speed:Math.random()*0.5+0.1, alpha:Math.random()*0.6+0.3,
-}));
+let best = 0;
+let score = 0, correct = 0, streak = 0, bestRun = 0, mult = 1, hits = 0, lane = 1, level = 1;
+let q = null, order = [0, 1, 2], reveal = null;
+let note = '', noteBad = false, paused = false, wrongs = [];
+let overReason = 'Out of fuel';
+let reduced = false;
+let g = null;
+let raf = null, clock = null, watchdog = null, nextTimer = null, fadeTimer = null;
+let deck = null, lastQ = null;
+let sinceCan = 0, canAt = 4;
 
-// ── Game state ─────────────────────────────────────────────────────
-let state='idle';
-let score=0,wave=1,lives=5,streak=0,bestStreak=0,correctCount=0,multiplier=1;
-let bestScore=parseInt(localStorage.getItem('ace_best')||'0');
-let currentQ=null;
-let tokens=[],particles=[],powerups=[];
-let shielded=false,slowTimer=0;
-let frameCount=0,lastTime=0,spawnTimer=0,waveTimer=0;
-const WAVE_DUR=18;
-const plane={x:0,y:0,w:44,h:52,targetX:0,invincible:0};
+const field = document.getElementById('field');
+const wall = document.getElementById('wall');
+const plane = document.getElementById('plane');
+const fuelEl = document.getElementById('fuelVal');
+const popEl = document.getElementById('pop');
+const canEl = document.getElementById('can');
+const bannerWrap = document.getElementById('bannerWrap');
+const fuelBar = document.getElementById('fuelBar');
 
-// ── Input ──────────────────────────────────────────────────────────
-let dragActive=false,dragStartX=0,planeStartX=0,lastTap=0;
-canvas.addEventListener('pointerdown',e=>{
-  if(state!=='playing') return;
-  dragActive=true; dragStartX=e.clientX; planeStartX=plane.x;
-  canvas.setPointerCapture(e.pointerId);
+try { const b = +localStorage.getItem('englishace_best'); if (b) best = b; } catch(e) {}
+document.getElementById('bestVal').textContent = best.toLocaleString();
+reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function announce(msg) { const el = document.getElementById('srStatus'); if (el) el.textContent = msg; }
+
+function gateSpeed() { return 150 * (1 + 0.14 * (level - 1)); }
+function burnRate() { return BURN; }
+function canEvery() { return 3 + Math.floor(Math.random() * 4); }
+
+field.addEventListener('click', e => {
+  if (paused || document.getElementById('phase-game').style.display === 'none') return;
+  const y = e.clientY - field.getBoundingClientRect().top;
+  const band = 330 / LANES;
+  setLane(Math.max(0, Math.min(LANES - 1, Math.floor(y / band))));
 });
-canvas.addEventListener('pointermove',e=>{ if(!dragActive) return; plane.targetX=planeStartX+(e.clientX-dragStartX); });
-canvas.addEventListener('pointerup',e=>{
-  dragActive=false;
-  const now=Date.now();
-  if(now-lastTap<300&&(state==='playing'||state==='paused')) togglePause();
-  lastTap=now;
+
+function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function nextQuestion() {
+  if (!deck || !deck.length) {
+    const items = shuffleArr(QUESTIONS.slice());
+    if (lastQ && items.length > 1 && items[0].q === lastQ) { const t = items[0]; items[0] = items[1]; items[1] = t; }
+    deck = items;
+  }
+  const v = deck.shift();
+  lastQ = v.q;
+  return v;
+}
+function laneY(i) { const lh = 330 / LANES; return lh * i + lh / 2; }
+
+function pop(text, color) {
+  if (!g) return;
+  popEl.textContent = text;
+  popEl.style.color = color;
+  popEl.style.top = (g.y - 34) + 'px';
+  if (reduced) return;
+  popEl.animate([
+    { opacity: 0, transform: 'translateY(6px) scale(.9)' },
+    { opacity: 1, transform: 'translateY(-10px) scale(1)', offset: 0.25 },
+    { opacity: 1, transform: 'translateY(-30px)', offset: 0.7 },
+    { opacity: 0, transform: 'translateY(-48px)' }
+  ], { duration: 1100, easing: 'ease-out' });
+}
+
+function startGame() {
+  deck = null;
+  stopClocks(); clearTimeout(nextTimer);
+  q = nextQuestion();
+  score = 0; correct = 0; streak = 0; bestRun = 0; mult = 1; hits = 0;
+  lane = 1; level = 1; order = shuffleArr([0, 1, 2]); reveal = null;
+  wrongs = []; paused = false; note = 'Fly into the right answer'; noteBad = false;
+  document.getElementById('phase-intro').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-game').style.display = 'block';
+  renderHUD(); renderNote(); renderGates();
+  sinceCan = 0; canAt = canEvery();
+  launch(true);
+}
+function goToIntro() {
+  stopClocks(); clearTimeout(nextTimer);
+  g = null;
+  document.getElementById('phase-game').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'none';
+  document.getElementById('phase-intro').style.display = 'block';
+}
+
+function launch(fresh) {
+  const w = field.clientWidth || 640;
+  const prev = g;
+  g = {
+    x: w + 40,
+    y: prev ? prev.y : laneY(lane),
+    ty: laneY(lane),
+    fuel: (fresh || !prev) ? 100 : prev.fuel,
+    can: (!fresh && prev) ? prev.can : null,
+    last: performance.now(), lastFrame: performance.now(), resolved: false
+  };
+  if (!g.can && (sinceCan || 0) >= (canAt || 4)) spawnCan();
+  paint();
+  run();
+}
+function spawnCan() {
+  if (!g) return;
+  g.can = { x: (field.clientWidth || 640) + 400, lane: Math.floor(Math.random() * LANES), taken: false };
+  sinceCan = 0;
+  canAt = canEvery();
+}
+
+function run() {
+  stopClocks();
+  if (!g) return;
+  g.last = performance.now(); g.lastFrame = g.last;
+  raf = requestAnimationFrame(loop);
+  clock = setInterval(() => { if (g && performance.now() - (g.lastRaf || 0) < 120) return; tick(); }, 33);
+  watchdog = setInterval(() => {
+    if (!g || paused || document.getElementById('phase-game').style.display === 'none') return;
+    if (performance.now() - (g.lastFrame || 0) > 400) run();
+  }, 500);
+}
+function stopClocks() { cancelAnimationFrame(raf); clearInterval(clock); clearInterval(watchdog); }
+function loop() {
+  if (!g || document.getElementById('phase-game').style.display === 'none' || paused) return;
+  raf = requestAnimationFrame(loop);
+  g.lastRaf = performance.now();
+  tick();
+}
+
+function togglePause() {
+  if (document.getElementById('phase-game').style.display === 'none') return;
+  if (!paused) { stopClocks(); paused = true; }
+  else { paused = false; if (g) run(); }
+  document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+  document.getElementById('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
+}
+document.addEventListener('visibilitychange', () => { if (g) g.last = performance.now(); });
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('phase-game').style.display === 'none') return;
+  const k = e.key;
+  if (k === ' ' || k === 'Spacebar' || k === 'Space') { e.preventDefault(); togglePause(); return; }
+  if (paused) return;
+  if (k === 'ArrowUp' || k === 'w') { e.preventDefault(); climb(-1); }
+  else if (k === 'ArrowDown' || k === 's') { e.preventDefault(); climb(1); }
+  else if (k >= '1' && k <= '3') { e.preventDefault(); setLane(+k - 1); }
 });
-canvas.addEventListener('pointercancel',()=>{ dragActive=false; });
-const keys={};
-window.addEventListener('keydown',e=>{ keys[e.key]=true; });
-window.addEventListener('keyup',  e=>{ keys[e.key]=false; });
-
-// ── Question picker ────────────────────────────────────────────────
-let usedQs=new Set();
-function pickQuestion(){
-  if(usedQs.size>=QUESTIONS.length) usedQs.clear();
-  let idx;
-  do { idx=Math.floor(Math.random()*QUESTIONS.length); } while(usedQs.has(idx));
-  usedQs.add(idx);
-  return QUESTIONS[idx];
+function climb(d) { setLane(Math.max(0, Math.min(LANES - 1, lane + d))); }
+function setLane(i) {
+  if (document.getElementById('phase-game').style.display === 'none' || paused) return;
+  if (!g) return;
+  g.ty = laneY(i);
+  if (i !== lane) { lane = i; renderGates(); }
 }
 
-// ── Spawn ──────────────────────────────────────────────────────────
-function spawnWave(){
-  currentQ=pickQuestion();
-  const W=canvas.width;
-  const wrongCount=Math.min(3,1+Math.floor(wave/3));
-  const maxAnswers=W<420?2:W<600?3:wrongCount+1;
-  const limitedWrong=Math.min(wrongCount,maxAnswers-1);
-  const answers=[
-    {text:currentQ.correct,correct:true},
-    ...[...currentQ.wrong].sort(()=>Math.random()-.5).slice(0,limitedWrong).map(w=>({text:w,correct:false}))
-  ].sort(()=>Math.random()-.5);
-  const spacing=W/(answers.length+1);
-  const baseSpeed=65+wave*10+Math.random()*15;
-  answers.forEach((a,i)=>{
-    tokens.push({text:a.text,correct:a.correct,x:spacing*(i+1),y:-50,
-      vy:baseSpeed,baseVy:baseSpeed,w:0,h:42,hit:false,alpha:1,
-      wobble:(Math.random()-.5)*.04,wobbleOff:Math.random()*Math.PI*2});
-  });
-  if(Math.random()<.18&&wave>=2){
-    const types=['shield','slow','heart'];
-    powerups.push({type:types[Math.floor(Math.random()*types.length)],x:Math.random()*(W-80)+40,y:-50,vy:55,hit:false,alpha:1});
-  }
-}
+function tick() {
+  if (!g) return;
+  const t = performance.now();
+  g.lastFrame = t;
+  let dt = t - g.last; g.last = t;
+  if (!(dt > 0)) dt = 0;
+  if (dt > 250) dt = 250;
+  const s = dt / 1000;
 
-// ── Particles ──────────────────────────────────────────────────────
-function burst(x,y,colour,count=16){
-  for(let i=0;i<count;i++){
-    const angle=(Math.PI*2/count)*i+Math.random()*.5;
-    const spd=Math.random()*130+40;
-    particles.push({type:'circle',x,y,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd,r:Math.random()*4+2,life:1,colour});
-  }
-}
-function textPop(x,y,txt,colour){
-  particles.push({type:'text',x,y,vy:-65,vx:0,txt,colour,life:1});
-}
+  g.fuel = Math.max(0, g.fuel - burnRate() * s);
+  g.x -= gateSpeed() * s;
+  g.y += (g.ty - g.y) * Math.min(1, dt / 110);
+  paint();
 
-// ── roundRect polyfill ─────────────────────────────────────────────
-function roundRect(ctx,x,y,w,h,r){
-  r=Math.min(r,w/2,h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
-  ctx.closePath();
-}
+  if (!g.resolved && g.x <= NOSE) { g.resolved = true; resolve(); }
+  if (g.fuel <= 0) { die('Out of fuel'); return; }
 
-// ── Draw helpers ───────────────────────────────────────────────────
-function drawStars(dt){
-  ctx.save();
-  const W=canvas.width,H=canvas.height;
-  for(const s of STARS){
-    s.y+=s.speed*dt*(slowTimer>0?40:80);
-    if(s.y>H){s.y=0;s.x=Math.random()*W;}
-    ctx.globalAlpha=s.alpha; ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.arc(s.x%W,s.y,s.r,0,Math.PI*2); ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawPlane(x,y,alpha){
-  ctx.save(); ctx.globalAlpha=alpha; ctx.translate(x,y);
-  const grd=ctx.createRadialGradient(0,18,2,0,18,24);
-  grd.addColorStop(0,'rgba(79,195,247,.9)'); grd.addColorStop(1,'rgba(79,195,247,0)');
-  ctx.fillStyle=grd; ctx.beginPath(); ctx.ellipse(0,20,15,15,0,0,Math.PI*2); ctx.fill();
-  for(let i=1;i<=4;i++){
-    ctx.globalAlpha=alpha*(.22/i); ctx.fillStyle='#4fc3f7';
-    ctx.beginPath(); ctx.ellipse(0,24+i*7,7/i,6/i,0,0,Math.PI*2); ctx.fill();
-  }
-  ctx.globalAlpha=alpha;
-  ctx.fillStyle='#e8eaf6';
-  ctx.beginPath(); ctx.moveTo(0,-26); ctx.lineTo(8,10); ctx.lineTo(5,20); ctx.lineTo(-5,20); ctx.lineTo(-8,10); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#4fc3f7';
-  ctx.beginPath(); ctx.moveTo(-8,4); ctx.lineTo(-28,18); ctx.lineTo(-22,22); ctx.lineTo(-6,14); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(8,4);  ctx.lineTo(28,18);  ctx.lineTo(22,22);  ctx.lineTo(6,14);  ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#1565c0';
-  ctx.beginPath(); ctx.moveTo(-5,14); ctx.lineTo(-13,22); ctx.lineTo(-5,20); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(5,14);  ctx.lineTo(13,22);  ctx.lineTo(5,20);  ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#4fc3f7'; ctx.beginPath(); ctx.ellipse(0,-10,5,9,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(-1,-11,2,4,-.3,0,Math.PI*2); ctx.fill();
-  if(shielded){
-    ctx.globalAlpha=alpha*(.7+Math.sin(frameCount*.15)*.3);
-    ctx.strokeStyle='#ffd54f'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.arc(0,0,32,0,Math.PI*2); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawToken(t){
-  ctx.save(); ctx.globalAlpha=t.alpha;
-  const fSize=canvas.width<420?11:15;
-  ctx.font=`bold ${fSize}px Archivo, sans-serif`;
-  if(!t.w) t.w=ctx.measureText(t.text).width+(canvas.width<420?20:36);
-  const wobbleX=Math.sin(frameCount*t.wobble+t.wobbleOff)*2;
-  ctx.translate(t.x+wobbleX,t.y);
-  const rx=-t.w/2,ry=-t.h/2,rw=t.w,rh=t.h,rad=10;
-  ctx.shadowColor='rgba(255,255,255,0.5)'; ctx.shadowBlur=16;
-  const bg=ctx.createLinearGradient(rx,ry,rx,ry+rh);
-  bg.addColorStop(0,'rgba(255,255,255,0.97)'); bg.addColorStop(1,'rgba(210,225,255,0.95)');
-  ctx.fillStyle=bg; roundRect(ctx,rx,ry,rw,rh,rad); ctx.fill();
-  ctx.shadowBlur=0; ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2.5;
-  roundRect(ctx,rx,ry,rw,rh,rad); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.6)'; roundRect(ctx,rx+2,ry+2,rw-4,rh*0.35,rad-2); ctx.fill();
-  ctx.fillStyle='#0a1628'; ctx.font=`bold ${fSize}px Archivo, sans-serif`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.shadowColor='rgba(0,0,50,0.2)'; ctx.shadowBlur=2;
-  ctx.fillText(t.text,0,0);
-  ctx.restore();
-}
-
-function drawPowerup(p){
-  ctx.save(); ctx.globalAlpha=p.alpha;
-  ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.shadowColor='#ffd54f'; ctx.shadowBlur=10+Math.sin(frameCount*.12)*6;
-  ctx.fillText({shield:'🛡️',slow:'⏱️',heart:'❤️'}[p.type],p.x,p.y);
-  ctx.restore();
-}
-
-// Small helper so the HUD's progress track/fill read as pills, matching the
-// site's .eg-progress component, instead of hard-edged canvas rectangles.
-function roundedRectPath(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-}
-
-function drawHUD(){
-  ctx.save();
-  const W=canvas.width;
-
-  // Top bar — dark translucent strip with a thin green accent (Arcade's own
-  // nav-underline colour), score in the site's gold-light so it reads the
-  // same as every other game's score readout.
-  ctx.fillStyle='rgba(8,8,18,.8)'; ctx.fillRect(0,0,W,44);
-  ctx.fillStyle='rgba(127,176,141,.5)'; ctx.fillRect(0,43,W,1); // --eg-green-light
-  ctx.fillStyle='#D9A520'; ctx.font='900 18px Archivo, sans-serif'; // --eg-gold-light
-  ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillText(String(score),14,22);
-  if(multiplier>1){
-    ctx.fillStyle='#CF4F66'; // --eg-rose
-    ctx.font='bold 12px Archivo, sans-serif';
-    ctx.fillText('×'+multiplier,String(score).length*11+22,22);
-  }
-  ctx.fillStyle='#C9C3B8'; ctx.font='700 10px Archivo, sans-serif'; // --eg-ink-muted
-  ctx.textAlign='center'; ctx.fillText('WAVE '+wave,W/2,12);
-  const wPct=Math.max(0,1-waveTimer/WAVE_DUR);
-  roundedRectPath(W/2-55,20,110,4,2);
-  ctx.fillStyle='rgba(255,255,255,.09)'; ctx.fill();
-  if(wPct>0){ roundedRectPath(W/2-55,20,Math.max(4,110*wPct),4,2); ctx.fillStyle='#7FB08D'; ctx.fill(); } // --eg-green-light
-  ctx.font='14px serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let i=0;i<5;i++){ ctx.globalAlpha=i<lives?1:.15; ctx.fillText('✈',W-10-i*20,22); }
-  ctx.globalAlpha=1;
-  if(slowTimer>0){
-    ctx.fillStyle='#CF4F66'; ctx.font='700 9px Archivo, sans-serif'; // --eg-rose
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('SLOW '+Math.ceil(slowTimer)+'s',W/2,36);
-  }
-
-  // Question banner — the site's own inverted "prompt" card (cream ground,
-  // black ink) used for every other game's question/prompt, instead of a
-  // flat saturated-blue box that didn't match the palette anywhere else.
-  ctx.fillStyle='#F4EFE6'; ctx.fillRect(0,44,W,62); // --eg-ink
-  ctx.strokeStyle='rgba(10,10,10,.08)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(0,106); ctx.lineTo(W,106); ctx.stroke();
-  if(currentQ){
-    ctx.fillStyle='#6B665E'; ctx.font='bold 9px Archivo, sans-serif'; // --eg-prompt__label
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('COMPLETE THE PHRASE',W/2,56);
-    ctx.fillStyle='#0A0A0A'; ctx.font='bold 20px Archivo, sans-serif'; // --eg-ink-on-light
-    ctx.fillText(currentQ.q,W/2,82);
-  }
-  ctx.restore();
-}
-
-function drawParticles(dt){
-  ctx.save();
-  for(const p of particles){
-    p.life-=dt*(p.type==='text'?1.3:1.7);
-    p.x+=p.vx*dt; p.y+=p.vy*dt;
-    if(p.life<=0) continue;
-    ctx.globalAlpha=Math.max(0,p.life);
-    if(p.type==='text'){
-      ctx.fillStyle=p.colour; ctx.font='bold 14px Archivo, sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.txt,p.x,p.y);
-    } else {
-      ctx.fillStyle=p.colour;
-      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,p.r*p.life),0,Math.PI*2); ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
-function overlap(ax,ay,aw,ah,bx,by,bw,bh){
-  return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;
-}
-
-// ── Master loop ────────────────────────────────────────────────────
-function announce(msg){
-  const el = document.getElementById('srStatus');
-  if (el) el.textContent = msg;
-}
-
-function masterLoop(ts){
-  requestAnimationFrame(masterLoop);
-  const dt=Math.min((ts-lastTime)/1000,.05);
-  lastTime=ts; frameCount++;
-  const W=canvas.width,H=canvas.height;
-  ctx.fillStyle='#03050f'; ctx.fillRect(0,0,W,H);
-  drawStars(dt);
-
-  if(state==='idle'){
-    drawPlane(W/2+Math.sin(frameCount*.02)*30,H*.6,1);
-    return;
-  }
-  if(state==='paused'){
-    for(const t of tokens){ if(!t.hit&&t.alpha>0) drawToken(t); }
-    drawPlane(plane.x,plane.y,1);
-    drawHUD();
-    return;
-  }
-
-  // Playing
-  waveTimer-=dt; spawnTimer-=dt;
-  if(slowTimer>0) slowTimer-=dt;
-  if(plane.invincible>0) plane.invincible--;
-  const activeTokens=tokens.filter(t=>!t.hit);
-  if(waveTimer<=0&&activeTokens.length===0){ wave++;waveTimer=WAVE_DUR;spawnTimer=0;sfxWaveUp();updateBpm();announce(`Wave ${wave}. Score ${score}.`); }
-  if(spawnTimer<=0&&activeTokens.length===0&&waveTimer>0){ spawnWave();spawnTimer=.5; }
-
-  if(keys['ArrowLeft']||keys['a']||keys['A']) plane.targetX-=320*dt;
-  if(keys['ArrowRight']||keys['d']||keys['D']) plane.targetX+=320*dt;
-  plane.targetX=Math.max(plane.w/2,Math.min(W-plane.w/2,plane.targetX));
-  plane.x+=(plane.targetX-plane.x)*Math.min(1,12*dt);
-  plane.y=H-100;
-  const hw=plane.w/2;
-
-  const dead=[];
-  for(let i=0;i<tokens.length;i++){
-    const t=tokens[i];
-    if(t.hit){t.alpha-=dt*3;if(t.alpha<=0)dead.push(i);continue;}
-    t.vy=slowTimer>0?t.baseVy*.35:t.baseVy;
-    t.y+=t.vy*dt;
-    if(t.y>H+60){t.hit=true;continue;}
-    drawToken(t);
-    if(plane.invincible===0&&overlap(plane.x-hw,plane.y-26,plane.w,plane.h,t.x-t.w/2,t.y-t.h/2,t.w,t.h)){
-      t.hit=true;
-      if(t.correct){
-        const pts=10*wave*multiplier;
-        score+=pts;streak++;correctCount++;
-        if(streak>bestStreak) bestStreak=streak;
-        multiplier=streak>=5?3:streak>=3?2:1;
-        sfxCorrect();
-        burst(t.x,t.y,'#4fc3f7',20);
-        textPop(plane.x,plane.y-35,'+'+pts,'#ffd54f');
-        spawnTimer=0; plane.invincible=20;
-      } else {
-        if(shielded){
-          sfxShield();shielded=false;
-          burst(plane.x,plane.y,'#ffd54f',14);
-          textPop(plane.x,plane.y-35,'SHIELD!','#ffd54f');
-        } else {
-          sfxWrong();lives--;streak=0;multiplier=1;plane.invincible=100;
-          burst(plane.x,plane.y,'#ef5350',24);
-          textPop(plane.x,plane.y-35,'✈ −1','#ef5350');
-          announce(`Hit "${t.text}" — wrong answer. ${lives} ${lives===1?'life':'lives'} left.`);
-          if(lives<=0){endGame();return;}
-        }
+  if (g.can) {
+    g.can.x -= gateSpeed() * s;
+    if (!g.can.taken && g.can.x <= NOSE) {
+      g.can.taken = true;
+      if (Math.abs(laneY(g.can.lane) - g.y) < 46) {
+        g.fuel = Math.min(100, g.fuel + 25);
+        pop('+25% FUEL', '#8A5A00');
+        note = 'Fuel drop collected — +25%'; noteBad = false; renderNote();
       }
     }
+    if (g.can.x < -160) g.can = null;
   }
-  for(let i=dead.length-1;i>=0;i--) tokens.splice(dead[i],1);
 
-  powerups=powerups.filter(p=>{
-    if(p.hit){p.alpha-=dt*2;return p.alpha>0;}
-    p.y+=p.vy*dt; if(p.y>H+50) return false;
-    drawPowerup(p);
-    if(overlap(plane.x-hw,plane.y-26,plane.w,plane.h,p.x-16,p.y-16,32,32)){
-      p.hit=true; sfxPowerup();
-      if(p.type==='shield'){shielded=true;textPop(plane.x,plane.y-35,'🛡️ SHIELD','#ffd54f');}
-      if(p.type==='slow'){slowTimer=6;textPop(plane.x,plane.y-35,'⏱️ SLOW','#b39ddb');}
-      if(p.type==='heart'&&lives<5){lives++;textPop(plane.x,plane.y-35,'❤️ +LIFE','#ef5350');}
-      burst(p.x,p.y,'#ffd54f',12);
-    }
-    return true;
-  });
-
-  drawParticles(dt);
-  particles=particles.filter(p=>p.life>0);
-  const showPlane=plane.invincible===0||Math.floor(plane.invincible/6)%2===0;
-  drawPlane(plane.x,plane.y,showPlane?1:0);
-  drawHUD();
+  if (g.resolved && !g.handedOff && g.x < -340) {
+    g.handedOff = true;
+    sinceCan = (sinceCan || 0) + 1;
+    nextQuestionUp();
+  }
 }
 
-// ── Game flow ──────────────────────────────────────────────────────
-function startGame(){
-  primeAudioSync(); // synchronous native AudioContext unlock, in case this is the first gesture
-  document.getElementById('startScreen').classList.add('hidden');
-  document.getElementById('endScreen').classList.add('hidden');
-  score=0;wave=1;lives=5;streak=0;bestStreak=0;correctCount=0;multiplier=1;
-  tokens=[];particles=[];powerups=[];
-  shielded=false;slowTimer=0;spawnTimer=0;waveTimer=WAVE_DUR;
-  frameCount=0;usedQs.clear();currentQ=null;
-  plane.x=canvas.width/2;plane.targetX=plane.x;
-  plane.y=canvas.height-100;plane.invincible=0;
-  dragActive=false;
-  state='playing';lastTime=performance.now();
-  document.getElementById('trackSelector').style.display='flex';
-  document.getElementById('pauseBtn').classList.add('visible');
-  const psh=document.getElementById('pauseSubHint');if(psh)psh.style.display='block';
-  startAudio().then(switchToGameMusic);
+function paint() {
+  if (!g) return;
+  wall.style.transform = 'translateX(' + g.x.toFixed(1) + 'px)';
+  plane.style.transform = 'translateY(' + g.y.toFixed(1) + 'px)';
+  fuelEl.textContent = Math.round(g.fuel) + '%';
+  if (g.can && !g.can.taken) {
+    canEl.style.opacity = '1';
+    canEl.style.transform = 'translate(' + g.can.x.toFixed(1) + 'px,' + (laneY(g.can.lane) - 24).toFixed(1) + 'px)';
+  } else canEl.style.opacity = '0';
+  fuelBar.style.width = Math.max(0, g.fuel).toFixed(1) + '%';
+  fuelBar.style.background = g.fuel < 25 ? 'var(--eg-rose)' : 'var(--eg-gold-light)';
 }
 
-function endGame(){
-  // Set state FIRST — stops masterLoop from doing anything else
-  state='idle';
-  announce(`Out of lives. Final score ${score}, reached wave ${wave}.`);
+function resolve() {
+  if (!q) return;
+  const picked = order[lane];
+  const right = picked === q.a;
 
-  // Hide game UI elements
-  try {
-    document.getElementById('trackSelector').style.display='none';
-    document.getElementById('pauseBtn').classList.remove('visible');
-    const psh2=document.getElementById('pauseSubHint');if(psh2)psh2.style.display='none';
-    document.getElementById('pauseBtn').textContent='⏸ PAUSE';
-    document.getElementById('pauseOverlay').classList.remove('visible');
-  } catch(e){}
-
-  // Audio — in try/catch so a music error never blocks the end screen
-  try { sfxGameOver(); } catch(e){}
-  try { switchToMenuMusic(); } catch(e){}
-
-  // Update best score
-  if(score>bestScore){bestScore=score;localStorage.setItem('ace_best',bestScore);}
-
-  // Show end screen — guaranteed even if audio failed
-  try {
-    document.getElementById('startHi').textContent='BEST: '+bestScore;
-    document.getElementById('endScoreNum').textContent=score;
-    document.getElementById('endWave').textContent=wave;
-    document.getElementById('endCorrect').textContent=correctCount;
-    document.getElementById('endStreak').textContent=bestStreak;
-    document.getElementById('endScreen').classList.remove('hidden');
-    renderLeaderboard('englishace','lbBody');
-  } catch(e){ console.error('endGame display error:', e); }
-}
-
-function showStart(){
-  document.getElementById('endScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
-  renderLeaderboard('englishace', 'startLbBody');
-}
-
-// Bail out of a paused game straight to the main menu (mirrors endGame()'s
-// UI cleanup, but skips the end screen and doesn't touch the score).
-function quitToMenu(){
-  state='idle';
-  document.getElementById('pauseOverlay').classList.remove('visible');
-  document.getElementById('trackSelector').style.display='none';
-  document.getElementById('pauseBtn').classList.remove('visible');
-  const psh=document.getElementById('pauseSubHint');if(psh)psh.style.display='none';
-  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
-  if(audioReady){ switchToMenuMusic(); Tone.getTransport().start(); }
-  showStart();
-}
-
-document.getElementById('submitBtn').addEventListener('click',async()=>{
-  const btn = document.getElementById('submitBtn');
-  const inp = document.getElementById('nameInput');
-  const msg = document.getElementById('submitMsg');
-  const name = inp.value.trim();
-  if(!name)return;
-  if (btn.disabled) return; // a submit is already in flight — ignore rapid double-click
-  btn.disabled = true; inp.disabled = true;
-  const ok = await window.submitScore('englishace',name,score);
-  if(ok){
-    inp.value='';
-    if (msg) { msg.textContent = '✓ Score submitted!'; msg.style.color = 'var(--correct)'; }
-    renderLeaderboard('englishace','lbBody');
+  if (right) {
+    streak += 1;
+    mult = Math.min(4, 1 + 0.25 * streak);
+    correct += 1;
+    if (g) g.fuel = Math.min(100, g.fuel + 15);
+    const gain = Math.round(120 * mult);
+    if (!reduced) plane.animate([{ filter: 'none' }, { filter: 'drop-shadow(0 0 16px rgba(47,158,94,.95))', offset: 0.4 }, { filter: 'none' }], { duration: 380 });
+    pop('+' + gain, '#1E7A45');
+    bestRun = Math.max(bestRun, streak);
+    score += gain;
+    level = 1 + Math.floor(correct / 5);
+    reveal = { lane, ok: true };
+    noteBad = false; note = q.o[q.a] + ' ✓ +15% fuel';
   } else {
-    if (msg) { msg.textContent = '✗ Submission failed — check your connection'; msg.style.color = 'var(--wrong)'; }
+    hits += 1;
+    if (g) g.fuel = Math.max(0, g.fuel - 14);
+    if (!reduced) plane.animate([
+      { transform: plane.style.transform },
+      { transform: plane.style.transform + ' translateY(9px) rotate(-7deg)', offset: 0.3 },
+      { transform: plane.style.transform + ' translateY(-5px) rotate(4deg)', offset: 0.65 },
+      { transform: plane.style.transform }
+    ], { duration: 460 });
+    pop('−14% FUEL', '#8C1226');
+    streak = 0; mult = 1;
+    reveal = { lane, ok: false };
+    wrongs.push({ picked: q.o[picked], right: q.o[q.a] });
+    noteBad = true; note = q.o[picked] + ' — it was ' + q.o[q.a];
   }
-  btn.disabled = false; inp.disabled = false;
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// AUDIO ENGINE — ambient/downtempo, mobile-safe
-// ═══════════════════════════════════════════════════════════════════
-let audioReady=false;
-let musicGain=null;
-let padA,padB,melo,subBass,fxSynth,fxBell,noiseFX;
-let musicEventId=null,musicStep=0,musicMode='none',currentTrack=0;
-let lastWaveBpm=0;
-
-// All volume levels reduced to 80% of their previous loudness.
-const VOL_STATES=[
-  {label:'🔊 100%',musicVol:-1.94, muted:false},  // was 0dB, now 80% linear gain
-  {label:'🔉  50%',musicVol:-13.94,muted:false},  // was -12dB, same proportional drop
-  {label:'🔇  OFF',musicVol:-Infinity,muted:true},
-];
-let volState=0;
-function isMuted(){ return VOL_STATES[volState].muted; }
-
-// ── Music data — ambient/downtempo ───────────────────────────────
-// All tracks: slow, sparse, pad-heavy, melodic but non-intrusive
-// BPM 60-75, lots of space between notes, lush reverb
-
-const MENU_TRACK={
-  // Floating ambient — C major pentatonic, sparse bell melody
-  // Brian Eno "Music for Airports" feel
-  name:'Menu', bpm:60,
-  // Held bass notes every 8 steps (very slow, half-note feel)
-  bass:[
-    'C2',null,null,null,null,null,null,null,
-    'G2',null,null,null,null,null,null,null,
-    'F2',null,null,null,null,null,null,null,
-    'G2',null,null,null,null,null,null,null,
-    'C2',null,null,null,null,null,null,null,
-    'A2',null,null,null,null,null,null,null,
-    'F2',null,null,null,null,null,null,null,
-    'G2',null,null,null,null,null,null,null,
-  ],
-  // Sparse bell-like melody — notes land unpredictably, lots of rests
-  melody:[
-    'G4',null,null,null,null,null,'E4',null,
-    null,null,'C5',null,null,null,null,null,
-    'D4',null,null,null,'G4',null,null,null,
-    null,null,'E4',null,null,null,null,null,
-    'C5',null,null,null,null,null,'G4',null,
-    null,null,'A4',null,null,null,null,null,
-    'F4',null,null,null,null,null,'C5',null,
-    null,null,'G4',null,null,null,null,null,
-  ],
-  // Long held chords
-  pad:[
-    ['C3','E3','G3','C4'],
-    ['G2','B2','D3','G3'],
-    ['F2','A2','C3','F3'],
-    ['G2','B2','D3','G3'],
-    ['C3','E3','G3','C4'],
-    ['A2','C3','E3','A3'],
-    ['F2','A2','C3','F3'],
-    ['G2','B2','D3','G3'],
-  ],
-};
-
-const TRACKS=[
-  {
-    // ── DASH: Deep ambient Dm — slow, hypnotic, minimal ─────────
-    // Dm pentatonic, very sparse melody, sub-bass pulse every 4 steps
-    name:'Dash —', bpm:65,
-    bass:[
-      'D2',null,null,null,'D2',null,null,null,
-      'Bb1',null,null,null,'Bb1',null,null,null,
-      'F2',null,null,null,'F2',null,null,null,
-      'C2',null,null,null,'C2',null,null,null,
-    ],
-    // Sparse high melody — pentatonic D minor
-    melody:[
-      'D5',null,null,null,null,null,null,null,
-      null,null,'A4',null,null,null,null,null,
-      'F4',null,null,null,null,null,'D4',null,
-      null,null,null,null,'C4',null,null,null,
-      null,null,'D5',null,null,null,null,null,
-      'A4',null,null,null,'F4',null,null,null,
-      null,null,null,null,'D5',null,'A4',null,
-      'F4',null,null,null,null,null,null,null,
-    ],
-    pad:[
-      ['D3','F3','A3','D4'],
-      ['Bb2','D3','F3','Bb3'],
-      ['F2','A2','C3','F3'],
-      ['C3','E3','G3','C4'],
-      ['D3','F3','A3','D4'],
-      ['Bb2','D3','F3','Bb3'],
-      ['F2','A2','C3','F3'],
-      ['A2','C3','E3','A3'],
-    ],
-  },
-  {
-    // ── HYPHEN: Am downtempo — warm, floating, slightly jazzy ────
-    // Am7 → Fmaj7 → C → G, smooth voice leading, very relaxed
-    name:'Hyphen -', bpm:60,
-    bass:[
-      'A1',null,null,null,'A1',null,null,null,
-      'F2',null,null,null,'F2',null,null,null,
-      'C2',null,null,null,'C2',null,null,null,
-      'G2',null,null,null,'G2',null,null,null,
-    ],
-    melody:[
-      null,null,'C5',null,null,null,null,null,
-      'A4',null,null,null,null,null,'E4',null,
-      null,null,null,null,'G4',null,null,null,
-      null,null,'F4',null,null,null,null,null,
-      'E4',null,null,null,null,null,'A4',null,
-      null,null,'C5',null,null,null,null,null,
-      'B4',null,null,null,'G4',null,null,null,
-      null,null,null,null,'E4',null,null,null,
-    ],
-    pad:[
-      ['A2','C3','E3','G3'],
-      ['F2','A2','C3','E3'],
-      ['C3','E3','G3','B3'],
-      ['G2','B2','D3','F3'],
-      ['A2','C3','E3','G3'],
-      ['F2','A2','C3','E3'],
-      ['C3','E3','G3','B3'],
-      ['G2','B2','D3','F3'],
-    ],
-  },
-  {
-    // ── ELLIPSIS: Em ambient — ethereal, Bonobo/Zero7 feel ───────
-    // Em → C → G → D, slow pulse, delicate high melody
-    name:'Ellipsis …', bpm:70,
-    bass:[
-      'E2',null,null,null,'E2',null,null,null,
-      'C2',null,null,null,'C2',null,null,null,
-      'G1',null,null,null,'G1',null,null,null,
-      'D2',null,null,null,'D2',null,null,null,
-    ],
-    melody:[
-      'B4',null,null,null,null,null,'G4',null,
-      null,null,'E5',null,null,null,null,null,
-      null,null,'G4',null,'E4',null,null,null,
-      null,null,null,null,'D5',null,null,null,
-      'E4',null,null,null,'G4',null,null,null,
-      'B4',null,null,null,null,null,'G4',null,
-      null,null,'E5',null,null,null,'D5',null,
-      'B4',null,null,null,null,null,null,null,
-    ],
-    pad:[
-      ['E3','G3','B3','E4'],
-      ['C3','E3','G3','C4'],
-      ['G2','B2','D3','G3'],
-      ['D3','F#3','A3','D4'],
-      ['E3','G3','B3','E4'],
-      ['C3','E3','G3','C4'],
-      ['G2','B2','D3','G3'],
-      ['D3','F#3','A3','D4'],
-    ],
-  },
-];
-
-let audioInitInProgress = false; // guards against overlapping init attempts on rapid taps
-// Synchronously resume Tone.js's own AudioContext the instant a gesture
-// fires. IMPORTANT: this must operate on Tone's context, not a separately
-// created native AudioContext — creating our own context here would
-// unlock a context Tone.js never uses, leaving its real internal context
-// suspended and silent on strict mobile browsers (this was the actual
-// cause of "no sound on mobile" — calling resume() on the wrong object).
-function primeAudioSync(){
-  try{
-    if (typeof Tone !== 'undefined' && Tone.getContext) {
-      const ctx = Tone.getContext().rawContext;
-      if (ctx && ctx.state === 'suspended') ctx.resume();
-    }
-  }catch(e){ console.warn('primeAudioSync failed:', e); }
+  renderHUD(); renderNote(); renderGates();
+  if (hits >= 3) die('Shot down');
 }
 
-async function startAudio(){
-  if(audioReady) return;
-  if(audioInitInProgress) return; // a previous tap is already setting things up
-  audioInitInProgress = true;
-  try {
-    // Mobile-safe: must call Tone.start() inside a user gesture handler,
-    // and as close to the very start of that handler as possible — this
-    // gives mobile Safari the best chance of recognising the gesture.
-    await Tone.start();
-
-    // Extra safety for iOS — ensure context is running
-    const ctx = Tone.getContext().rawContext;
-    if(ctx.state === 'suspended'){
-      await ctx.resume();
-    }
-
-    // ── SFX — direct to destination (unaffected by music volume) ──
-    fxSynth = new Tone.Synth({
-      oscillator:{type:'sine'},
-      envelope:{attack:.001,decay:.15,sustain:.1,release:.2},
-      volume:-11.94
-    }).toDestination();
-
-    fxBell = new Tone.Synth({
-      oscillator:{type:'triangle'},
-      envelope:{attack:.001,decay:.4,sustain:0,release:.3},
-      volume:-15.94
-    }).toDestination();
-
-    noiseFX = new Tone.NoiseSynth({
-      noise:{type:'white'},
-      envelope:{attack:.001,decay:.05,sustain:0,release:.01},
-      volume:-21.94
-    }).toDestination();
-
-    // ── Music chain — padA + padB + melo + subBass → reverb → musicGain ──
-    musicGain = new Tone.Gain(0.8).toDestination(); // 80% of previous max volume
-
-    // Long reverb tail — the heart of the ambient sound. IR generation
-    // can occasionally hang on older/slower mobile devices, so we race
-    // it against a timeout and fall back to proceeding without waiting
-    // further, rather than blocking audio setup entirely.
-    const rev = new Tone.Reverb({decay:6, wet:0.7}).connect(musicGain);
-    const reverbReady   = rev.generate();
-    const reverbTimeout = new Promise(resolve => setTimeout(resolve, 2500));
-    await Promise.race([reverbReady, reverbTimeout]);
-
-    // Subtle delay on melody
-    const delay = new Tone.FeedbackDelay('8n.',0.25).connect(rev);
-    delay.wet.value = 0.3;
-
-    // Pad A — lush sine pads, very slow attack
-    padA = new Tone.PolySynth(Tone.Synth,{
-      oscillator:{type:'sine'},
-      envelope:{attack:1.5,decay:1,sustain:0.9,release:3},
-      volume:-14
-    }).connect(rev);
-
-    // Pad B — slightly detuned triangle for warmth
-    padB = new Tone.PolySynth(Tone.Synth,{
-      oscillator:{type:'triangle'},
-      envelope:{attack:2,decay:1,sustain:0.8,release:4},
-      volume:-18
-    }).connect(rev);
-
-    // Melody — clean sine, goes through delay then reverb
-    melo = new Tone.Synth({
-      oscillator:{type:'sine'},
-      envelope:{attack:.01,decay:.5,sustain:.2,release:1.5},
-      volume:-12
-    }).connect(delay);
-
-    // Sub bass — very slow, very quiet, felt not heard
-    subBass = new Tone.Synth({
-      oscillator:{type:'sine'},
-      envelope:{attack:.3,decay:.5,sustain:.7,release:1},
-      volume:-16
-    }).connect(musicGain); // bypass reverb for clarity
-
-    audioReady = true;
-    Tone.getTransport().bpm.value = MENU_TRACK.bpm;
-    Tone.getTransport().start();
-    scheduleMusic('menu');
-    console.log('Audio ready, context state:', ctx.state);
-  } catch(e){
-    console.warn('Audio init failed:',e);
-    // Allow a future tap to retry from scratch rather than staying
-    // broken for the rest of the session.
-    audioReady = false;
-  } finally {
-    audioInitInProgress = false;
-  }
+function nextQuestionUp() {
+  if (document.getElementById('phase-game').style.display === 'none') return;
+  const swap = () => {
+    q = nextQuestion(); order = shuffleArr([0, 1, 2]); reveal = null;
+    launch(false);
+    renderGates();
+    if (!reduced) bannerWrap.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' });
+  };
+  if (!reduced) {
+    bannerWrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in' });
+    clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(swap, 195);
+  } else swap();
 }
 
-function scheduleMusic(mode){
-  if(musicEventId!==null){ Tone.getTransport().cancel(musicEventId); musicEventId=null; }
-  musicMode=mode; musicStep=0;
-  if(mode==='none') return;
-
-  const T = mode==='menu' ? MENU_TRACK : TRACKS[currentTrack];
-
-  // Use '8n' interval — ambient music doesn't need 16th-note resolution
-  // This halves CPU usage and is more mobile-friendly
-  musicEventId=Tone.getTransport().scheduleRepeat(time=>{
-    if(isMuted()||!audioReady) return;
-
-    const step  = musicStep % T.melody.length;
-    // Chord changes every 8 steps (at 8n intervals = every 4 beats = very slow)
-    const chord = Math.floor(step / 8) % T.pad.length;
-
-    // Sub-bass — slow notes, every 8 steps
-    const bNote = T.bass[step];
-    if(bNote && subBass) subBass.triggerAttackRelease(bNote,'2n',time);
-
-    // Pad chords — held very long, change every 8 steps
-    if(step % 8 === 0 && padA && padB){
-      const ch = T.pad[chord];
-      padA.triggerAttackRelease(ch,'2n',time);
-      // padB plays a slight variation (drop lowest note, add high)
-      const ch2 = ch.slice(1); // drop lowest
-      padB.triggerAttackRelease(ch2,'2n',time);
-    }
-
-    // Sparse melody
-    const mNote = T.melody[step];
-    if(mNote && melo) melo.triggerAttackRelease(mNote,'4n',time);
-
-    musicStep++;
-  },'8n',0);
+function die(reason) {
+  stopClocks(); clearTimeout(nextTimer);
+  g = null;
+  best = Math.max(best, score);
+  try { localStorage.setItem('englishace_best', String(best)); } catch(e) {}
+  document.getElementById('bestVal').textContent = best.toLocaleString();
+  overReason = reason; paused = false;
+  showResult();
 }
 
-function getGameBpm(){ return Math.min(TRACKS[currentTrack].bpm+20, TRACKS[currentTrack].bpm+(wave-1)*2); }
+// ── render ─────────────────────────────────────────────────────────
+function renderHUD() {
+  document.getElementById('qType').textContent = q ? q.t : '';
+  document.getElementById('scoreVal').textContent = score.toLocaleString();
+  document.getElementById('hitVal').textContent = ['●','●','●'].map((d,i) => i < hits ? '●' : '○').join(' ');
+  document.getElementById('multVal').textContent = '×' + mult.toFixed(2).replace(/0$/, '').replace(/\.$/, '');
+}
+function renderNote() {
+  const el = document.getElementById('noteLine');
+  el.textContent = note;
+  el.style.color = noteBad ? 'var(--eg-rose)' : 'var(--eg-ink-muted)';
+  announce(note);
+}
+function renderGates() {
+  if (!q) return;
+  const parts = (q.q || '~').split('~');
+  const blanked = parts.length > 1;
+  document.getElementById('qPre').textContent = parts[0] || '';
+  document.getElementById('qPost').textContent = blanked ? (parts[1] || '') : '';
+  document.getElementById('qBlank').style.display = blanked ? 'inline-flex' : 'none';
 
-function switchToMenuMusic(){
-  if(!audioReady) return;
-  Tone.getTransport().bpm.rampTo(MENU_TRACK.bpm,2);
-  scheduleMusic('menu');
-}
-function switchToGameMusic(){
-  if(!audioReady) return;
-  Tone.getTransport().bpm.value=getGameBpm();
-  scheduleMusic('game');
-}
-function updateBpm(){
-  const bpm=getGameBpm();
-  if(bpm!==lastWaveBpm){lastWaveBpm=bpm;Tone.getTransport().bpm.rampTo(bpm,2);}
-}
-function selectTrack(n){
-  currentTrack=n;
-  [0,1,2].forEach(i=>document.getElementById('track'+i).classList.toggle('active',i===n));
-  if(audioReady&&musicMode!=='none'){
-    const bpm=musicMode==='menu'?MENU_TRACK.bpm:getGameBpm();
-    Tone.getTransport().bpm.rampTo(bpm,.5);
-    scheduleMusic(musicMode);
-  }
-}
-function applyVolume(){
-  const v=VOL_STATES[volState];
-  document.getElementById('muteBtn').textContent=v.label;
-  if(musicGain) musicGain.gain.rampTo(v.musicVol===-Infinity?0:Math.pow(10,v.musicVol/20),.1);
-}
-function sfxCorrect(){
-  // Gentle ascending bell chime — soft and pleasing
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  fxBell.triggerAttackRelease('G5','8n',now);
-  fxBell.triggerAttackRelease('C6','8n',now+0.18);
-}
-function sfxWrong(){
-  // Soft low thud + tiny noise — subtle, not harsh
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  fxSynth.triggerAttackRelease('D3','8n',now);
-  noiseFX.triggerAttackRelease('32n',now+.05);
-}
-function sfxShield(){
-  // Soft shimmer
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  fxBell.triggerAttackRelease('C5','8n',now);
-  fxBell.triggerAttackRelease('E5','8n',now+.12);
-  fxBell.triggerAttackRelease('G5','8n',now+.24);
-}
-function sfxPowerup(){
-  // Soft rising bells
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  ['C5','E5','G5','C6'].forEach((n,i)=>fxBell.triggerAttackRelease(n,'8n',now+i*.12));
-}
-function sfxGameOver(){
-  // Slow descending sine — mournful but gentle
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  ['G4','E4','C4','G3'].forEach((n,i)=>fxSynth.triggerAttackRelease(n,'4n',now+i*.35));
-}
-function sfxWaveUp(){
-  // Very subtle — single soft chime
-  if(!audioReady||isMuted()) return;
-  const now=Tone.now();
-  fxBell.triggerAttackRelease('C5','4n',now);
-}
-
-document.getElementById('muteBtn').addEventListener('click',async()=>{
-  primeAudioSync();
-  await startAudio();
-  volState=(volState+1)%VOL_STATES.length;
-  applyVolume();
-});
-
-// ── Pause ──────────────────────────────────────────────────────────
-function togglePause(){
-  if(state==='playing'){
-    state='paused';
-    document.getElementById('pauseOverlay').classList.add('visible');
-    document.getElementById('pauseBtn').textContent='▶ RESUME';
-    if(audioReady) Tone.getTransport().pause();
-  } else if(state==='paused'){
-    state='playing';
-    lastTime=performance.now();
-    document.getElementById('pauseOverlay').classList.remove('visible');
-    document.getElementById('pauseBtn').textContent='⏸ PAUSE';
-    if(audioReady) Tone.getTransport().start();
-  }
-}
-document.getElementById('pauseBtn').addEventListener('click',togglePause);
-window.addEventListener('keydown',e=>{
-  if(e.code==='Space'&&(state==='playing'||state==='paused')){
-    e.preventDefault(); togglePause();
-  }
-});
-
-// Auto-pause when the tab is backgrounded — same reasoning as the other
-// real-time games in this audit (WordSnake/WordDrop/Affix Runner): tokens
-// keep flying toward the plane unseen while hidden, risking a collision
-// with a wrong answer (losing a life) with nobody there to react. Reuses
-// togglePause() so lastTime is correctly re-anchored on manual resume;
-// deliberately doesn't auto-resume itself.
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && state === 'playing') togglePause();
-});
-
-// ── Boot ───────────────────────────────────────────────────────────
-document.getElementById('startHi').textContent='BEST: '+bestScore;
-renderLeaderboard('englishace', 'startLbBody'); // render the leaderboard immediately on page load
-lastTime=performance.now();
-requestAnimationFrame(masterLoop);
-
-// Detect touch device and update pause hints accordingly
-(function(){
-  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const pauseTip = document.getElementById('pauseTip');
-  const resumeHint = document.getElementById('resumeHint');
-  const pauseSubHint = document.getElementById('pauseSubHint');
-
-  if(isTouch){
-    if(pauseTip)     pauseTip.textContent     = 'double-tap screen or tap ⏸';
-    if(resumeHint)   resumeHint.textContent   = 'Double-tap screen or tap ▶ RESUME';
-    if(pauseSubHint) pauseSubHint.textContent = 'double-tap to pause';
-  } else {
-    if(pauseTip)     pauseTip.textContent     = 'tap ⏸ or press Space';
-    if(resumeHint)   resumeHint.textContent   = 'Press Space or click ▶ RESUME';
-    if(pauseSubHint) pauseSubHint.textContent = 'Space to pause';
-  }
-})();
-
-// Mobile audio fix: primeAudioSync() runs FIRST and SYNCHRONOUSLY to grab
-// the native AudioContext unlock the instant the gesture is detected;
-// startAudio() then does the full Tone.js setup.
-// touchstart must be non-passive on iOS Safari — some WebKit versions only
-// count a gesture as "real" when the handler is capable of calling
-// preventDefault(), even if it never actually does.
-['click','pointerdown'].forEach(evt=>{
-  document.addEventListener(evt, function handler(){
-    primeAudioSync();
-    startAudio();
-    document.removeEventListener(evt, handler);
+  wall.innerHTML = '';
+  order.forEach((oi, ln) => {
+    const isRight = oi === q.a;
+    let bg = '#F6F9FC', ink = '#0B2D4D';
+    if (reveal) {
+      if (isRight) { bg = '#2F9E5E'; ink = '#FFFFFF'; }
+      else if (reveal.lane === ln) { bg = '#CF4F66'; ink = '#FFFFFF'; }
+    } else if (ln === lane) { bg = '#FFF3D2'; }
+    const el = document.createElement('span');
+    el.className = 'ea-gate';
+    el.style.top = laneY(ln) + 'px';
+    el.style.background = bg; el.style.color = ink;
+    el.innerHTML = '<span>' + escHtml(q.o[oi]) + '</span>';
+    wall.appendChild(el);
   });
-});
-document.addEventListener('touchstart', function iosHandler(){
-  primeAudioSync();
-  startAudio();
-  document.removeEventListener('touchstart', iosHandler);
-}, {passive:false});
+}
+
+function showResult() {
+  document.getElementById('phase-game').style.display = 'none';
+  document.getElementById('phase-result').style.display = 'block';
+  document.getElementById('overReason').textContent = overReason;
+  document.getElementById('finalScore').textContent = score.toLocaleString();
+  document.getElementById('finalCorrect').textContent = correct;
+  document.getElementById('finalBestRun').textContent = bestRun;
+  document.getElementById('finalHits').textContent = hits;
+  const wrap = document.getElementById('wrongWrap');
+  const chips = document.getElementById('wrongChips');
+  chips.innerHTML = '';
+  if (wrongs.length) {
+    wrap.style.display = '';
+    wrongs.slice(-5).forEach(w => {
+      const span = document.createElement('span');
+      span.className = 'eg-arcade-review-chip';
+      span.textContent = w.picked + ' → ' + w.right;
+      chips.appendChild(span);
+    });
+  } else wrap.style.display = 'none';
+  document.getElementById('submitArea').innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+      <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
+    </div>`;
+  renderLeaderboard(GAME_KEY, 'lbBodyResult');
+}
+
+async function doSubmit() {
+  await handleScoreSubmit(GAME_KEY, score, 'nameInput', 'submitArea', 'lbBodyResult');
+  renderLeaderboard(GAME_KEY, 'lbBodyResult');
+}
+
+renderLeaderboard(GAME_KEY, 'lbBodyIntro');
 </script>
 </body>
 </html>
