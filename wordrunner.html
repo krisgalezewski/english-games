@@ -19,7 +19,7 @@
 }
 html, body { background: var(--eg-green, #12632F); }
 body { font-family:'IBM Plex Sans',system-ui,sans-serif; color:var(--nb-ink); padding:0; }
-a.nb-back { color:var(--nb-muted); }
+a.nb-back { color:#F1EDE4; }
 a.nb-back:hover { color:var(--nb-alert); }
 .nb-mono { font-family:'IBM Plex Mono',monospace; }
 .nb-wrap { max-width:660px; margin:0 auto; padding:clamp(14px,2vw,26px); display:flex; flex-direction:column; gap:12px; box-sizing:border-box; }
@@ -32,6 +32,14 @@ a.nb-back:hover { color:var(--nb-alert); }
 .nb-header .right { display:flex; align-items:center; gap:9px; }
 .nb-header .best { font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--nb-muted); }
 .nb-ghost-btn { background:transparent; border:1.5px solid var(--nb-ink); border-radius:2px; color:var(--nb-ink); padding:4px 9px; min-height:30px; font:inherit; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; letter-spacing:.1em; cursor:pointer; }
+/* The header sits directly on the page's green backdrop, not the cream
+   panel — .nb-ink/.nb-muted were tuned for cream and read as barely-visible
+   dark-on-dark there, so give the header its own light color. Scoped to
+   .nb-header so it doesn't touch .nb-ghost-btn's other use inside the
+   cream in-panel HUD (PAUSE / JUMP D). */
+.nb-header, .nb-header .best { color:#F1EDE4; }
+.nb-header a:hover { color:var(--nb-alert); }
+.nb-header .nb-ghost-btn { border-color:#F1EDE4; color:#F1EDE4; }
 
 .nb-panel { border:1.5px solid var(--nb-ink); background:var(--nb-panel); }
 .nb-welcome-body { padding:clamp(16px,2.4vw,24px) clamp(20px,3vw,30px) 0; }
@@ -240,7 +248,7 @@ a.nb-back:hover { color:var(--nb-alert); }
 <script>
 'use strict';
 const GAME_KEY = 'affixclimber';
-const FLOOR_H = 92, ANCHOR = 150, VINE_H = 1400, MAX_GAP = 1.5, TRAIL = 1.2, CATCHUP = 0.5;
+const FLOOR_H = 92, ANCHOR = 150, VINE_H = 1400, MAX_GAP = 1.5;
 const HOP_STYLES = ["A · Arc & edge climb", "B · High vault", "C · Chimney press", "D · Lunge & mantle", "E · Coil & spring"];
 const FALLBACK_LEVELS = [{
   name: "Level 1", affixes: ["un-", "re-", "-ful", "-less"],
@@ -392,9 +400,11 @@ function startGame() {
   document.getElementById('phase-game').style.display = 'block';
   renderHUD(); renderNote(); showBanner('');
   renderWorld();
-  runLoop();
   clearInterval(idleTimer);
-  if (!reduced) idleTimer = setInterval(fidget, 5600);
+  armReadyGate(document.querySelector('.nb-climb-viewport'), () => {
+    runLoop();
+    if (!reduced) idleTimer = setInterval(fidget, 5600);
+  });
 }
 function togglePause() {
   if (screen !== 'play') return;
@@ -479,19 +489,23 @@ function hop(lg, el) {
     streak += 1;
     mult = Math.min(4, 1 + 0.25 * streak);
     const now = performance.now();
-    // A wrong pick (below) always pushes the decay line up. An ordinary
-    // correct pick deliberately does NOT push it back down — climbing to a
-    // new floor changes the *gap* (floor − vine) simply because the floor
-    // number went up, but the vine's own value only ever eases back via the
-    // two bonuses below, so a mistake's cost genuinely sticks.
-    const freeze = streak >= 3 && streak % 3 === 0;
-    if (freeze) gg.vine = Math.max(gg.vine - 0.3, fl - 3); // streak of 3+ correct: small relief
     const milestone = fl > 0 && fl % 20 === 0;
+    const freeze = !milestone && streak >= 3 && streak % 3 === 0;
+    // Climbing to a new floor advances the decay line by the same amount,
+    // so the *gap* to the climber stays exactly where it was — reaching a
+    // higher floor must never look like relief on its own (that's the "it
+    // immediately lowers" effect a screen-follows-the-climber camera would
+    // otherwise create). A wrong pick (below) always shrinks the gap; these
+    // two bonuses are the only ways it ever grows.
     if (milestone) {
       gg.vine = Math.max(0, gg.vine / 2); // every 20 floors: decay line halves outright
       gg.frozenUntil = Math.max(gg.frozenUntil, now + 1600);
       clearTimeout(bannerTimer); bannerTimer = setTimeout(() => showBanner(''), 1900);
       sfxChime();
+    } else if (freeze) {
+      gg.vine += 0.7; // streak of 3+ correct: small relief — gap grows by 0.3 instead of staying flat
+    } else {
+      gg.vine += 1; // ordinary climb: gap stays exactly the same
     }
     const newLevel = levelIndexFor(fl) + 1;
     const levelUp = newLevel !== level;
@@ -609,12 +623,13 @@ function tick() {
   if (dt > 200) dt = 200;
   const fl = climber.floor;
   const isFrozen = t < gg.frozenUntil;
+  // The decay line's own continuous creep — the background pressure that
+  // keeps rising the whole time a player is deciding. Climbing itself (in
+  // hop() below) is what keeps the gap to the climber from growing on its
+  // own; there is deliberately no separate "catch-up" pulling the line
+  // toward the climber here, since that fought the streak-of-3/20-floor
+  // reliefs by eroding them back down between hops.
   if (!isFrozen) gg.vine += decaySpeed(fl) * dt / 1000;
-  const trail = fl - TRAIL;
-  if (gg.vine < trail && !isFrozen) {
-    const rate = CATCHUP * (1 + 0.25 * levelIndexFor(fl));
-    gg.vine = Math.min(trail, gg.vine + rate * dt / 1000);
-  }
   if (frozen !== isFrozen) { frozen = isFrozen; renderHUD(); }
   const target = fl * FLOOR_H - ANCHOR;
   gg.cam += (target - gg.cam) * Math.min(1, dt / 140);
@@ -701,8 +716,11 @@ function renderWorld() {
         const btn = document.createElement('button');
         btn.className = 'af-cand';
         btn.textContent = lg.w;
-        btn.style.color = revealed ? 'var(--nb-alert)' : 'var(--nb-ink)';
-        btn.style.border = '2px ' + (revealed ? 'dashed' : 'solid') + ' ' + (revealed ? 'var(--nb-alert)' : 'var(--nb-ink)');
+        // Every upcoming candidate ledge must look identical — no matter
+        // whether this word was previously a wrong guess (misses), marking it
+        // would tip off which platform is correct before the climber hops.
+        btn.style.color = 'var(--nb-ink)';
+        btn.style.border = '2px solid var(--nb-ink)';
         btn.onclick = () => hop(lg, btn);
         ledgeEls[i] = btn;
         row.appendChild(btn);

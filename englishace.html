@@ -29,6 +29,16 @@
 .ea-gate::before { content:''; position:absolute; left:14%; top:-19px; width:52px; height:52px; border-radius:50%; background:inherit; }
 .ea-gate::after { content:''; position:absolute; right:13%; top:-27px; width:64px; height:64px; border-radius:50%; background:inherit; }
 .ea-gate span { position:relative; z-index:1; }
+/* The shorter landscape-mobile field packs its 3 lanes much closer together
+   (laneBand() scales with field height), so the answer clouds must shrink
+   to match or their decorative bumps overlap between lanes. This block must
+   stay AFTER the base .ea-gate rules above — same specificity, so source
+   order decides, and it needs to win when both apply. */
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse) {
+  .ea-gate { min-height:34px; padding:0 14px; font-size:clamp(10px,1.6vw,13px); box-shadow:0 6px 14px rgba(11,45,77,.22); }
+  .ea-gate::before { left:14%; top:-8px; width:22px; height:22px; }
+  .ea-gate::after { right:13%; top:-11px; width:26px; height:26px; }
+}
 .ea-can { position:absolute; left:0; top:0; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px; background:var(--eg-gold-light); color:var(--eg-ink-on-light); font-size:15px; font-weight:900; letter-spacing:.08em; white-space:nowrap; box-shadow:0 12px 26px rgba(11,45,77,.28); opacity:0; pointer-events:none; }
 .ea-pop { position:absolute; left:150px; top:0; font-size:20px; font-weight:900; font-stretch:110%; white-space:nowrap; opacity:0; pointer-events:none; text-shadow:0 2px 6px rgba(11,45,77,.35); }
 .ea-plane { position:absolute; left:58px; top:0; width:96px; height:64px; margin-top:-32px; will-change:transform; z-index:2; }
@@ -306,7 +316,8 @@ function startGame() {
   document.getElementById('phase-game').style.display = 'block';
   renderHUD(); renderNote(); renderGates();
   sinceCan = 0; canAt = canEvery();
-  launch(true);
+  launch(true, false); // prime state & draw the first frame; hold off on motion
+  armReadyGate(field, () => run());
 }
 function goToIntro() {
   stopClocks(); clearTimeout(nextTimer);
@@ -316,7 +327,7 @@ function goToIntro() {
   document.getElementById('phase-intro').style.display = 'block';
 }
 
-function launch(fresh) {
+function launch(fresh, motion) {
   const w = field.clientWidth || 640;
   const prev = g;
   g = {
@@ -329,7 +340,9 @@ function launch(fresh) {
   };
   if (!g.can && (sinceCan || 0) >= (canAt || 4)) spawnCan();
   paint();
-  run();
+  // motion defaults to true — startGame() passes false to prime state and
+  // draw the first frame while the ready gate holds off actual movement.
+  if (motion !== false) run();
 }
 function spawnCan() {
   if (!g) return;

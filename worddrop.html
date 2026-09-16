@@ -330,7 +330,7 @@ function startGame() {
   const active = nextWord();
   g = { active };
   renderSentence();
-  queueLaunch();
+  armReadyGate(field, () => queueLaunch());
 }
 function goToIntro() {
   stopClocks(); clearTimeout(launchTimer);

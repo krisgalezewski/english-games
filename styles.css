@@ -542,17 +542,65 @@ a:hover { color: #FFFFFF; }
 /* --- Rotate-to-landscape hint (mobile only) ------------------------------- */
 /* A dismissible, non-blocking suggestion — never a hard gate — shown by
    initRotateHint() (shared.js) on portrait touch devices for the games that
-   most benefit from the extra width (WordSnake, English Ace). */
+   most benefit from the extra width (WordSnake, English Ace). Made loud on
+   purpose (gold, bold, animated icon) since a quiet version got missed. */
 .eg-rotate-hint {
-  display:flex; align-items:center; gap:10px;
-  background: var(--eg-card); border:1px solid var(--eg-border-strong);
-  border-radius: var(--eg-r-pill); padding:10px 16px; margin:0 0 14px;
-  font-size:13px; font-weight:700; color: var(--eg-ink-muted);
+  display:flex; align-items:center; gap:12px;
+  background: var(--eg-gold-light); border:2px solid var(--eg-gold);
+  border-radius: var(--eg-r-card); padding:14px 18px; margin:0 0 14px;
+  font-size:15px; font-weight:800; color: var(--eg-ink-on-light);
+  box-shadow: 0 4px 18px rgba(217,165,32,.35);
+  animation: eg-rotate-hint-pop 420ms ease;
 }
-.eg-rotate-hint__icon { font-size:16px; line-height:1; flex:0 0 auto; }
-.eg-rotate-hint__text { flex:1 1 auto; }
-.eg-rotate-hint__close { flex:0 0 auto; background:transparent; border:0; color: var(--eg-ink-faint); font-size:16px; line-height:1; cursor:pointer; padding:4px; }
+.eg-rotate-hint__icon { font-size:26px; line-height:1; flex:0 0 auto; animation: eg-rotate-hint-spin 1.6s ease-in-out infinite; }
+.eg-rotate-hint__text { flex:1 1 auto; line-height:1.25; }
+.eg-rotate-hint__close { flex:0 0 auto; background:transparent; border:0; color: var(--eg-ink-on-light); opacity:.65; font-size:20px; line-height:1; cursor:pointer; padding:4px; }
+.eg-rotate-hint__close:hover { opacity:1; }
 @media (hover:hover) and (pointer:fine) { .eg-rotate-hint { display:none !important; } }
+@keyframes eg-rotate-hint-pop {
+  0% { transform:scale(.92); opacity:0; }
+  100% { transform:scale(1); opacity:1; }
+}
+@keyframes eg-rotate-hint-spin {
+  0%, 100% { transform:rotate(0deg); }
+  20% { transform:rotate(-100deg); }
+  40% { transform:rotate(0deg); }
+  60% { transform:rotate(-100deg); }
+  80% { transform:rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eg-rotate-hint { animation:none; }
+  .eg-rotate-hint__icon { animation:none; }
+}
+
+/* --- Ready gate: "tap / press any key to start" -------------------------- */
+/* Overlaid by armReadyGate() (shared.js) on the board/field right after the
+   game phase becomes visible, before any motion starts. The host element it
+   is appended to must already be position:relative/absolute. */
+.eg-ready-gate {
+  position:absolute; inset:0; z-index:60;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(6,6,6,.6); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  cursor:pointer;
+}
+.eg-ready-gate__card {
+  background: var(--eg-gold-light); color: var(--eg-ink-on-light);
+  border-radius: var(--eg-r-pill); padding:16px 30px;
+  font-size:17px; font-weight:800; text-align:center; white-space:nowrap;
+  box-shadow:0 12px 30px rgba(0,0,0,.5);
+  animation: eg-ready-gate-pulse 1.5s ease-in-out infinite;
+}
+.eg-ready-gate__tap { display:none; }
+.eg-ready-gate__key { display:inline; }
+@media (pointer:coarse) {
+  .eg-ready-gate__tap { display:inline; }
+  .eg-ready-gate__key { display:none; }
+}
+@keyframes eg-ready-gate-pulse {
+  0%, 100% { transform:scale(1); }
+  50% { transform:scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) { .eg-ready-gate__card { animation:none; } }
 
 /* --- Motion -------------------------------------------------------------- */
 

@@ -441,7 +441,7 @@ function initRotateHint(container) {
   let dismissed = false;
   const el = document.createElement('div');
   el.className = 'eg-rotate-hint';
-  el.innerHTML = `<span class="eg-rotate-hint__icon" aria-hidden="true">⟳</span><span class="eg-rotate-hint__text">Turn your phone sideways for more room to play.</span><button type="button" class="eg-rotate-hint__close" aria-label="Dismiss">✕</button>`;
+  el.innerHTML = `<span class="eg-rotate-hint__icon" aria-hidden="true">🔄</span><span class="eg-rotate-hint__text">Turn your phone sideways — the full board needs the extra width!</span><button type="button" class="eg-rotate-hint__close" aria-label="Dismiss">✕</button>`;
   el.querySelector('.eg-rotate-hint__close').onclick = () => { dismissed = true; sync(); };
   container.prepend(el);
   function sync() { el.style.display = (!dismissed && portrait.matches) ? 'flex' : 'none'; }
@@ -485,6 +485,69 @@ function bindAutoLandscapeFullscreen(isActive) {
     if (coarse.matches && landscape.matches && (!isActive || isActive())) tryEnterLandscapeFullscreen();
   };
   landscape.addEventListener ? landscape.addEventListener('change', attempt) : landscape.addListener(attempt);
+}
+
+// ── Ready gate: "tap / press any key to start" ─────────────────────
+// Games used to start moving the instant the player left the intro screen,
+// which meant they had to rotate/scroll/settle the viewport *while* the
+// snake was already crawling or the plane already flying. This gates the
+// actual start of motion behind one more beat: it drops a dismiss-by-any-
+// input overlay onto `hostEl` (which must already be position:relative or
+// position:absolute so the overlay can cover it), scrolls `hostEl` to the
+// center of the viewport so the whole board/field is on screen without the
+// player having to scroll, and calls `onReady()` exactly once — on tap/
+// click of the overlay (mobile) or the first keydown anywhere (desktop).
+// Call this AFTER all one-time per-run setup (state reset, first draw) but
+// BEFORE anything that starts a timer/rAF loop/spawn cadence — `onReady`
+// is where that motion-starting code belongs.
+//
+// If a player backs out to the intro screen (or otherwise starts a new run)
+// without ever dismissing a previous gate, that old overlay/listener would
+// otherwise be orphaned — still in the DOM, still listening — and a second
+// call would stack a duplicate on top of it. A single module-level handle
+// tracks the one outstanding gate so a new call always tears down any
+// undismissed previous one first.
+let __readyGateActive = null;
+function armReadyGate(hostEl, onReady) {
+  if (__readyGateActive) {
+    try { __readyGateActive.overlay.remove(); } catch(e) {}
+    document.removeEventListener('keydown', __readyGateActive.onKey, true);
+    __readyGateActive = null;
+  }
+  if (!hostEl || !onReady) { onReady && onReady(); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'eg-ready-gate';
+  overlay.innerHTML =
+    '<div class="eg-ready-gate__card">' +
+      '<span class="eg-ready-gate__tap">Tap to start</span>' +
+      '<span class="eg-ready-gate__key">Press any key to start</span>' +
+    '</div>';
+  hostEl.appendChild(overlay);
+
+  // Let the now-visible game phase lay out for a frame first — scrolling
+  // while it (or an ancestor) is still display:none/mid-transition no-ops.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      try { hostEl.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch(e) {}
+    });
+  });
+
+  function fire() {
+    if (__readyGateActive !== state) return; // already torn down/superseded
+    __readyGateActive = null;
+    overlay.remove();
+    document.removeEventListener('keydown', onKey, true);
+    onReady();
+  }
+  function onKey(e) {
+    // Ignore bare modifier presses so e.g. a stray Shift doesn't start it.
+    if (['Shift','Control','Alt','Meta','CapsLock','Tab'].indexOf(e.key) !== -1) return;
+    fire();
+  }
+  overlay.addEventListener('click', fire);
+  document.addEventListener('keydown', onKey, true);
+  const state = { overlay, onKey };
+  __readyGateActive = state;
 }
 
 // ── Compact end-card pattern (non-blocking, like CollocationCrash/WordChain) ──
