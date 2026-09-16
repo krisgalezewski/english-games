@@ -495,6 +495,10 @@ a:hover { color: #FFFFFF; }
 .eg-arcade-pause-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(11,45,77,.92); z-index:3; text-align:center; }
 .eg-arcade-pause-overlay .lbl { font-size:11.5px; font-weight:800; letter-spacing:.24em; color: var(--eg-gold-light); }
 .eg-arcade-pause-overlay .hint { font-size:11px; font-weight:700; letter-spacing:.18em; color: var(--eg-ink-faint); }
+/* .eg-btn defaults to align-self:flex-start (for horizontal button rows);
+   inside this centered column layout that pins Resume to the left edge, so
+   re-center it explicitly. */
+.eg-arcade-pause-overlay .eg-btn { align-self:center; }
 
 .eg-arcade-banner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .eg-arcade-banner span { background: var(--eg-ink); color: var(--eg-ink-on-light); border-radius: var(--eg-r-pill); padding:14px 26px; font-size:15px; font-weight:900; letter-spacing:.1em; text-align:center; }
@@ -510,10 +514,45 @@ a:hover { color: #FFFFFF; }
 .eg-arcade-review-chip { background:rgba(10,10,10,.28); border:1px solid rgba(244,239,230,.3); border-radius: var(--eg-r-pill); padding:6px 14px; font-size:13px; font-weight:700; color: var(--eg-ink); }
 .eg-arcade-review-chip--miss { background:rgba(207,79,102,.14); border-color:rgba(207,79,102,.35); color: var(--eg-rose); }
 
-.eg-arcade-dpad { display:grid; grid-template-columns:repeat(3,48px); grid-template-rows:repeat(2,48px); gap:6px; }
+/* Hidden by default — keyboard/mouse players steer with arrows/WASD or a
+   swipe, so the on-screen D-pad is only useful on a touch device with no
+   hover capability. Shown back via the (hover:none),(pointer:coarse) query
+   below. */
+.eg-arcade-dpad { display:none; grid-template-columns:repeat(3,48px); grid-template-rows:repeat(2,48px); gap:6px; }
 .eg-arcade-dpad button { background: var(--eg-card); border:1px solid var(--eg-border-strong); border-radius:12px; color: var(--eg-ink-muted); font:inherit; font-size:18px; font-weight:900; cursor:pointer; transition: color var(--eg-transition), border-color var(--eg-transition); }
 .eg-arcade-dpad button:hover { color: var(--eg-ink); border-color:#3A3A3A; }
 .eg-arcade-dpad span.spacer { visibility:hidden; }
+@media (hover:none), (pointer:coarse) {
+  .eg-arcade-dpad { display:grid; }
+}
+
+/* Short-height landscape phones (rotated to play WordSnake/English Ace) —
+   trims the site header and arcade HUD so the play area fits without
+   scrolling even outside of fullscreen. Gated on pointer:coarse so it never
+   fires for a landscape desktop/tablet window. */
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse) {
+  .eg-header { padding:8px 6px; gap:8px 16px; }
+  .eg-arcade-hud { padding:6px 10px; gap:6px; }
+  .eg-arcade-cat { padding:5px 10px; font-size:9.5px; }
+  .eg-arcade-chip { padding:5px 10px; }
+  .eg-arcade-pause { padding:5px 12px; min-height:28px; }
+  .eg-arcade-speedpips { padding:4px 10px; }
+}
+
+/* --- Rotate-to-landscape hint (mobile only) ------------------------------- */
+/* A dismissible, non-blocking suggestion — never a hard gate — shown by
+   initRotateHint() (shared.js) on portrait touch devices for the games that
+   most benefit from the extra width (WordSnake, English Ace). */
+.eg-rotate-hint {
+  display:flex; align-items:center; gap:10px;
+  background: var(--eg-card); border:1px solid var(--eg-border-strong);
+  border-radius: var(--eg-r-pill); padding:10px 16px; margin:0 0 14px;
+  font-size:13px; font-weight:700; color: var(--eg-ink-muted);
+}
+.eg-rotate-hint__icon { font-size:16px; line-height:1; flex:0 0 auto; }
+.eg-rotate-hint__text { flex:1 1 auto; }
+.eg-rotate-hint__close { flex:0 0 auto; background:transparent; border:0; color: var(--eg-ink-faint); font-size:16px; line-height:1; cursor:pointer; padding:4px; }
+@media (hover:hover) and (pointer:fine) { .eg-rotate-hint { display:none !important; } }
 
 /* --- Motion -------------------------------------------------------------- */
 

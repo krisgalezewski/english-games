@@ -26,7 +26,7 @@
 .wd-pill { display:inline-flex; align-items:center; background:var(--eg-red); color:var(--eg-ink); border-radius:12px; padding:2px 14px; font-weight:900; font-stretch:110%; }
 .wd-gap { display:inline-block; height:1.05em; border-bottom:5px solid rgba(150,22,47,.45); border-radius:3px; vertical-align:baseline; }
 
-.wd-field { position:relative; height:420px; background:var(--eg-red); }
+.wd-field { position:relative; height:420px; background:var(--eg-red); touch-action:none; }
 .wd-lanes { position:absolute; inset:0; display:grid; pointer-events:none; }
 .wd-lanes span { border-right:1px solid rgba(244,239,230,.14); }
 .wd-lanes span:last-child { border-right:0; }
@@ -85,7 +85,7 @@
         <p class="eg-body">A sentence appears with one word lifted out and pinned in place. After a beat it drops down the middle of the field below.</p>
         <p class="eg-body">Steer it into the lane for its part of speech before it lands — the lanes are labelled along the bottom and shuffle every level. Catch it right and it clears; miss and it stacks up in that lane. Eight tiles stacked in one lane and the run is over.</p>
         <p class="eg-body">A streak of correct catches builds your multiplier and, every few in a row, lifts a tile off whichever lane is tallest. Prepositions join the lanes at level 6, pronouns at level 11.</p>
-        <p class="eg-body"><strong>Desktop:</strong> ← → or A/D to move, ↓ or S to hard-drop, 1–6 to jump straight to a lane, space to pause. <strong>Mobile:</strong> tap a lane button along the bottom.</p>
+        <p class="eg-body"><strong>Desktop:</strong> ← → or A/D to move, ↓ or S to hard-drop, 1–6 to jump straight to a lane, space to pause. <strong>Mobile:</strong> tap a lane button along the bottom, or swipe left/right to move and swipe down to hard-drop.</p>
       </div>
     </div>
   </section>
@@ -431,6 +431,15 @@ function pick(c) {
   col = c; renderHUD();
 }
 function drop() { if (g) g.dropping = true; }
+
+// Mobile: swipe left/right to change lanes, swipe down to hard-drop —
+// in addition to the always-visible lane buttons along the bottom. Lanes
+// are much wider than WordSnake's grid cells, so a bigger per-step
+// threshold keeps an ordinary short swipe to one lane at a time.
+bindArcadeTouch(field, {
+  onDirection: (dx, dy) => { if (dx) move(dx); else if (dy > 0) drop(); },
+  threshold: 48
+});
 
 function restY(c) { return fieldTop + FH - stacks[c].length * RH - TH; }
 

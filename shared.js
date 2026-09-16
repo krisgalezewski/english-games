@@ -349,6 +349,144 @@ function freshRandomIndex(game, max) {
   return all[0]; // everything seen recently — just pick any
 }
 
+// ── Arcade touch gestures ──────────────────────────────────────────
+// Shared swipe/tap handler for the motion games (WordSnake, WordDrop,
+// English Ace). Two things it does that a naive touchstart/touchend swipe
+// doesn't:
+//  1. Direction is evaluated continuously as the finger moves, not just once
+//     on release, so a single unbroken drag that changes direction (e.g. up
+//     then right) fires onDirection more than once — no need to lift and
+//     re-swipe — and each segment reports the moment it crosses the
+//     threshold, which is what makes steering feel immediate.
+//  2. Tap vs double-tap is disambiguated with a short timer, the same way a
+//     browser tells a click from a dblclick: a lone tap fires onTap after
+//     `doubleTapMs` (only if onDoubleTap is registered — otherwise it fires
+//     immediately, since there's nothing to disambiguate against), while a
+//     second tap inside that window near the first fires onDoubleTap and
+//     cancels the pending onTap.
+// Pointer Events cover mouse, touch and pen in one listener; onDirection is
+// harmless to also receive from a mouse drag, and games that only want
+// touch behaviour can ignore the callback when e.pointerType === 'mouse'.
+function bindArcadeTouch(el, opts) {
+  if (!el) return;
+  const {
+    onDirection,       // (dx, dy) — one of dx/dy is 0, the other is -1 or 1
+    onTap,              // () => void
+    onDoubleTap,        // () => void
+    threshold = 24,     // px of drag per direction segment (small = snappier)
+    tapSlop = 14,        // px — total movement still small enough to count as a tap
+    doubleTapMs = 320,
+  } = opts || {};
+
+  let active = false, moved = false;
+  let startX = 0, startY = 0, lastX = 0, lastY = 0;
+  let lastTapTime = 0, lastTapX = 0, lastTapY = 0, tapTimer = null;
+
+  el.addEventListener('pointerdown', e => {
+    active = true; moved = false;
+    startX = lastX = e.clientX; startY = lastY = e.clientY;
+  });
+
+  el.addEventListener('pointermove', e => {
+    if (!active || !onDirection) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+    moved = true;
+    if (Math.abs(dx) > Math.abs(dy)) onDirection(dx > 0 ? 1 : -1, 0);
+    else onDirection(0, dy > 0 ? 1 : -1);
+    // Reset the baseline to the current point (not the gesture start) so a
+    // long continuous drag keeps firing one direction call per threshold
+    // crossed, in whichever direction the finger is currently moving.
+    lastX = e.clientX; lastY = e.clientY;
+  });
+
+  const end = e => {
+    if (!active) return;
+    active = false;
+    const totalDx = e.clientX - startX, totalDy = e.clientY - startY;
+    if (moved || Math.abs(totalDx) > tapSlop || Math.abs(totalDy) > tapSlop) return;
+    if (!onTap && !onDoubleTap) return;
+    const now = performance.now();
+    if (onDoubleTap && now - lastTapTime < doubleTapMs &&
+        Math.abs(e.clientX - lastTapX) < 40 && Math.abs(e.clientY - lastTapY) < 40) {
+      clearTimeout(tapTimer); tapTimer = null;
+      lastTapTime = 0;
+      onDoubleTap();
+      return;
+    }
+    lastTapTime = now; lastTapX = e.clientX; lastTapY = e.clientY;
+    if (onDoubleTap) {
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { tapTimer = null; onTap && onTap(); }, doubleTapMs);
+    } else {
+      onTap();
+    }
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', () => { active = false; });
+}
+
+// ── Rotate-to-landscape hint ───────────────────────────────────────
+// Non-blocking suggestion (never a hard gate) for the two motion games that
+// most benefit from landscape width on a phone (WordSnake, English Ace).
+// Inserts a dismissible .eg-rotate-hint strip into `container` while the
+// device is a portrait touch screen, and hides it automatically once the
+// player rotates (CSS also hides it outright on hover-capable/fine-pointer
+// devices, i.e. desktop, so this only ever shows on a phone/tablet).
+function initRotateHint(container) {
+  if (!container || !window.matchMedia) return;
+  const coarse = window.matchMedia('(pointer:coarse)');
+  const portrait = window.matchMedia('(orientation:portrait)');
+  if (!coarse.matches) return;
+  let dismissed = false;
+  const el = document.createElement('div');
+  el.className = 'eg-rotate-hint';
+  el.innerHTML = `<span class="eg-rotate-hint__icon" aria-hidden="true">⟳</span><span class="eg-rotate-hint__text">Turn your phone sideways for more room to play.</span><button type="button" class="eg-rotate-hint__close" aria-label="Dismiss">✕</button>`;
+  el.querySelector('.eg-rotate-hint__close').onclick = () => { dismissed = true; sync(); };
+  container.prepend(el);
+  function sync() { el.style.display = (!dismissed && portrait.matches) ? 'flex' : 'none'; }
+  portrait.addEventListener ? portrait.addEventListener('change', sync) : portrait.addListener(sync);
+  sync();
+}
+
+// ── Best-effort fullscreen + landscape lock ────────────────────────
+// Tries to take the game fullscreen and lock the screen to landscape when
+// the player rotates their phone. Many mobile browsers refuse this outside
+// a direct user-gesture handler (orientationchange doesn't always count),
+// so every step is wrapped so a refusal is silent — the game must stay
+// fully playable in landscape even when fullscreen/lock never happens.
+function tryEnterLandscapeFullscreen(el) {
+  el = el || document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  const already = document.fullscreenElement || document.webkitFullscreenElement;
+  const lockLandscape = () => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch(e) {}
+  };
+  if (already) { lockLandscape(); return; }
+  if (!req) return;
+  try {
+    const p = req.call(el);
+    if (p && p.then) p.then(lockLandscape).catch(() => {});
+    else lockLandscape();
+  } catch(e) {}
+}
+
+// Wires the above to fire once, best-effort, whenever this phone is rotated
+// into landscape while `isActive()` says the game is actually in play.
+function bindAutoLandscapeFullscreen(isActive) {
+  if (!window.matchMedia) return;
+  const landscape = window.matchMedia('(orientation:landscape)');
+  const coarse = window.matchMedia('(pointer:coarse)');
+  const attempt = () => {
+    if (coarse.matches && landscape.matches && (!isActive || isActive())) tryEnterLandscapeFullscreen();
+  };
+  landscape.addEventListener ? landscape.addEventListener('change', attempt) : landscape.addListener(attempt);
+}
+
 // ── Compact end-card pattern (non-blocking, like CollocationCrash/WordChain) ──
 // Renders an inline summary card that does NOT cover the nav bar.
 // Call this instead of building a full-screen overlay end card.

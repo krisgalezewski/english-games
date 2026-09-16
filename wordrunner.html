@@ -15,14 +15,17 @@
    engineer's-notebook aesthetic on cream paper. This is intentional (see
    the design hand-off README), not an oversight. */
 :root {
-  --nb-paper:#E4DFD3; --nb-panel:#F1EDE4; --nb-ink:#16324F; --nb-muted:#6B6558; --nb-alert:#C2452D;
+  --nb-panel:#F1EDE4; --nb-ink:#16324F; --nb-muted:#6B6558; --nb-alert:#C2452D;
 }
-html, body { background:var(--nb-paper); }
+html, body { background: var(--eg-green, #12632F); }
 body { font-family:'IBM Plex Sans',system-ui,sans-serif; color:var(--nb-ink); padding:0; }
 a.nb-back { color:var(--nb-muted); }
 a.nb-back:hover { color:var(--nb-alert); }
 .nb-mono { font-family:'IBM Plex Mono',monospace; }
 .nb-wrap { max-width:660px; margin:0 auto; padding:clamp(14px,2vw,26px); display:flex; flex-direction:column; gap:12px; box-sizing:border-box; }
+@media (min-width:860px) {
+  .nb-wrap { max-width:960px; }
+}
 .nb-header { display:flex; align-items:center; justify-content:space-between; gap:12px; font-family:'IBM Plex Mono',monospace; }
 .nb-header a { font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
 .nb-header .title { font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
@@ -48,6 +51,9 @@ a.nb-back:hover { color:var(--nb-alert); }
 .nb-clear-pill { color:var(--nb-panel); border-radius:2px; padding:4px 9px; letter-spacing:.08em; }
 
 .nb-climb-viewport { position:relative; height:clamp(360px,54vh,460px); overflow:hidden; background:var(--nb-panel); }
+@media (min-width:860px) {
+  .nb-climb-viewport { height:clamp(460px,62vh,660px); }
+}
 .nb-graph-bg { position:absolute; inset:0; background-image:linear-gradient(rgba(22,50,79,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(22,50,79,.11) 1px,transparent 1px); background-size:22px 22px; }
 .nb-world { position:absolute; left:0; right:0; bottom:0; height:4000px; will-change:transform; }
 .nb-world-lines { position:absolute; inset:0; background-image:linear-gradient(rgba(22,50,79,.16) 1.5px,transparent 1.5px); background-size:100% 92px; }
@@ -473,12 +479,16 @@ function hop(lg, el) {
     streak += 1;
     mult = Math.min(4, 1 + 0.25 * streak);
     const now = performance.now();
+    // A wrong pick (below) always pushes the decay line up. An ordinary
+    // correct pick deliberately does NOT push it back down — climbing to a
+    // new floor changes the *gap* (floor − vine) simply because the floor
+    // number went up, but the vine's own value only ever eases back via the
+    // two bonuses below, so a mistake's cost genuinely sticks.
     const freeze = streak >= 3 && streak % 3 === 0;
-    if (freeze) gg.vine = Math.max(gg.vine - 0.3, fl - 3);
+    if (freeze) gg.vine = Math.max(gg.vine - 0.3, fl - 3); // streak of 3+ correct: small relief
     const milestone = fl > 0 && fl % 20 === 0;
     if (milestone) {
-      const gapNow = Math.max(0.4, fl - gg.vine);
-      gg.vine = fl - Math.min(5, gapNow * 2);
+      gg.vine = Math.max(0, gg.vine / 2); // every 20 floors: decay line halves outright
       gg.frozenUntil = Math.max(gg.frozenUntil, now + 1600);
       clearTimeout(bannerTimer); bannerTimer = setTimeout(() => showBanner(''), 1900);
       sfxChime();

@@ -15,7 +15,13 @@
 .ea-play { border-radius:var(--eg-r-tile); background:#080B0D; border:1px solid var(--eg-border); overflow:hidden; position:relative; }
 .ea-fuelbar { height:6px; background:var(--eg-card); overflow:hidden; }
 .ea-fuelbar span { display:block; height:100%; width:100%; background:var(--eg-gold-light); }
-.ea-field { position:relative; height:470px; background:linear-gradient(#2E6FA8,#7FB6E0 68%,#B7D7EE); overflow:hidden; cursor:pointer; }
+.ea-field { position:relative; height:470px; background:linear-gradient(#2E6FA8,#7FB6E0 68%,#B7D7EE); overflow:hidden; cursor:pointer; touch-action:none; }
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse) {
+  .ea-field { height:min(280px,58vh); }
+  .ea-grass { height:34px; }
+  .ea-banner { padding:8px 22px; font-size:clamp(13px,2vw,18px); }
+  .ea-blank { width:44px; height:26px; font-size:15px; }
+}
 .ea-clouds { position:absolute; inset:0; pointer-events:none; opacity:.45; }
 .ea-clouds span { position:absolute; border-radius:999px; background:rgba(255,255,255,.5); }
 .ea-wall { position:absolute; left:0; top:0; bottom:0; width:0; will-change:transform; }
@@ -42,6 +48,9 @@
     <span style="font-size:19px;font-weight:900;font-stretch:110%;color:var(--eg-gold-light);" id="bestVal">0</span>
   </div>
 </header>
+
+
+<div id="rotateHintHost" style="max-width:1040px;margin:0 auto;"></div>
 
 <div id="phase-intro" style="max-width:1040px;margin:0 auto;">
   <section class="eg-tile eg-tile--dark">
@@ -71,7 +80,7 @@
     </div>
     <div class="hero-play-row">
       <button class="eg-btn eg-btn--primary" onclick="startGame()">Take off</button>
-      <span class="eg-body--sm" style="color:var(--eg-ink-faint);">↑ ↓ or 1–3 to change altitude · space to pause</span>
+      <span class="eg-body--sm" style="color:var(--eg-ink-faint);">↑ ↓ or 1–3 to change altitude · space/double-tap to pause</span>
     </div>
     <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
       <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
@@ -81,7 +90,7 @@
         <p class="eg-body">A question banner sits above the runway; three cloud-shaped answers ride toward you in three lanes. Fly into the lane with the correct answer before it reaches your plane.</p>
         <p class="eg-body">A correct answer clears in green and refuels you 15%; a wrong one flashes red and costs you 14% fuel — take three hits and you're shot down. Fuel also burns steadily the whole time, so watch the bar under the HUD and grab the gold "+25% FUEL" drop when one drifts by.</p>
         <p class="eg-body">A streak of correct answers builds your score multiplier, and every 5 correct answers speeds the gates up a notch.</p>
-        <p class="eg-body"><strong>Desktop:</strong> ↑/↓ or W/S to change altitude, 1–3 to jump to a lane, space to pause. <strong>Mobile:</strong> tap the field at the height you want to fly.</p>
+        <p class="eg-body"><strong>Desktop:</strong> ↑/↓ or W/S to change altitude, 1–3 to jump to a lane, space to pause. <strong>Mobile:</strong> swipe up or down to change lanes, double-tap to pause. Playing in landscape gives you more room to see the gates coming.</p>
       </div>
     </div>
   </section>
@@ -228,11 +237,25 @@ function gateSpeed() { return 150 * (1 + 0.14 * (level - 1)); }
 function burnRate() { return BURN; }
 function canEvery() { return 3 + Math.floor(Math.random() * 4); }
 
+// Mouse: click the field at the height you want to fly (absolute position).
+// Touch has its own relative gesture below (swipe up/down, double-tap to
+// pause), so a touch-originated click is ignored here to avoid double
+// handling — lastPointerType is set by the pointerdown listener attached in
+// bindArcadeTouch's sibling call further down.
+let lastPointerType = 'mouse';
+field.addEventListener('pointerdown', e => { lastPointerType = e.pointerType; }, { capture: true });
 field.addEventListener('click', e => {
+  if (lastPointerType !== 'mouse') return;
   if (paused || document.getElementById('phase-game').style.display === 'none') return;
   const y = e.clientY - field.getBoundingClientRect().top;
-  const band = 330 / LANES;
+  const band = laneBand() / LANES;
   setLane(Math.max(0, Math.min(LANES - 1, Math.floor(y / band))));
+});
+bindArcadeTouch(field, {
+  onDirection: (dx, dy) => { if (dy) climb(dy); },
+  onDoubleTap: () => togglePause(),
+  threshold: 20,
+  tapSlop: 12
 });
 
 function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -246,7 +269,16 @@ function nextQuestion() {
   lastQ = v.q;
   return v;
 }
-function laneY(i) { const lh = 330 / LANES; return lh * i + lh / 2; }
+// The lane band is kept shorter than the field's full height, leaving room
+// at the bottom for the grass/banner and at the top for the gate curve —
+// computed from the field's live height (not a fixed 330px) so this still
+// works when the field is shrunk for a landscape-mobile screen.
+function laneBand() {
+  const h = field.clientHeight || 470;
+  const margin = Math.max(70, Math.min(140, h * 0.3));
+  return Math.max(120, h - margin);
+}
+function laneY(i) { const lh = laneBand() / LANES; return lh * i + lh / 2; }
 
 function pop(text, color) {
   if (!g) return;
@@ -333,6 +365,12 @@ function togglePause() {
   document.getElementById('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
 }
 document.addEventListener('visibilitychange', () => { if (g) g.last = performance.now(); });
+
+// Re-derive lane positions if the field's own size changes mid-flight —
+// most notably a phone rotating between portrait and landscape, which the
+// CSS media query above responds to with a different field height.
+window.addEventListener('resize', () => { if (g) { g.ty = laneY(lane); renderGates(); } });
+window.addEventListener('orientationchange', () => { if (g) { g.ty = laneY(lane); renderGates(); } });
 
 document.addEventListener('keydown', e => {
   if (document.getElementById('phase-game').style.display === 'none') return;
@@ -535,6 +573,8 @@ async function doSubmit() {
 }
 
 renderLeaderboard(GAME_KEY, 'lbBodyIntro');
+initRotateHint(document.getElementById('rotateHintHost'));
+bindAutoLandscapeFullscreen(() => !!g);
 </script>
 </body>
 </html>

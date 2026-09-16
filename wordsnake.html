@@ -17,7 +17,7 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
 @keyframes wstray { 0%,100% { opacity:1 } 50% { opacity:.55 } }
 
 .ws-canvas-wrap { position:relative; }
-.ws-tray-row { background:#101010; border-top:1px solid var(--eg-border); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.ws-tray-row { background:#101010; border-top:1px solid var(--eg-border); padding:14px 20px 8px; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
 .ws-tray { display:flex; gap:6px; align-items:center; min-height:38px; }
 .ws-tray .ltr { font-size:30px; font-weight:900; font-stretch:110%; letter-spacing:.02em; color:var(--eg-ink); }
 .ws-tray .ltr.ready { color:var(--eg-gold-light); animation:wstray 1.1s ease-in-out infinite; }
@@ -27,7 +27,10 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
 #bankBtn.ready { background:var(--eg-ink); color:var(--eg-ink-on-light); border-color:var(--eg-ink); animation:wsready 1.1s ease-in-out infinite; }
 #bankBtn:disabled { cursor:default; }
 
-.ws-note-row { padding:13px 20px 18px; background:#101010; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.ws-note-row { padding:10px 20px; background:#101010; display:flex; align-items:center; justify-content:center; text-align:center; }
+.ws-submit-row { padding:10px 20px 18px; background:#101010; display:flex; align-items:center; justify-content:center; }
+.ws-dpad-row { padding:0 20px 18px; background:#101010; display:none; justify-content:center; }
+@media (hover:none), (pointer:coarse) { .ws-dpad-row { display:flex; } }
 
 .welcome-svg-well svg { width:100%; height:auto; display:block; }
 </style>
@@ -40,6 +43,9 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
     <span style="font-size:19px;font-weight:900;font-stretch:110%;color:var(--eg-gold-light);" id="bestVal">0</span>
   </div>
 </header>
+
+
+<div id="rotateHintHost" style="max-width:1040px;margin:0 auto;"></div>
 
 <div id="phase-intro" style="max-width:1040px;margin:0 auto;">
   <section class="eg-tile eg-tile--dark">
@@ -58,7 +64,7 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
     </div>
     <div class="hero-play-row">
       <button class="eg-btn eg-btn--primary" onclick="startGame()">Start run</button>
-      <span class="eg-body--sm" style="color:var(--eg-ink-faint);">Arrows, WASD or swipe · Enter to submit · space to pause · a ⌫ tile undoes a letter</span>
+      <span class="eg-body--sm" style="color:var(--eg-ink-faint);">Arrows, WASD or swipe · Enter/tap to submit · space/double-tap to pause · a ⌫ tile undoes a letter</span>
     </div>
     <button type="button" class="instr-toggle" id="instrToggle" onclick="toggleInstructions()" aria-expanded="false" aria-controls="instrDetail">
       <span id="instrToggleLabel">More instructions</span><span class="instr-chevron" aria-hidden="true">▾</span>
@@ -69,7 +75,7 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
         <p class="eg-body">A tile that could still extend your word glows cream and bright; a dim tile leads nowhere useful right now. When your tray spells a real word it turns gold and pulses — submit it to bank the points and reset your tray, or keep pushing for something longer.</p>
         <p class="eg-body">Ran into a dead end? Look for the red <strong>⌫</strong> tile — eating it removes the last letter from your tray so you can try a different branch.</p>
         <p class="eg-body">The board wraps at every edge — fly off one side and you reappear on the other. Only crossing your own body ends the run. Every 5 words you bank, the snake speeds up one notch.</p>
-        <p class="eg-body"><strong>Desktop:</strong> arrow keys or WASD to steer, Enter to submit a ready word, Space to pause. <strong>Mobile:</strong> swipe to steer, tap Submit, or use the on-screen D-pad.</p>
+        <p class="eg-body"><strong>Desktop:</strong> arrow keys or WASD to steer, Enter to submit a ready word, Space to pause. <strong>Mobile:</strong> swipe to steer (you can change direction mid-swipe without lifting your finger), tap once to submit a ready word, double-tap to pause, or use the on-screen D-pad.</p>
       </div>
     </div>
   </section>
@@ -110,10 +116,14 @@ canvas { touch-action:none; display:block; width:100%; background:var(--eg-teal)
 
     <div class="ws-tray-row">
       <div class="ws-tray" id="wordLetters"><span class="slot"></span></div>
-      <button id="bankBtn" onclick="bankWord()" disabled>Submit</button>
     </div>
     <div class="ws-note-row">
       <span class="eg-body--sm" style="color:var(--eg-ink-muted);font-weight:700;" id="noteLine">Collect letters in order</span>
+    </div>
+    <div class="ws-submit-row">
+      <button id="bankBtn" onclick="bankWord()" disabled>Submit</button>
+    </div>
+    <div class="ws-dpad-row">
       <div class="eg-arcade-dpad">
         <span class="spacer"></span><button onclick="steer(0,-1)">↑</button><span class="spacer"></span>
         <button onclick="steer(-1,0)">←</button><button onclick="steer(0,1)">↓</button><button onclick="steer(1,0)">→</button>
@@ -207,25 +217,45 @@ function sUndo() { tone(300, 0, 0.12, 0.05); }
 function sBank() { tone(523.25, 0, 0.16, 0.06); tone(783.99, 0.1, 0.26, 0.055); }
 
 // ── layout ─────────────────────────────────────────────────────────
+// Normally width-driven (canvas fills its container, height follows the
+// COLS:ROWS ratio) — but on a short viewport (a phone in landscape, outside
+// fullscreen) that would make the canvas taller than the screen has room
+// for below the header/tray/note rows, so once we know how much vertical
+// space is actually left, cap by height instead and let width follow.
 function fit() {
-  const w = canvas.clientWidth || 640, dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const h = Math.round(w * ROWS / COLS);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const containerW = canvas.parentElement.clientWidth || canvas.clientWidth || 640;
+  let w = containerW, h = Math.round(w * ROWS / COLS);
+  const wrapEl = document.querySelector('.ws-canvas-wrap');
+  const trayRow = document.querySelector('.ws-tray-row');
+  const noteRow = document.querySelector('.ws-note-row');
+  const submitRow = document.querySelector('.ws-submit-row');
+  const dpadRow = document.querySelector('.ws-dpad-row');
+  if (wrapEl) {
+    const top = wrapEl.getBoundingClientRect().top;
+    const reserved = (trayRow ? trayRow.offsetHeight : 0) + (noteRow ? noteRow.offsetHeight : 0) +
+      (submitRow ? submitRow.offsetHeight : 0) + (dpadRow ? dpadRow.offsetHeight : 0);
+    const availH = window.innerHeight - top - reserved - 10;
+    if (availH > 120 && h > availH) { h = Math.floor(availH); w = Math.round(h * COLS / ROWS); }
+  }
+  canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
   canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
   cell = canvas.width / COLS;
   draw();
 }
 window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', fit);
 
 let touchBound = false;
 function bindTouch() {
   if (touchBound) return; touchBound = true;
-  let sx = 0, sy = 0;
-  canvas.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
-  canvas.addEventListener('pointerup', e => {
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
-    if (Math.abs(dx) > Math.abs(dy)) steer(dx > 0 ? 1 : -1, 0); else steer(0, dy > 0 ? 1 : -1);
+  bindArcadeTouch(canvas, {
+    onDirection: (dx, dy) => steer(dx, dy),
+    onTap: () => bankWord(),
+    onDoubleTap: () => togglePause(),
+    threshold: 22,
+    tapSlop: 12
   });
 }
 
@@ -597,6 +627,8 @@ function draw() {
 }
 
 renderLeaderboard(GAME_KEY, 'lbBodyIntro');
+initRotateHint(document.getElementById('rotateHintHost'));
+bindAutoLandscapeFullscreen(() => !!g);
 </script>
 </body>
 </html>
