@@ -289,17 +289,35 @@ a:hover { color: #FFFFFF; }
 
 /* --- Game HUD ------------------------------------------------------------ */
 
-.eg-hud { display:flex; flex-wrap:wrap; gap: var(--eg-gap-sm); }
+/* No flex-wrap: with wrapping, a row of 3 stat tiles on a narrow phone
+   would fit 2 per row and strand the 3rd alone on its own row, where
+   flex-grow then stretches it to the full container width — a huge,
+   oddly-empty tile that pushes everything below it further down the page.
+   Dividing the row evenly and letting tiles shrink (min-width:0 so the
+   value/label can wrap instead of forcing overflow) keeps every stat row
+   exactly one line tall at any width. */
+.eg-hud { display:flex; gap: var(--eg-gap-sm); }
 .eg-stat {
-  flex: 1 1 120px;
+  flex: 1 1 0;
+  min-width: 0;
   background: var(--eg-card); border:1px solid var(--eg-border);
   border-radius: var(--eg-r-well); padding:16px 18px;
+  box-sizing: border-box;
 }
 .eg-stat__label { font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color: var(--eg-ink-faint); }
 .eg-stat__value { font-size:28px; font-weight:900; font-stretch:110%; line-height:1.1; margin-top:4px; }
 .eg-stat__value--streak { color: var(--eg-gold-light); }
 .eg-stat__value--time   { color: var(--eg-rose); }
 .eg-stat__value small   { color: var(--eg-ink-faint); font-size:18px; }
+@media (max-width:420px) {
+  /* Keeps a 3- or 4-stat row comfortably on one line on a phone-width
+     screen instead of the tiles' own padding/font-size forcing an early
+     wrap (which is exactly the awkward wrap this rule set exists to avoid). */
+  .eg-hud { gap:8px; }
+  .eg-stat { padding:12px 10px; }
+  .eg-stat__label { font-size:9.5px; letter-spacing:.12em; }
+  .eg-stat__value { font-size:22px; }
+}
 
 .eg-progress { height:8px; border-radius: var(--eg-r-pill); background: var(--eg-border); overflow:hidden; }
 .eg-progress__bar { height:100%; background: var(--eg-teal-light); border-radius: var(--eg-r-pill);
@@ -325,7 +343,13 @@ a:hover { color: #FFFFFF; }
 
 /* --- Answer options ------------------------------------------------------ */
 
-.eg-options { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+/* width:100% (and align-self, belt-and-braces) is required here: this grid
+   sits inside a `align-items:center` flex column in every game that uses
+   it, so without an explicit width it shrink-wraps to a single column's
+   content width instead of the auto-fit repeat ever getting a chance to
+   place a second column — the classic "grid inside a centered flex column
+   collapses to one column" trap. */
+.eg-options { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:12px; width:100%; align-self:stretch; box-sizing:border-box; }
 .eg-option {
   display:flex; align-items:center; gap:14px;
   background: var(--eg-card); border:1px solid var(--eg-border-strong);

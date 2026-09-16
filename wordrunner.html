@@ -529,8 +529,12 @@ function hop(lg, el) {
     renderWorld();
     requestAnimationFrame(() => requestAnimationFrame(() => playHop(geo)));
   } else {
-    const floorNow = climber.floor;
-    gg.vine = Math.min(gg.vine + 1.2, floorNow - 0.55);
+    // Always shrinks the gap by a fixed amount — no cap. The old cap
+    // (floorNow - 0.55) meant that once the gap fell to ~0.55 it could
+    // never shrink further no matter how many more wrong picks followed,
+    // so a player could stall on one floor and never actually be caught.
+    // die() (in tick(), below) is what stops it once the gap runs out.
+    gg.vine += 1.2;
     sfxThud();
     if (climberEl && geo && !reduced) climberEl.animate([
       { transform: 'translate(0,0) rotate(0deg)', offset: 0 },
