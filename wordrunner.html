@@ -498,7 +498,16 @@ function hop(lg, el) {
     // otherwise create). A wrong pick (below) always shrinks the gap; these
     // two bonuses are the only ways it ever grows.
     if (milestone) {
-      gg.vine = Math.max(0, gg.vine / 2); // every 20 floors: decay line halves outright
+      // Every 20 floors: decay halved. This means the *gap* to the climber
+      // doubles (capped at MAX_GAP) — not gg.vine itself cut in half. gg.vine
+      // is a cumulative value that tracks along with fl the whole game (by
+      // floor 20 it's already ~18-20), so halving it directly used to blow
+      // the gap out to 10+ floors — many times wider than the ~1.5-floor
+      // window the camera actually shows around the climber, so the decay
+      // line would fly off the bottom of the screen and look like it had
+      // vanished. Doubling the gap (bounded the same as every other relief
+      // here) keeps the line a generous-but-visible distance behind instead.
+      gg.vine = fl - Math.min(MAX_GAP, (fl - gg.vine) * 2);
       gg.frozenUntil = Math.max(gg.frozenUntil, now + 1600);
       clearTimeout(bannerTimer); bannerTimer = setTimeout(() => showBanner(''), 1900);
       sfxChime();

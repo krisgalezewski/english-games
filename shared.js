@@ -568,6 +568,19 @@ function armReadyGate(hostEl, onReady) {
   function onKey(e) {
     // Ignore bare modifier presses so e.g. a stray Shift doesn't start it.
     if (['Shift','Control','Alt','Meta','CapsLock','Tab'].indexOf(e.key) !== -1) return;
+    // This listener runs in the capture phase, ahead of each game's own
+    // keydown handler (registered on document without capture). Left alone,
+    // the very same keypress that dismisses this gate would go on to reach
+    // that handler too — and for spacebar specifically, that handler treats
+    // it as pause/resume, so the game would start and immediately pause
+    // itself on the same press. Stopping propagation here consumes the key
+    // for "start" only; once the gate is torn down this listener is gone, so
+    // every later press reaches the game's own handler exactly as normal
+    // (spacebar pauses/resumes only once the run has actually started).
+    // preventDefault too, since the game's handler would otherwise have been
+    // the one stopping spacebar from scrolling the page.
+    e.preventDefault();
+    e.stopPropagation();
     fire();
   }
   overlay.addEventListener('click', fire);
