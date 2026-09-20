@@ -627,6 +627,10 @@ function previewMode(m) {
 }
 
 function beginGame() {
+  // The player scrolled down to reach "Start playing" on the intro screen;
+  // without this the game view opens still scrolled to that position, so
+  // they land mid-page instead of seeing the top of the board.
+  window.scrollTo(0, 0);
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('modeTabsBar').style.display = 'flex';
   document.getElementById('rulesBox').style.display = '';
@@ -707,7 +711,11 @@ function loadItem() {
   pauseTimerDisplay(cfg.time);
   playCurrent(true, () => {
     input.disabled = false;
-    input.focus();
+    // preventScroll: this callback fires after the page has already been
+    // scrolled to the top on "Start playing" (see beginGame()) — focusing
+    // the input here would otherwise have the browser auto-scroll it back
+    // into view, undoing that.
+    input.focus({ preventScroll: true });
     showFeedback('', '');
     startTimer(cfg.time);
   });
@@ -874,7 +882,7 @@ function submitAnswer() {
     streak = 0;
     document.getElementById('streakVal').textContent = 0;
     showFeedback('Not quite — listen again and try once more.', 'bad');
-    setTimeout(() => { input.classList.remove('is-wrong'); input.value = ''; input.focus(); }, 500);
+    setTimeout(() => { input.classList.remove('is-wrong'); input.value = ''; input.focus({ preventScroll: true }); }, 500);
   }
 }
 

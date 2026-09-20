@@ -441,7 +441,14 @@ a:hover { color: #FFFFFF; }
 
 /* Small pill tabs — for in-game mode switching and leaderboard filters,
    where a full mode-select card would be too heavy. */
-.eg-pilltabs { display:inline-flex; flex-wrap:wrap; gap:4px; background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-pill); padding:4px; }
+/* inline-flex's shrink-to-fit width is bounded above by the available
+   space, so once these wrap onto two rows on a narrow phone the box itself
+   still spans the full available width — leaving each wrapped row's pills
+   flush left with dead space to the right (looking like the first row
+   "sticks out" of an otherwise-centered field). justify-content:center fixes
+   that; on a single unwrapped row it's a no-op since the row already fills
+   the box. */
+.eg-pilltabs { display:inline-flex; flex-wrap:wrap; justify-content:center; gap:4px; background:var(--eg-card); border:1px solid var(--eg-border); border-radius:var(--eg-r-pill); padding:4px; }
 .eg-pilltab { padding:8px 16px; border-radius:var(--eg-r-pill); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; border:0; background:transparent; color:var(--eg-ink-faint); cursor:pointer; transition:background var(--eg-transition), color var(--eg-transition); }
 .eg-pilltab:hover { color: var(--eg-ink); }
 .eg-pilltab.active { background:var(--eg-ink); color:var(--eg-ink-on-light); }

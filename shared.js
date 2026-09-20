@@ -475,16 +475,42 @@ function tryEnterLandscapeFullscreen(el) {
   } catch(e) {}
 }
 
-// Wires the above to fire once, best-effort, whenever this phone is rotated
-// into landscape while `isActive()` says the game is actually in play.
+// Wires the above to fire, best-effort, whenever this phone is rotated into
+// landscape while `isActive()` says the game is actually in play.
+//
+// Rotating the phone is not itself a "user gesture" as far as the
+// Fullscreen API is concerned, so calling requestFullscreen() straight from
+// the orientationchange/matchMedia handler is silently refused by most
+// mobile browsers (that was the bug here: this used to do exactly that, so
+// it essentially never worked). Instead this arms a flag on rotation and
+// consumes it on the very next real tap or key press anywhere on the page —
+// a genuine gesture — which is what the fullscreen request actually runs
+// inside of. In practice that next gesture is almost always immediate: the
+// "tap/press to start" ready-gate, a D-pad tap, or the first swipe.
 function bindAutoLandscapeFullscreen(isActive) {
   if (!window.matchMedia) return;
   const landscape = window.matchMedia('(orientation:landscape)');
   const coarse = window.matchMedia('(pointer:coarse)');
-  const attempt = () => {
-    if (coarse.matches && landscape.matches && (!isActive || isActive())) tryEnterLandscapeFullscreen();
-  };
-  landscape.addEventListener ? landscape.addEventListener('change', attempt) : landscape.addListener(attempt);
+  let armed = false;
+  function shouldTry() {
+    if (!coarse.matches || !landscape.matches) return false;
+    if (isActive && !isActive()) return false;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return false;
+    return true;
+  }
+  function onOrientationChange() {
+    if (shouldTry()) armed = true;
+  }
+  function onGesture() {
+    if (armed && shouldTry()) tryEnterLandscapeFullscreen();
+    armed = false;
+  }
+  landscape.addEventListener ? landscape.addEventListener('change', onOrientationChange) : landscape.addListener(onOrientationChange);
+  // Capture phase so this still sees the gesture even if some other handler
+  // (e.g. a swipe controller) calls stopPropagation() on it.
+  document.addEventListener('touchend', onGesture, true);
+  document.addEventListener('pointerup', onGesture, true);
+  document.addEventListener('keydown', onGesture, true);
 }
 
 // ── Ready gate: "tap / press any key to start" ─────────────────────

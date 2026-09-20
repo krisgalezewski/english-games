@@ -1748,6 +1748,10 @@ function previewDiff(d) {
 }
 
 function beginGame() {
+  // The player scrolled down to reach "Start playing" on the intro screen;
+  // without this the game view opens still scrolled to that position, so
+  // they land mid-page instead of seeing the top of the board.
+  window.scrollTo(0, 0);
   practiceMode = false;
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'flex';

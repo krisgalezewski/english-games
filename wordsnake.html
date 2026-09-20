@@ -21,20 +21,51 @@ canvas { touch-action:none; display:block; width:100%; margin:0 auto; background
 @keyframes wstray { 0%,100% { opacity:1 } 50% { opacity:.55 } }
 
 .ws-canvas-wrap { position:relative; }
-.ws-tray-row { background:#101010; border-top:1px solid var(--eg-border); padding:14px 20px 8px; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
-.ws-tray { display:flex; gap:6px; align-items:center; min-height:38px; }
-.ws-tray .ltr { font-size:30px; font-weight:900; font-stretch:110%; letter-spacing:.02em; color:var(--eg-ink); }
+
+/* Page-scoped HUD layout: three flex groups (stats / letter tray / speed +
+   pause) inside the shared .eg-arcade-hud bar. Kept out of styles.css so the
+   other arcade games (English Ace, Word Drop) that reuse .eg-arcade-hud /
+   .eg-arcade-cat / .eg-arcade-pause are entirely untouched by this. */
+.ws-hud-left { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.ws-hud-center { flex:1 1 120px; display:flex; align-items:center; justify-content:center; min-width:0; }
+.ws-hud-right { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+
+.ws-tray { display:flex; gap:4px; align-items:center; min-height:26px; flex-wrap:wrap; justify-content:center; }
+.ws-tray .ltr { font-size:22px; font-weight:900; font-stretch:110%; letter-spacing:.02em; color:var(--eg-ink); line-height:1; }
 .ws-tray .ltr.ready { color:var(--eg-gold-light); animation:wstray 1.1s ease-in-out infinite; }
 .ws-tray .ltr.dead { color:#FFB3C0; }
-.ws-tray .slot { border:2px dashed var(--eg-border-strong); border-radius:8px; width:20px; height:28px; }
+.ws-tray .slot { border:2px dashed var(--eg-border-strong); border-radius:6px; width:15px; height:20px; }
+
+.ws-speed-pill { display:flex; align-items:baseline; gap:4px; background: var(--eg-card); border:1px solid var(--eg-border-strong); border-radius: var(--eg-r-pill); padding:6px 11px; }
+.ws-speed-pill__label { font-size:9.5px; font-weight:700; letter-spacing:.16em; color: var(--eg-ink-faint); text-transform:uppercase; }
+.ws-speed-pill__value { font-size:13px; font-weight:900; color: var(--eg-gold-light); }
+
+.ws-pause-btn { display:flex; align-items:center; justify-content:center; width:34px; height:34px; flex:0 0 auto; border-radius:50%; background:transparent; color:var(--eg-ink-muted); border:1px solid var(--eg-border-strong); cursor:pointer; padding:0; transition:color .15s,border-color .15s; }
+.ws-pause-btn:hover { color:var(--eg-ink); border-color:#3A3A3A; }
+.ws-pause-btn.is-paused { color:var(--eg-gold-light); border-color:var(--eg-gold-light); }
+
+/* Advisory note (e.g. "No word starts with LST") now lives on top of the
+   board near the top edge, fading in on change and fading back out a couple
+   seconds later — rather than a permanent info line under the board, which
+   ate into the vertical space mobile players need most. */
+.ws-note-overlay { position:absolute; top:10px; left:50%; transform:translateX(-50%); max-width:92%; padding:7px 16px; border-radius:var(--eg-r-pill); background:rgba(11,45,77,.9); color:var(--eg-ink); font-size:12.5px; font-weight:700; text-align:center; letter-spacing:.01em; pointer-events:none; z-index:2; opacity:0; transition:opacity .35s ease; }
+.ws-note-overlay.show { opacity:1; }
+
 #bankBtn { background:#141414; color:var(--eg-ink-muted); border:1px solid var(--eg-border-strong); border-radius:var(--eg-r-pill); padding:12px 22px; min-height:44px; font:inherit; font-size:13px; font-weight:800; letter-spacing:.06em; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
 #bankBtn.ready { background:var(--eg-ink); color:var(--eg-ink-on-light); border-color:var(--eg-ink); animation:wsready 1.1s ease-in-out infinite; }
 #bankBtn:disabled { cursor:default; }
 
-.ws-note-row { padding:10px 20px; background:#101010; display:flex; align-items:center; justify-content:center; text-align:center; }
 .ws-submit-row { padding:10px 20px 18px; background:#101010; display:flex; align-items:center; justify-content:center; }
 .ws-dpad-row { padding:0 20px 18px; background:#101010; display:none; justify-content:center; }
 @media (hover:none), (pointer:coarse) { .ws-dpad-row { display:flex; } }
+
+@media (max-width:420px) {
+  .ws-tray .ltr { font-size:18px; }
+  .ws-speed-pill { padding:5px 9px; }
+  .ws-speed-pill__value { font-size:12px; }
+  .ws-pause-btn { width:30px; height:30px; }
+  .ws-note-overlay { font-size:11px; padding:6px 12px; }
+}
 
 .welcome-svg-well svg { width:100%; height:auto; display:block; }
 </style>
@@ -97,20 +128,26 @@ canvas { touch-action:none; display:block; width:100%; margin:0 auto; background
 <div id="phase-game" style="max-width:1040px;margin:0 auto;display:none;">
   <section class="eg-arcade-play">
     <div class="eg-arcade-hud">
-      <span class="eg-arcade-cat">Vocabulary</span>
-      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Score</span><span class="eg-arcade-chip__value" id="scoreVal">0</span></span>
-      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Words</span><span class="eg-arcade-chip__value" id="bankedVal">0</span></span>
-      <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Mult</span><span class="eg-arcade-chip__value eg-arcade-chip__value--mult" id="multVal">1.0×</span></span>
-      <span class="eg-arcade-spacer"></span>
-      <button class="eg-arcade-pause" id="pauseBtn" onclick="togglePause()" title="Pause (space)">PAUSE</button>
-      <span class="eg-arcade-speedpips">
-        <span class="eg-arcade-speedpips__label">Speed</span>
-        <span class="pip" id="pip1"></span><span class="pip" id="pip2"></span><span class="pip" id="pip3"></span><span class="pip" id="pip4"></span><span class="pip" id="pip5"></span>
-      </span>
+      <div class="ws-hud-left">
+        <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Score</span><span class="eg-arcade-chip__value" id="scoreVal">0</span></span>
+        <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Words</span><span class="eg-arcade-chip__value" id="bankedVal">0</span></span>
+        <span class="eg-arcade-chip"><span class="eg-arcade-chip__label">Mult</span><span class="eg-arcade-chip__value eg-arcade-chip__value--mult" id="multVal">1.0×</span></span>
+      </div>
+      <div class="ws-hud-center">
+        <div class="ws-tray" id="wordLetters"><span class="slot"></span></div>
+      </div>
+      <div class="ws-hud-right">
+        <span class="ws-speed-pill" title="Speed level"><span class="ws-speed-pill__label">Spd</span><span class="ws-speed-pill__value" id="speedVal">1</span></span>
+        <button class="ws-pause-btn" id="pauseBtn" onclick="togglePause()" title="Pause (space)" aria-label="Pause">
+          <svg class="ico-pause" viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          <svg class="ico-play" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="display:none;"><path d="M7 4l13 8-13 8z"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="ws-canvas-wrap">
       <canvas id="gameCanvas"></canvas>
+      <div class="ws-note-overlay" id="noteLine"></div>
       <div class="eg-arcade-pause-overlay" id="pauseOverlay" style="display:none;">
         <span class="lbl">PAUSED</span>
         <button class="eg-btn eg-btn--primary" onclick="togglePause()">Resume</button>
@@ -118,12 +155,6 @@ canvas { touch-action:none; display:block; width:100%; margin:0 auto; background
       </div>
     </div>
 
-    <div class="ws-tray-row">
-      <div class="ws-tray" id="wordLetters"><span class="slot"></span></div>
-    </div>
-    <div class="ws-note-row">
-      <span class="eg-body--sm" style="color:var(--eg-ink-muted);font-weight:700;" id="noteLine">Collect letters in order</span>
-    </div>
     <div class="ws-submit-row">
       <button id="bankBtn" onclick="bankWord()" disabled>Submit</button>
     </div>
@@ -221,23 +252,28 @@ function sUndo() { tone(300, 0, 0.12, 0.05); }
 function sBank() { tone(523.25, 0, 0.16, 0.06); tone(783.99, 0.1, 0.26, 0.055); }
 
 // ── layout ─────────────────────────────────────────────────────────
-// Normally width-driven (canvas fills its container, height follows the
-// COLS:ROWS ratio) — but on a short viewport (a phone in landscape, outside
-// fullscreen) that would make the canvas taller than the screen has room
-// for below the header/tray/note rows, so once we know how much vertical
-// space is actually left, cap by height instead and let width follow.
+// Width-driven: the canvas fills its container and height follows the
+// COLS:ROWS ratio, full stop — this is the board's normal, stable size and
+// it should not shrink just because a particular window happens to be a bit
+// short, or because the HUD/tray reflows. The one exception is a touch
+// device turned sideways outside fullscreen (a phone in landscape with maybe
+// 350-400px of real height to work with), where a width-driven height would
+// run off the bottom of the screen entirely; only there do we cap by height
+// instead and let width follow. Gated on pointer:coarse so no desktop
+// window, however short, is ever affected — that was the actual bug behind
+// "the board is smaller now": this cap used to apply unconditionally, so an
+// ordinary desktop window under ~900px tall (or a mobile-portrait layout
+// with several rows below the canvas) would get silently capped too.
 function measureFit() {
   const containerW = canvas.parentElement.clientWidth || canvas.clientWidth || 640;
   let w = containerW, h = Math.round(w * ROWS / COLS);
-  const wrapEl = document.querySelector('.ws-canvas-wrap');
-  const trayRow = document.querySelector('.ws-tray-row');
-  const noteRow = document.querySelector('.ws-note-row');
-  const submitRow = document.querySelector('.ws-submit-row');
-  const dpadRow = document.querySelector('.ws-dpad-row');
+  const isCoarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  const wrapEl = isCoarse ? document.querySelector('.ws-canvas-wrap') : null;
   if (wrapEl) {
+    const submitRow = document.querySelector('.ws-submit-row');
+    const dpadRow = document.querySelector('.ws-dpad-row');
     const top = wrapEl.getBoundingClientRect().top;
-    const reserved = (trayRow ? trayRow.offsetHeight : 0) + (noteRow ? noteRow.offsetHeight : 0) +
-      (submitRow ? submitRow.offsetHeight : 0) + (dpadRow ? dpadRow.offsetHeight : 0);
+    const reserved = (submitRow ? submitRow.offsetHeight : 0) + (dpadRow ? dpadRow.offsetHeight : 0);
     const availH = window.innerHeight - top - reserved - 10;
     if (availH > 120 && h > availH) { h = Math.floor(availH); w = Math.round(h * COLS / ROWS); }
   }
@@ -343,7 +379,12 @@ function togglePause() {
   paused = !paused;
   pauseSet(paused);
   document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
-  document.getElementById('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
+  const btn = document.getElementById('pauseBtn');
+  btn.classList.toggle('is-paused', paused);
+  btn.title = paused ? 'Resume (space)' : 'Pause (space)';
+  btn.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+  btn.querySelector('.ico-pause').style.display = paused ? 'none' : '';
+  btn.querySelector('.ico-play').style.display = paused ? '' : 'none';
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -513,12 +554,21 @@ function renderHUD() {
   document.getElementById('scoreVal').textContent = score.toLocaleString();
   document.getElementById('bankedVal').textContent = banked;
   document.getElementById('multVal').textContent = mult.toFixed(1) + '×';
-  for (let i = 1; i <= 5; i++) document.getElementById('pip' + i).classList.toggle('on', i <= Math.min(5, level));
+  document.getElementById('speedVal').textContent = level;
 }
+let noteTimer = null;
 function renderNote() {
   const el = document.getElementById('noteLine');
-  el.textContent = note;
   announce(note);
+  if (!note) { el.classList.remove('show'); return; }
+  el.textContent = note;
+  // Force a reflow so re-adding .show retriggers the fade-in even if the
+  // note text changes while a previous note is still visible.
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { el.classList.remove('show'); }, 2200);
 }
 function renderTray() {
   const wrap = document.getElementById('wordLetters');
