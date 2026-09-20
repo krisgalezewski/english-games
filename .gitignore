@@ -1,0 +1,4 @@
+# Secrets — never commit
+.tts_api_key
+.env
+.env.*

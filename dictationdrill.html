@@ -596,7 +596,49 @@ if ('speechSynthesis' in window) {
 }
 
 // ── Speak helper ───────────────────────────────────────────────────────
+// Pre-recorded Google Cloud TTS clips (generate_audio.py + audio/manifest.json)
+// are far more natural and consistent across browsers/devices than the
+// browser's own speechSynthesis voice, so we prefer them when available and
+// fall back to speechSynthesis automatically — before the manifest has been
+// generated, if a specific clip is missing, or if playback fails for any
+// reason — so the game always works even with no audio files at all.
+let audioManifest = null;
+fetch('audio/manifest.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(m => { audioManifest = m; })
+  .catch(() => { audioManifest = null; });
+
+let currentAudioEl = null;
+
 function speak(text, rate, onEnd) {
+  if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); // stop any overlapping utterance
+
+  const file = audioManifest && audioManifest[text];
+  if (file) {
+    const btn = document.getElementById('playBtn');
+    const audioEl = new Audio('audio/' + file);
+    currentAudioEl = audioEl;
+    audioEl.playbackRate = rate || 1.0;
+    btn.classList.add('speaking');
+    const finish = () => {
+      btn.classList.remove('speaking');
+      if (currentAudioEl === audioEl) currentAudioEl = null;
+      if (onEnd) onEnd();
+    };
+    audioEl.addEventListener('ended', finish, { once: true });
+    audioEl.addEventListener('error', () => {
+      // Missing/broken file — fall back rather than leaving the student stuck.
+      currentAudioEl = null;
+      speakWithBrowserVoice(text, rate, onEnd);
+    }, { once: true });
+    audioEl.play().catch(() => { currentAudioEl = null; speakWithBrowserVoice(text, rate, onEnd); });
+    return;
+  }
+  speakWithBrowserVoice(text, rate, onEnd);
+}
+
+function speakWithBrowserVoice(text, rate, onEnd) {
   if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
   speechSynthesis.cancel(); // stop any overlapping utterance
   const utter = new SpeechSynthesisUtterance(text);
