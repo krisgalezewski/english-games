@@ -161,6 +161,11 @@ a:hover { color: #FFFFFF; }
    keeps its "Games"/"Quiz" cross-links smaller and muted too). */
 .eg-nav .eg-nav-quiet { font-size:11px; letter-spacing:.14em; }
 
+/* ENGLISH VOICED — link back to the main site. Same size as the quiet
+   Lens/Quiz links, but white and bold so it reads as the brand link. */
+.eg-nav .eg-nav-brand { color: var(--eg-ink); font-weight:800; }
+.eg-nav .eg-nav-brand:hover { color: var(--eg-ink); }
+
 .eg-footer {
   margin-top:40px; padding:22px 6px 0; border-top:1px solid #1C1C1C;
   display:flex; flex-wrap:wrap; gap:10px 24px; justify-content:space-between;
