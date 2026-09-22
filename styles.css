@@ -163,8 +163,8 @@ a:hover { color: #FFFFFF; }
 
 /* ENGLISH VOICED — link back to the main site. Same size as the quiet
    Lens/Quiz links, but white and bold so it reads as the brand link. */
-.eg-nav .eg-nav-brand { color: var(--eg-ink); font-weight:800; }
-.eg-nav .eg-nav-brand:hover { color: var(--eg-ink); }
+.eg-nav .eg-nav-brand { color: var(--eg-ink); font-weight:400; }
+.eg-nav .eg-nav-brand:hover { color: var(--eg-ink); font-weight:800; }
 
 .eg-footer {
   margin-top:40px; padding:22px 6px 0; border-top:1px solid #1C1C1C;
