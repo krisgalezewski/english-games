@@ -34,6 +34,16 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 .dd-timer-row .dd-timer-sec { color: var(--eg-ink); font-weight:800; font-size:13px; }
 .dd-timer-row .dd-timer-sec.urgent { color: var(--eg-red); }
 .dd-timer-bonus { color: var(--eg-green-light); opacity:0; transition:opacity .3s; }
+#gameUI { position:relative; }
+.dd-status-row { display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:10px; }
+.dd-status-row .eg-lives { justify-content:flex-start; }
+.dd-life-lost-flash { animation: ddLifeFlash .6s ease-out; }
+@keyframes ddLifeFlash { 0% { transform:scale(1.5); } 100% { transform:scale(1); } }
+.dd-pause-overlay { position:absolute; inset:0; border-radius:18px; background:rgba(8,8,10,.95); z-index:5;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:24px; }
+.dd-pause-overlay .lbl { font-size:12px; font-weight:800; letter-spacing:.24em; color: var(--eg-gold-light); text-transform:uppercase; }
+.dd-pause-overlay .hint { font-size:11px; font-weight:700; letter-spacing:.14em; color: var(--eg-ink-faint); text-transform:uppercase; }
+.dd-pause-overlay .eg-btn { align-self:center; }
 
 .dd-category-badge {
   display:inline-flex; align-items:center; gap:6px;
@@ -168,7 +178,9 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
           <p class="eg-body"><strong>LISTEN</strong> — press ▶ to hear the item, and again to replay it (replays are limited)<br>
           <strong>SPEED</strong> — switch between Normal and Slower playback<br>
           <strong>TYPE</strong> — type exactly what you hear, then Check<br>
-          <strong>HINT / SKIP</strong> — a limited number of each are available per round<br>
+          <strong>LIVES</strong> — you have 3; you lose one each time the timer runs out. The game goes on until they're gone<br>
+          <strong>PAUSE</strong> — press Pause or Esc any time; the timer stops and the audio waits for you<br>
+          <strong>HINT / SKIP</strong> — a limited number of each are available per game (skipping doesn't cost a life)<br>
           <strong>MODES</strong> — Easy and Medium drill single words; Hard and Expert use connected speech and full sentences</p>
         </div>
       </div>
@@ -196,11 +208,15 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
 
     <div class="eg-hud" style="width:100%">
       <div class="eg-stat"><div class="eg-stat__label">Score</div><div class="eg-stat__value" id="scoreVal">0</div></div>
-      <div class="eg-stat"><div class="eg-stat__label">Item</div><div class="eg-stat__value" id="roundVal">1 / 10</div></div>
+      <div class="eg-stat"><div class="eg-stat__label">Item</div><div class="eg-stat__value" id="roundVal">1</div></div>
       <div class="eg-stat"><div class="eg-stat__label">Streak</div><div class="eg-stat__value eg-stat__value--streak" id="streakVal">0</div></div>
     </div>
 
     <div style="width:100%;">
+      <div class="dd-status-row">
+        <div class="eg-lives" id="livesRow" aria-label="Lives"></div>
+        <button type="button" class="eg-arcade-pause" id="pauseBtn" onclick="togglePause()" title="Pause (Esc)">PAUSE</button>
+      </div>
       <div class="eg-progress"><div class="eg-progress__bar" id="timerFill" style="width:100%"></div></div>
       <div class="dd-timer-row" style="margin-top:6px;">
         <span>Time</span>
@@ -234,6 +250,12 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
         <button type="button" class="eg-btn eg-btn--ghost" onclick="skipItem()">Skip (<span id="skipsLeft">3</span>)</button>
       </div>
       <p class="eg-body--sm" id="feedback" style="text-align:center;margin:0;min-height:1.3em;" aria-live="polite" aria-atomic="true"></p>
+    </div>
+
+    <div class="dd-pause-overlay" id="pauseOverlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Game paused">
+      <span class="lbl">Paused</span>
+      <button type="button" class="eg-btn eg-btn--primary" onclick="togglePause()">Resume</button>
+      <span class="hint">Esc to resume</span>
     </div>
   </div>
 
@@ -477,10 +499,10 @@ const MODES = {
 };
 
 const RULES_TEXT = {
-  easy:      '<strong>Minimal pairs</strong> — single words at natural speed (slow down if you need to). Type exactly what you hear. <strong>2 replays</strong> per item, 10 items per round.',
-  medium:    '<strong>Tricky spelling</strong> — words with silent letters and irregular spelling. Type exactly what you hear, spelled correctly. <strong>2 replays</strong> per item, 10 items per round.',
-  connected: '<strong>Connected speech</strong> — short phrases spoken at natural speed, so you\'ll hear them sounding joined-up and blended together. Type the <em>real, correctly-spelled English words</em> you recognise — not the way it sounds. For example, if it sounds like <strong>"thi sorange"</strong>, you type <strong>"this orange"</strong>. Capitals don\'t matter, and you don\'t need a full stop. The summary will show which feature each phrase demonstrated: <span class="dd-cs-term" onclick="showCsTerm(\'weak_form\')">weak forms</span>, <span class="dd-cs-term" onclick="showCsTerm(\'assimilation\')">assimilation</span>, <span class="dd-cs-term" onclick="showCsTerm(\'elision\')">elision</span>, <span class="dd-cs-term" onclick="showCsTerm(\'gemination\')">gemination</span>, <span class="dd-cs-term" onclick="showCsTerm(\'catenation\')">catenation</span> or <span class="dd-cs-term" onclick="showCsTerm(\'intrusion\')">intrusion</span>. <strong>2 replays</strong> per item.',
-  expert:    '<strong>Full sentences</strong> — natural-speed sentences with normal stress and linking. Type the sentence exactly. A missing full stop at the end is fine. Only <strong>1 replay</strong> — closer to real listening exam conditions.',
+  easy:      '<strong>Minimal pairs</strong> — single words at natural speed (slow down if you need to). Type exactly what you hear. <strong>2 replays</strong> per item. <strong>3 lives</strong> — lose one when time runs out.',
+  medium:    '<strong>Tricky spelling</strong> — words with silent letters and irregular spelling. Type exactly what you hear, spelled correctly. <strong>2 replays</strong> per item. <strong>3 lives</strong> — lose one when time runs out.',
+  connected: '<strong>Connected speech</strong> — short phrases spoken at natural speed, so you\'ll hear them sounding joined-up and blended together. Type the <em>real, correctly-spelled English words</em> you recognise — not the way it sounds. For example, if it sounds like <strong>"thi sorange"</strong>, you type <strong>"this orange"</strong>. Capitals don\'t matter, and you don\'t need a full stop. The summary will show which feature each phrase demonstrated: <span class="dd-cs-term" onclick="showCsTerm(\'weak_form\')">weak forms</span>, <span class="dd-cs-term" onclick="showCsTerm(\'assimilation\')">assimilation</span>, <span class="dd-cs-term" onclick="showCsTerm(\'elision\')">elision</span>, <span class="dd-cs-term" onclick="showCsTerm(\'gemination\')">gemination</span>, <span class="dd-cs-term" onclick="showCsTerm(\'catenation\')">catenation</span> or <span class="dd-cs-term" onclick="showCsTerm(\'intrusion\')">intrusion</span>. <strong>2 replays</strong> per item. <strong>3 lives</strong> — lose one when time runs out.',
+  expert:    '<strong>Full sentences</strong> — natural-speed sentences with normal stress and linking. Type the sentence exactly. A missing full stop at the end is fine. Only <strong>1 replay</strong> — closer to real listening exam conditions. <strong>3 lives</strong> — lose one when time runs out.',
 };
 
 // Glossary for the connected-speech feature names shown in the Hard mode
@@ -526,7 +548,10 @@ function showCsTerm(key) {
   showLocalDefModal(term.label, term.explanation, term.examples.join('\n'), 'connected speech feature');
 }
 
-const ROUND_SIZE = 10;
+// Items are drawn in batches of this size; the game itself is endless and
+// only ends when the player runs out of lives.
+const BATCH_SIZE = 10;
+const MAX_LIVES = 3;
 
 // ── State ─────────────────────────────────────────────────────────────
 let mode = 'easy';
@@ -543,6 +568,19 @@ let roundEnded = false;
 // without this guard a rapid second submit/skip/hint/replay in that gap
 // would act on the wrong (already-advanced, not-yet-shown) item.
 let advancing = false;
+let lives = MAX_LIVES;
+// Pause state. `phase` says what the current item is doing, so Resume can
+// pick up exactly where it left off:
+//   'listening'  first playback, typing time hasn't started yet
+//   'typing'     countdown running
+//   'replaying'  countdown frozen while a replay plays
+//   'advancing'  item resolved, next one loads after a short delay
+let paused = false, phase = 'listening';
+let advanceTimer = null, pendingLoad = false;
+let usedThisGame = new Set();
+// Bumped whenever audio is stopped on purpose (pause, mode switch, restart),
+// so a stale "playback finished" callback can't start the timer later.
+let speakToken = 0;
 
 // ── Voice selection — prefer the best-quality British female voice ────
 // Different platforms expose very different voice lists. The previous
@@ -624,9 +662,32 @@ fetch('audio/manifest.json')
 
 let currentAudioEl = null;
 
+function stopAudio() {
+  speakToken++;
+  if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  document.getElementById('playBtn').classList.remove('speaking');
+}
+
 function speak(text, rate, onEnd) {
   if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); // stop any overlapping utterance
+  // Only the newest playback may report back, and only once. A watchdog
+  // makes sure it does report back: some browsers (notably mobile ones
+  // using the built-in voice) occasionally never fire "ended", which used
+  // to leave the game stuck on "Listen…" with the timer frozen forever.
+  const token = ++speakToken;
+  let done = false;
+  const watchdog = setTimeout(() => finishOnce(), Math.max(5000, text.length * 130 / (rate || 1) + 4000));
+  function finishOnce() {
+    if (done) return;
+    done = true;
+    clearTimeout(watchdog);
+    if (token !== speakToken) return; // superseded or stopped on purpose
+    document.getElementById('playBtn').classList.remove('speaking');
+    if (onEnd) onEnd();
+  }
+  const reportEnd = finishOnce;
 
   const file = audioManifest && audioManifest[text];
   if (file) {
@@ -638,18 +699,18 @@ function speak(text, rate, onEnd) {
     const finish = () => {
       btn.classList.remove('speaking');
       if (currentAudioEl === audioEl) currentAudioEl = null;
-      if (onEnd) onEnd();
+      reportEnd();
     };
     audioEl.addEventListener('ended', finish, { once: true });
     audioEl.addEventListener('error', () => {
       // Missing/broken file — fall back rather than leaving the student stuck.
       currentAudioEl = null;
-      speakWithBrowserVoice(text, rate, onEnd);
+      speakWithBrowserVoice(text, rate, reportEnd);
     }, { once: true });
-    audioEl.play().catch(() => { currentAudioEl = null; speakWithBrowserVoice(text, rate, onEnd); });
+    audioEl.play().catch(() => { currentAudioEl = null; speakWithBrowserVoice(text, rate, reportEnd); });
     return;
   }
-  speakWithBrowserVoice(text, rate, onEnd);
+  speakWithBrowserVoice(text, rate, reportEnd);
 }
 
 function speakWithBrowserVoice(text, rate, onEnd) {
@@ -721,16 +782,33 @@ function switchLb(m) {
 }
 
 // ── Round setup ──────────────────────────────────────────────────────
+// Adds the next batch of items to the queue — preferring items this player
+// hasn't heard recently (shared.js), and never repeating one within the same
+// game until the whole bank has been used.
+function addBatch() {
+  const cfg = MODES[mode];
+  if (usedThisGame.size >= cfg.bank.length) usedThisGame.clear();
+  const indices = freshRandomIndices('dictationdrill_' + mode, cfg.bank, cfg.bank.length)
+    .filter(i => !usedThisGame.has(i))
+    .slice(0, BATCH_SIZE);
+  indices.forEach(i => { usedThisGame.add(i); markSeen('dictationdrill_' + mode, i); });
+  roundItems.push(...indices.map(i => cfg.bank[i]));
+}
+
 function restartRound() {
   roundEnded = false;
-  const cfg = MODES[mode];
-  const indices = freshRandomIndices('dictationdrill_' + mode, cfg.bank, Math.min(ROUND_SIZE, cfg.bank.length));
-  indices.forEach(i => markSeen('dictationdrill_' + mode, i));
-  roundItems = indices.map(i => cfg.bank[i]);
+  stopAudio();
+  clearInterval(timerInterval);
+  clearTimeout(advanceTimer); advanceTimer = null; pendingLoad = false;
+  setPaused(false);
+  roundItems = []; usedThisGame = new Set();
+  addBatch();
 
   current = 0; score = 0; streak = 0; bestStreak = 0;
   correctCount = 0; firstTryCount = 0; results = [];
   skipsLeft = 3; hintsLeft = 1;
+  lives = MAX_LIVES;
+  renderLives();
 
   document.getElementById('scoreVal').textContent = 0;
   document.getElementById('streakVal').textContent = 0;
@@ -744,9 +822,10 @@ function restartRound() {
 
 function loadItem() {
   advancing = false;
-  if (current >= roundItems.length) { endRound(); return; }
+  if (roundEnded) return;
+  if (current >= roundItems.length) addBatch();
   const cfg = MODES[mode];
-  document.getElementById('roundVal').textContent = `${current + 1} / ${roundItems.length}`;
+  document.getElementById('roundVal').textContent = current + 1;
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'eg-body--sm';
   document.getElementById('feedback').style.color = '';
@@ -763,9 +842,20 @@ function loadItem() {
   // first playback genuinely finishes — previously the countdown ran
   // concurrently with the audio itself, silently eating into the time
   // students had left to type their answer.
-  showFeedback('Listen…', 'info');
   pauseTimerDisplay(cfg.time);
+  listenThenType();
+}
+
+// First playback of an item, then typing time starts. Also used by Resume
+// when the game was paused before that first playback had finished.
+function listenThenType() {
+  const cfg = MODES[mode];
+  const input = document.getElementById('dictationInput');
+  phase = 'listening';
+  input.disabled = true;
+  showFeedback('Listen…', 'info');
   playCurrent(true, () => {
+    if (paused || roundEnded) return;
     input.disabled = false;
     // preventScroll: this callback fires after the page has already been
     // scrolled to the top on "Start playing" (see beginGame()) — focusing
@@ -773,6 +863,7 @@ function loadItem() {
     // into view, undoing that.
     input.focus({ preventScroll: true });
     showFeedback('', '');
+    phase = 'typing';
     startTimer(cfg.time);
   });
 }
@@ -797,9 +888,10 @@ function getCurrentAspect() {
 }
 
 function playCurrent(isAutoPlay, onDone) {
-  if (roundEnded || current >= roundItems.length) return;
+  if (roundEnded || paused || current >= roundItems.length) return;
   if (!isAutoPlay) {
     if (advancing) return; // item already resolved, waiting to advance — nothing to replay yet
+    if (phase === 'listening' || phase === 'replaying') return; // already playing
     if (replaysLeft <= 0) { showFeedback('No replays left for this item!', 'bad'); return; }
     replaysLeft--;
     usedReplayThisItem = true;
@@ -808,7 +900,10 @@ function playCurrent(isAutoPlay, onDone) {
     // it afterward — replaying the audio should never silently cost the
     // student typing time.
     pauseTimerForReplay();
+    phase = 'replaying';
     speak(getCurrentSpoken(), speechRate, () => {
+      if (paused || roundEnded) return;
+      phase = 'typing';
       resumeTimerAfterReplay();
       if (onDone) onDone();
     });
@@ -872,12 +967,79 @@ function timeOut() {
   document.getElementById('dictationInput').disabled = true; // same advance-window guard as submitAnswer()
   const correct = getCurrentCorrect();
   const aspect = getCurrentAspect();
-  results.push({ correct, yours: '', status: 'skip', aspect });
+  results.push({ correct, yours: '', status: 'skip', timeout: true, aspect });
   streak = 0;
   document.getElementById('streakVal').textContent = 0;
-  showFeedback(`Time's up! Answer: "${correct}"`, 'bad');
-  advanceItem(1100);
+  loseLife();
+  if (lives <= 0) {
+    showFeedback(`Time's up! Answer: "${correct}" — no lives left.`, 'bad');
+    advancing = true; phase = 'advancing';
+    advanceTimer = setTimeout(() => endRound('lives'), 1600);
+    return;
+  }
+  showFeedback(`Time's up! Answer: "${correct}" — ${lives} ${lives === 1 ? 'life' : 'lives'} left.`, 'bad');
+  advanceItem(1500);
 }
+
+// ── Lives ─────────────────────────────────────────────────────────────
+function renderLives(flashIndex) {
+  const row = document.getElementById('livesRow');
+  row.innerHTML = '';
+  for (let i = 0; i < MAX_LIVES; i++) {
+    const el = document.createElement('span');
+    el.className = 'eg-life' + (i >= lives ? ' is-lost' : '') + (i === flashIndex ? ' dd-life-lost-flash' : '');
+    el.textContent = '❤️';
+    row.appendChild(el);
+  }
+  row.setAttribute('aria-label', `${lives} of ${MAX_LIVES} lives left`);
+}
+function loseLife() {
+  lives = Math.max(0, lives - 1);
+  renderLives(lives);
+}
+
+// ── Pause ─────────────────────────────────────────────────────────────
+function setPaused(on) {
+  paused = on;
+  document.getElementById('pauseOverlay').style.display = on ? 'flex' : 'none';
+  document.getElementById('pauseBtn').textContent = on ? 'RESUME' : 'PAUSE';
+}
+function gameActive() {
+  return document.getElementById('gameUI').style.display !== 'none' && !roundEnded;
+}
+function togglePause() {
+  if (!gameActive()) return;
+  const input = document.getElementById('dictationInput');
+  if (!paused) {
+    setPaused(true);
+    clearInterval(timerInterval);
+    // A replay in progress already stashed the remaining time; keep it.
+    if (phase === 'typing') _timeLeftBeforeReplay = null;
+    stopAudio();
+    input.disabled = true;
+    input.blur();
+    return;
+  }
+  setPaused(false);
+  if (pendingLoad) { pendingLoad = false; loadItem(); return; }
+  if (phase === 'advancing') return; // the next item will load on its own
+  if (phase === 'listening') { listenThenType(); return; }
+  // 'typing' or 'replaying': give the input back and carry on the countdown
+  if (phase === 'replaying' && _timeLeftBeforeReplay !== null) { timeLeft = _timeLeftBeforeReplay; _timeLeftBeforeReplay = null; }
+  phase = 'typing';
+  input.disabled = false;
+  input.focus({ preventScroll: true });
+  updateTimerUI(MODES[mode].time);
+  clearInterval(timerInterval);
+  timerInterval = setInterval(timerTick, 1000);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && gameActive()) { e.preventDefault(); togglePause(); }
+});
+// Leaving the tab or app pauses the game instead of silently holding the timer.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameActive() && !paused) togglePause();
+});
 
 // ── Answer checking ───────────────────────────────────────────────────
 // Words (easy/medium): direct case-insensitive comparison.
@@ -905,7 +1067,7 @@ function checkAnswer(typed, correct) {
 }
 
 function submitAnswer() {
-  if (roundEnded || advancing || current >= roundItems.length) return;
+  if (roundEnded || paused || advancing || current >= roundItems.length) return;
   const input = document.getElementById('dictationInput');
   const typed = input.value.trim();
   if (!typed) return;
@@ -943,7 +1105,7 @@ function submitAnswer() {
 }
 
 function useHint() {
-  if (roundEnded || advancing || current >= roundItems.length) return;
+  if (roundEnded || paused || advancing || current >= roundItems.length) return;
   if (hintsLeft <= 0) { showFeedback('No hints left!', 'bad'); return; }
   hintsLeft--; hintUsed = true;
   document.getElementById('hintsLeft').textContent = hintsLeft;
@@ -955,7 +1117,7 @@ function useHint() {
 }
 
 function skipItem() {
-  if (roundEnded || advancing || current >= roundItems.length) return;
+  if (roundEnded || paused || advancing || current >= roundItems.length) return;
   if (skipsLeft <= 0) { showFeedback('No skips left!', 'bad'); return; }
   skipsLeft--;
   document.getElementById('skipsLeft').textContent = skipsLeft;
@@ -973,8 +1135,14 @@ function skipItem() {
 
 function advanceItem(delay) {
   advancing = true;
+  phase = 'advancing';
   current++;
-  setTimeout(loadItem, delay);
+  clearTimeout(advanceTimer);
+  advanceTimer = setTimeout(() => {
+    advanceTimer = null;
+    if (paused) { pendingLoad = true; return; }
+    loadItem();
+  }, delay);
 }
 
 function showFeedback(msg, type) {
@@ -985,13 +1153,17 @@ function showFeedback(msg, type) {
 }
 
 // ── End of round ───────────────────────────────────────────────────────
-function endRound() {
+function endRound(reason) {
   roundEnded = true;
   clearInterval(timerInterval);
+  clearTimeout(advanceTimer); advanceTimer = null;
+  stopAudio();
+  setPaused(false);
+  document.getElementById('endReason').textContent = reason === 'lives' ? 'Out of lives' : 'Game over';
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('endCard').style.display = 'flex';
   document.getElementById('endScore').textContent = score + ' pts';
-  document.getElementById('endCorrect').textContent = correctCount + ' / ' + roundItems.length;
+  document.getElementById('endCorrect').textContent = correctCount + ' / ' + results.length;
   document.getElementById('endStreak').textContent = bestStreak;
   document.getElementById('endFirstTry').textContent = firstTryCount;
   document.getElementById('endCard').dataset.score = score;
@@ -1007,7 +1179,7 @@ function endRound() {
       </div>`;
   }
 
-  const ratio = correctCount / roundItems.length;
+  const ratio = results.length ? correctCount / results.length : 0;
   document.getElementById('endMsg').textContent =
     ratio === 1 ? 'Perfect listening — every single item correct!' :
     ratio >= 0.8 ? 'Excellent ear — almost a clean sweep!' :
@@ -1019,7 +1191,7 @@ function endRound() {
   results.forEach(r => {
     const el = document.createElement('div');
     el.className = 'dd-review-item ' + r.status;
-    const tag = r.status === 'correct' ? 'correct' : r.status === 'skip' ? 'skipped' : 'wrong';
+    const tag = r.status === 'correct' ? 'correct' : r.timeout ? "time's up" : r.status === 'skip' ? 'skipped' : 'wrong';
     const yoursHtml = r.yours
       ? `<div class="dd-rv-your-answer ${r.status !== 'correct' ? 'wrong-answer' : ''}">You typed: "${escHtml(r.yours)}"</div>`
       : '';
