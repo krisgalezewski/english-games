@@ -180,7 +180,7 @@ main { max-width:640px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
           <strong>TYPE</strong> — type exactly what you hear, then Check<br>
           <strong>LIVES</strong> — you have 3; you lose one each time the timer runs out. The game goes on until they're gone<br>
           <strong>PAUSE</strong> — press Pause or Esc any time; the timer stops and the audio waits for you<br>
-          <strong>HINT / SKIP</strong> — a limited number of each are available per game (skipping doesn't cost a life)<br>
+          <strong>HINT / SKIP</strong> — 3 skips per game (skipping doesn't cost a life); you start with 1 hint and earn another for every 10 correct answers<br>
           <strong>MODES</strong> — Easy and Medium drill single words; Hard and Expert use connected speech and full sentences</p>
         </div>
       </div>
@@ -552,6 +552,7 @@ function showCsTerm(key) {
 // only ends when the player runs out of lives.
 const BATCH_SIZE = 10;
 const MAX_LIVES = 3;
+const HINT_EVERY = 10; // correct answers needed to earn an extra hint
 
 // ── State ─────────────────────────────────────────────────────────────
 let mode = 'easy';
@@ -1040,6 +1041,14 @@ document.addEventListener('keydown', e => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && gameActive() && !paused) togglePause();
 });
+// Leaving the page (a link, the back button, closing the tab) stops all
+// audio and pauses, so nothing keeps playing over the next page — and if
+// the browser later restores this page from its back/forward cache, the
+// game is waiting, paused, instead of carrying on by itself.
+window.addEventListener('pagehide', () => {
+  if (gameActive() && !paused) togglePause();
+  stopAudio();
+});
 
 // ── Answer checking ───────────────────────────────────────────────────
 // Words (easy/medium): direct case-insensitive comparison.
@@ -1084,6 +1093,9 @@ function submitAnswer() {
                             // in that gap would wrongly re-check this answer against it
     streak++; correctCount++;
     if (streak > bestStreak) bestStreak = streak;
+    // Endless games are long, so hints are earned: one more every 10 correct.
+    const earnedHint = correctCount % HINT_EVERY === 0;
+    if (earnedHint) { hintsLeft++; document.getElementById('hintsLeft').textContent = hintsLeft; }
     if (firstListen) firstTryCount++;
     const base = MODES[mode].type === 'word' ? 15 : 35;
     const bonus = firstListen ? Math.floor(base * 0.5) : 0;
@@ -1093,7 +1105,7 @@ function submitAnswer() {
     document.getElementById('scoreVal').textContent = score;
     document.getElementById('streakVal').textContent = streak;
     results.push({ correct, yours: typed, status: 'correct', pts, aspect: getCurrentAspect() });
-    showFeedback(`✓ Correct! +${pts} pts${firstListen ? ' (first listen bonus!)' : ''}`, 'ok');
+    showFeedback(`✓ Correct! +${pts} pts${firstListen ? ' (first listen bonus!)' : ''}${earnedHint ? ' · +1 hint earned!' : ''}`, 'ok');
     advanceItem(700);
   } else {
     input.classList.add('is-wrong');
