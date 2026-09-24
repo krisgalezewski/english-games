@@ -1,3 +1,18 @@
+// ── Stop audio from carrying over between pages ──────────────────
+// Browsers don't always stop the built-in voice (speechSynthesis) when you
+// leave a page: it can keep talking over the next game. So every games page
+// silences leftover speech as it opens, and again as it's left (or restored
+// from the back/forward cache).
+(function () {
+  function hush() {
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+    try { document.querySelectorAll('audio, video').forEach(m => m.pause()); } catch (e) {}
+  }
+  hush();
+  window.addEventListener('pagehide', hush);
+  window.addEventListener('pageshow', e => { if (e.persisted) hush(); });
+})();
+
 // ── Supabase config ──────────────────────────────────────────────
 const SUPABASE_URL  = 'https://mumvnjyiupzvmcoatwye.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11bXZuanlpdXB6dm1jb2F0d3llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODEzMDMsImV4cCI6MjA5Njg1NzMwM30.JgMQRDkIvGFUvKR_Iwoo91zaPdd5urNig8yc0g0oMRk';

@@ -542,5 +542,14 @@
 </footer>
 
 <script src="game-of-the-week.js"></script>
+<script>
+// Silence any speech still playing from a game you've just left
+// (see shared.js, "Stop audio from carrying over between pages").
+(function () {
+  function hush() { try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} }
+  hush();
+  window.addEventListener('pageshow', hush);
+})();
+</script>
 </body>
 </html>
