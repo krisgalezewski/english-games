@@ -20,9 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script defer src="/analytics.js"></script>
 <!-- /seo -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
@@ -213,7 +211,7 @@ main { max-width:580px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
     <div class="review-grid" id="reviewGrid" style="margin-top:6px;"></div>
     <div id="submitArea" style="width:100%;max-width:460px;margin-top:6px;">
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <input id="nameInput" class="eg-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
         <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>
     </div>
@@ -1412,7 +1410,7 @@ function endRound() {
   if (submitAreaEl) {
     submitAreaEl.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <input id="nameInput" class="eg-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
         <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
   }

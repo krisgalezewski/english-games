@@ -601,7 +601,7 @@ function renderCompactEndCard(containerEl, opts) {
       ${opts.message ? `<p class="compact-end-msg">${escHtml(opts.message)}</p>` : ''}
       ${opts.reviewItemsHtml ? `<div class="compact-review-grid">${opts.reviewItemsHtml}</div>` : ''}
       <div class="compact-submit-row">
-        <input class="text-input compact-name-input" placeholder="Your name" maxlength="24"/>
+        <input class="text-input compact-name-input" placeholder="Name or nickname" maxlength="24"/>
         <button class="btn-primary compact-submit-btn">Add to leaderboard</button>
       </div>
       <div class="compact-end-actions">

@@ -20,9 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script defer src="/analytics.js"></script>
 <!-- /seo -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
@@ -232,7 +230,7 @@ main { max-width:820px; margin:0 auto; padding:8px 0 48px; display:flex; flex-di
       <!-- Submit form — only shown once the player chooses to stop -->
       <div id="submitArea" style="display:none;width:100%;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+          <input id="nameInput" class="eg-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
           <button type="button" class="eg-btn eg-btn--primary" onclick="doSubmit()">Add to leaderboard</button>
         </div>
       </div>
@@ -1780,7 +1778,7 @@ function endGame() {
   if (submitAreaEl) {
     submitAreaEl.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <input id="nameInput" class="eg-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
         <button class="eg-btn eg-btn--primary" type="button" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
   }
@@ -1892,7 +1890,7 @@ function stopAndShowSubmit() {
     sub.style.display = 'block';
     sub.innerHTML = `
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-        <input id="nameInput" class="eg-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+        <input id="nameInput" class="eg-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
         <button class="eg-btn eg-btn--primary" type="button" onclick="doSubmit()">Add to leaderboard</button>
       </div>`;
     sub.dataset.score = finalScore;

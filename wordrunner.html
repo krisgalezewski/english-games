@@ -20,9 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script defer src="/analytics.js"></script>
 <!-- /seo -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="styles.css"/>
 <link rel="icon" href="favicon.ico" sizes="any"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
@@ -242,7 +240,7 @@ a.nb-back:hover { color:var(--nb-alert); }
         </div>
         <div id="submitArea" style="width:100%;max-width:420px;">
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <input id="nameInput" class="nb-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+            <input id="nameInput" class="nb-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
             <button type="button" class="nb-primary-btn" onclick="doSubmit()">Add to leaderboard</button>
           </div>
         </div>
@@ -805,7 +803,7 @@ function showResult() {
   });
   document.getElementById('submitArea').innerHTML = `
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <input id="nameInput" class="nb-input" placeholder="Your name" maxlength="24" style="flex:1;min-width:160px;"/>
+      <input id="nameInput" class="nb-input" placeholder="Name or nickname" maxlength="24" style="flex:1;min-width:160px;"/>
       <button type="button" class="nb-primary-btn" onclick="doSubmit()">Add to leaderboard</button>
     </div>`;
   renderLB();
